@@ -55,7 +55,7 @@
 
     /* Chart canvases */
     .chart-stack{ display:flex; flex-direction:column; gap:2px; }
-    .chart-stack canvas{ width:100%; background:var(--canvas-bg); border:1px solid rgba(0,0,0,.15); border-radius:8px; image-rendering:auto; }
+    .chart-stack canvas{ width:100%; background:var(--canvas-bg); border:1px solid rgba(0,0,0,.15); border-radius:8px; image-rendering:-webkit-optimize-contrast; }
 
     /* Legend */
     .legend-bar{ display:flex; flex-wrap:wrap; gap:14px; padding:10px 14px; background:rgba(0,0,0,.02); border:1px solid rgba(0,0,0,.10); border-radius:10px; margin-top:6px; font-size:12px; }
@@ -95,30 +95,31 @@
     .sidebar-grid{ display:grid; gap:14px; grid-template-columns:1.2fr .8fr; margin-top:14px; }
     @media(max-width:980px){ .sidebar-grid{ grid-template-columns:1fr; } }
 
-    @page { size: landscape; margin: 0.35in; }
+    @page { size: landscape; margin: 0.3in; }
     @media print {
       body{ background:#fff; color:#000; margin:0; }
-      main{ padding:4px 10px; }
-      header{ border:none; padding:2px 10px 2px; text-align:center; }
-      h1{ font-size:16px; margin-bottom:1px; }
-      .sub{ font-size:10px; }
-      .card{ box-shadow:none; border:1px solid #ccc; background:#fff; padding:4px; margin-bottom:4px; }
+      main{ padding:2px 8px; }
+      header{ border:none; padding:1px 10px 1px; text-align:center; }
+      h1{ font-size:14px; margin-bottom:0px; }
+      .sub{ font-size:9px; margin-bottom:0; }
+      .card{ box-shadow:none; border:1px solid #ccc; background:#fff; padding:3px; margin-bottom:3px; }
       #tab-timeline > .card:first-child{ page-break-inside:avoid; }
-      canvas{ border:1px solid #ccc; image-rendering:auto; }
+      canvas{ border:1px solid #ccc; image-rendering:-webkit-optimize-contrast; }
+      #chartMeds{ max-height:70px !important; }
       button, input, select, .no-print, .tabs{ display:none !important; }
       .tab-content{ display:block !important; }
       .muted{ color:#333; }
       .danger{ color:#b00020; }
       .warn{ color:#8a5200; }
       .ok{ color:#0a6a2c; }
-      .legend-bar{ background:#f8f8f8; border-color:#ccc; padding:4px 8px; margin-top:2px; font-size:10px; gap:10px; }
+      .legend-bar{ background:#f8f8f8; border-color:#ccc; padding:2px 6px; margin-top:1px; font-size:9px; gap:8px; }
       .phase-table th{ background:#eee; }
       .phase-table th,.phase-table td{ border-color:#ccc; color:#000; }
       .chart-stack{ gap:0px; }
-      .sidebar-grid{ display:block; margin-top:4px; }
-      .sidebar-grid > .card{ margin-bottom:6px; }
-      .kpi .box{ padding:6px 8px; }
-      .big{ font-size:18px; }
+      .sidebar-grid{ display:block; margin-top:2px; }
+      .sidebar-grid > .card{ margin-bottom:4px; }
+      .kpi .box{ padding:4px 6px; }
+      .big{ font-size:16px; }
       #tab-phases{ page-break-before:always; }
       #tab-insights{ page-break-before:always; }
     }
@@ -269,11 +270,36 @@
   <!-- Tab 2: Phase Comparison -->
   <div id="tab-phases" class="tab-content">
     <div class="card">
-      <div style="font-weight:650; font-size:15px; margin-bottom:4px;">Medication-Phase Weekly Metrics (Morning vs Afternoon/Evening)</div>
+      <div style="font-weight:650; font-size:15px; margin-bottom:4px;">Medication-Phase Metrics (Morning vs Afternoon/Evening)</div>
       <div class="muted small" id="phaseRange">&mdash;</div>
       <div class="hr"></div>
       <div id="phaseTableContainer">
         <div class="muted">Upload data to see phase comparison.</div>
+      </div>
+      <div id="phaseLegend" style="display:none;">
+        <div class="hr"></div>
+        <div style="font-weight:600; font-size:12px; margin-bottom:6px; color:var(--accent);">Methodology &amp; Parameters</div>
+        <div class="muted small" style="line-height:1.6; margin-bottom:8px;">
+          For each medication change, statistics are computed from the <b>last N readings</b> recorded before that change, provided they fall within the lookback window. If fewer than N readings exist in that window, all available readings before the change are used. The final row reports the most recent readings within a configurable time window. <span style="color:var(--accent)">Δ columns</span> show the change from the prior phase to help track treatment response.
+        </div>
+        <div class="row no-print" style="gap:8px; flex-wrap:wrap; margin-top:4px;">
+          <div class="pill" style="padding:5px 8px;">
+            <label style="font-size:11px;">Readings per phase (N)</label>
+            <input id="phaseN" type="number" min="2" max="30" value="5" style="width:54px; font-size:12px; padding:4px 6px;" />
+          </div>
+          <div class="pill" style="padding:5px 8px;">
+            <label style="font-size:11px;">Lookback window (months)</label>
+            <input id="phaseLookback" type="number" min="1" max="12" value="3" style="width:54px; font-size:12px; padding:4px 6px;" />
+          </div>
+          <div class="pill" style="padding:5px 8px;">
+            <label style="font-size:11px;">Recent window (weeks)</label>
+            <input id="phaseRecentWeeks" type="number" min="1" max="12" value="2" style="width:54px; font-size:12px; padding:4px 6px;" />
+          </div>
+          <button id="phaseApplyBtn" style="font-size:12px; padding:6px 12px;">Update Table</button>
+        </div>
+        <div class="hr" style="margin:8px 0;"></div>
+        <div style="font-weight:600; font-size:12px; margin-bottom:4px; color:var(--accent);">Clinical Decision Support Suggestions</div>
+        <div class="muted small" style="line-height:1.6;" id="phaseSuggestions"></div>
       </div>
     </div>
   </div>
@@ -797,7 +823,7 @@
   // CANVAS SETUP
   // =============================================
   function setupCanvas(canvas, displayW, displayH) {
-    const dpr = Math.max(2, window.devicePixelRatio||1);
+    const dpr = Math.max(3, window.devicePixelRatio||1);
     canvas.width = displayW*dpr;
     canvas.height = displayH*dpr;
     canvas.style.width = displayW+'px';
@@ -1159,25 +1185,54 @@
     $('avgPmLabel').textContent = `Recent 2-week Afternoon/Evening avg`;
 
     $('avgAll').textContent=fmtBP(rm.avgSys,rm.avgDia);
-    $('avgAllDetail').innerHTML=`n=${rm.count} &bull; <span class="ok"><b>Green</b> ${fmtPct(rm.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Red</b> ${fmtPct(rm.pctRed)}</span> &bull; <span class="danger"><b>Severe</b> ${fmtPct(rm.pctSevere)}</span>${rm.pctHypo>0?' &bull; <span style="color:#7B1FA2"><b>Hypo</b> '+fmtPct(rm.pctHypo)+'</span>':''}`;
+    $('avgAllDetail').innerHTML=`n=${rm.count} &bull; <span class="ok"><b>Green</b> ${fmtPct(rm.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Red</b> ${fmtPct(rm.pctRed)}</span> &bull; <span style="color:#c62828"><b>Severe ${fmtPct(rm.pctSevere)}</b></span>${rm.pctHypo>0?' &bull; <span style="color:#7B1FA2"><b>Hypo</b> '+fmtPct(rm.pctHypo)+'</span>':''}`;
+
+    // Morning card with color-coded details
     $('avgAm').textContent=fmtBP(rm.avgAmSys,rm.avgAmDia);
-    $('avgAmDetail').textContent=`n=${rm.amCount}`;
+    const amReadings = rec.filter(x => x.window === 'Morning');
+    const amM = amReadings.length ? computeMetrics(amReadings) : null;
+    if (amM && amM.count > 0) {
+      $('avgAmDetail').innerHTML=`n=${amM.count} &bull; <span class="ok"><b>Green</b> ${fmtPct(amM.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Red</b> ${fmtPct(amM.pctRed)}</span> &bull; <span style="color:#c62828"><b>Severe ${fmtPct(amM.pctSevere)}</b></span>${amM.pctHypo>0?' &bull; <span style="color:#7B1FA2"><b>Hypo</b> '+fmtPct(amM.pctHypo)+'</span>':''}`;
+    } else {
+      $('avgAmDetail').textContent = `n=0`;
+    }
+
+    // Afternoon/Evening card with color-coded details
     $('avgPm').textContent=fmtBP(rm.avgPmSys,rm.avgPmDia);
-    $('avgPmDetail').textContent=`n=${rm.pmCount}`;
+    const pmReadings = rec.filter(x => x.window === 'Afternoon/Evening');
+    const pmM = pmReadings.length ? computeMetrics(pmReadings) : null;
+    if (pmM && pmM.count > 0) {
+      $('avgPmDetail').innerHTML=`n=${pmM.count} &bull; <span class="ok"><b>Green</b> ${fmtPct(pmM.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Red</b> ${fmtPct(pmM.pctRed)}</span> &bull; <span style="color:#c62828"><b>Severe ${fmtPct(pmM.pctSevere)}</b></span>${pmM.pctHypo>0?' &bull; <span style="color:#7B1FA2"><b>Hypo</b> '+fmtPct(pmM.pctHypo)+'</span>':''}`;
+    } else {
+      $('avgPmDetail').textContent = `n=0`;
+    }
   }
 
   // =============================================
   // CLINICIAN REPORT
   // =============================================
+  function colorBP(sys, dia) {
+    // Color-code a BP value based on classification
+    if (sys == null || dia == null) return '—';
+    const s = Math.round(sys), d = Math.round(dia);
+    const cls = classifyBP(s, d);
+    let color = '#1a1a2e'; // default text
+    if (cls.hypo) color = '#7B1FA2';
+    else if (cls.severe) color = '#c62828';
+    else if (cls.green) color = '#1b7a3d';
+    else if (cls.red) color = '#d32f2f';
+    return `<span style="color:${color};font-weight:650;">${s}/${d}</span>`;
+  }
+
   function buildReport(rs, m) {
     if(!rs.length)return '<strong>Home BP summary</strong><div class="muted small">No data loaded.</div>';
     const first=rs[0].t,last=rs[rs.length-1].t;const g=m.goal;
     const bullets=[];
     bullets.push(`<li><b>Range:</b> ${fmtDate(first)} – ${fmtDate(last)} (${m.count} readings; AM ${m.amCount}, PM ${m.pmCount})</li>`);
-    bullets.push(`<li><b>Average:</b> ${fmtBP(m.avgSys,m.avgDia)} (goal ${g.sys}/${g.dia}); ${Math.round(m.aboveGoalPct)}% above goal</li>`);
-    if(m.avgAmSys!=null)bullets.push(`<li><b>AM avg:</b> ${fmtBP(m.avgAmSys,m.avgAmDia)}</li>`);
-    if(m.avgPmSys!=null)bullets.push(`<li><b>PM avg:</b> ${fmtBP(m.avgPmSys,m.avgPmDia)}</li>`);
-    bullets.push(`<li><b>Classification:</b> <span class="ok"><b>Green</b> ${fmtPct(m.pctGreen)}</span>, <span style="color:#d32f2f"><b>Red</b> ${fmtPct(m.pctRed)}</span>, <span class="danger"><b>Severe</b> ${fmtPct(m.pctSevere)}</span>${m.pctHypo>0?', <span style="color:#7B1FA2"><b>Hypo</b> '+fmtPct(m.pctHypo)+'</span>':''}</li>`);
+    bullets.push(`<li><b>Average:</b> ${colorBP(m.avgSys,m.avgDia)} (goal ${g.sys}/${g.dia}); ${Math.round(m.aboveGoalPct)}% above goal</li>`);
+    if(m.avgAmSys!=null)bullets.push(`<li><b>AM avg:</b> ${colorBP(m.avgAmSys,m.avgAmDia)}</li>`);
+    if(m.avgPmSys!=null)bullets.push(`<li><b>PM avg:</b> ${colorBP(m.avgPmSys,m.avgPmDia)}</li>`);
+    bullets.push(`<li><b>Classification:</b> <span class="ok"><b>Green</b> ${fmtPct(m.pctGreen)}</span>, <span style="color:#d32f2f"><b>Red</b> ${fmtPct(m.pctRed)}</span>, <span style="color:#c62828"><b>Severe ${fmtPct(m.pctSevere)}</b></span>${m.pctHypo>0?', <span style="color:#7B1FA2"><b>Hypo</b> '+fmtPct(m.pctHypo)+'</span>':''}</li>`);
     if(m.severe.length)bullets.push(`<li class="danger"><b>Severe:</b> ${m.severe.length} readings (SBP&ge;160 or DBP&ge;95)</li>`);
     const medNames=Object.keys(medIntervals);
     if(medNames.length)bullets.push(`<li><b>Medications detected:</b> ${medNames.join(', ')}</li>`);
@@ -1251,19 +1306,43 @@
     return current;
   }
 
-  function phaseStats(rs, startDt, endDt, windowLabel) {
-    const sub = rs.filter(r => r.t >= startDt && r.t < endDt && (windowLabel === 'All' || r.window === windowLabel));
+  function phaseStatsFromReadings(sub) {
     const n = sub.length;
-    if (!n) return { meanSBP: null, meanDBP: null, green: null, red: null, severe: null, p90: null, n: 0 };
+    if (!n) return { meanSBP: null, meanDBP: null, green: null, red: null, severe: null, n: 0 };
     return {
       meanSBP: mean(sub.map(x => x.sys)),
       meanDBP: mean(sub.map(x => x.dia)),
       green: 100 * sub.filter(x => x.green).length / n,
       red: 100 * sub.filter(x => x.red).length / n,
       severe: 100 * sub.filter(x => x.severe).length / n,
-      p90: quantile(sub.map(x => x.sys), 0.9),
       n
     };
+  }
+
+  // Get last N readings before a boundary date within a lookback window, for a given time-of-day window
+  function getLastNReadings(rs, beforeDate, N, lookbackMonths, windowLabel) {
+    const lookbackMs = lookbackMonths * 30.44 * 86400000;
+    const earliest = new Date(beforeDate.getTime() - lookbackMs);
+    const candidates = rs.filter(r => r.t < beforeDate && r.t >= earliest && (windowLabel === 'All' || r.window === windowLabel));
+    // Sort descending by time, take last N
+    candidates.sort((a, b) => b.t - a.t);
+    const taken = candidates.slice(0, N);
+    taken.sort((a, b) => a.t - b.t); // restore chronological order
+    return taken;
+  }
+
+  // Get readings within a recent window (last W weeks from data end)
+  function getRecentReadings(rs, weeksBack, windowLabel) {
+    if (!rs.length) return [];
+    const latest = rs[rs.length - 1].t;
+    const cutoff = new Date(latest.getTime() - weeksBack * 7 * 86400000);
+    return rs.filter(r => r.t >= cutoff && (windowLabel === 'All' || r.window === windowLabel));
+  }
+
+  // Legacy wrapper for clinical insights (uses date range)
+  function phaseStats(rs, startDt, endDt, windowLabel) {
+    const sub = rs.filter(r => r.t >= startDt && r.t < endDt && (windowLabel === 'All' || r.window === windowLabel));
+    return phaseStatsFromReadings(sub);
   }
 
   // Also used by clinical insights
@@ -1284,7 +1363,12 @@
 
   function renderPhaseTable(rs) {
     const container = $('phaseTableContainer');
-    if (!rs.length) { container.innerHTML = '<div class="muted">Upload data to see phase comparison.</div>'; return; }
+    const legend = $('phaseLegend');
+    if (!rs.length) { container.innerHTML = '<div class="muted">Upload data to see phase comparison.</div>'; legend.style.display='none'; return; }
+
+    const N = Math.max(2, +$('phaseN').value || 5);
+    const lookbackMonths = Math.max(1, +$('phaseLookback').value || 3);
+    const recentWeeks = Math.max(1, +$('phaseRecentWeeks').value || 2);
 
     const xMin = rs[0].t, xMax = rs[rs.length-1].t;
     $('phaseRange').textContent = `${fmtDateShort(xMin)}, ${xMin.getFullYear()} – ${fmtDateShort(xMax)}, ${xMax.getFullYear()}`;
@@ -1292,6 +1376,7 @@
     const boundaries = buildMedChangeBoundaries();
     if (!boundaries.length) {
       container.innerHTML = '<div class="muted">No medication phases detected. Add medication info to the Notes column.</div>';
+      legend.style.display='none';
       return;
     }
 
@@ -1299,22 +1384,17 @@
     const tableRows = [];
     const prev = { Morning: null, 'Afternoon/Evening': null };
 
-    // Each boundary gets a "Pre-[change]" row showing 7-day stats before that change.
-    // If the immediate 7-day window has no readings, search backward in 7-day chunks.
+    // Each boundary: take last N readings before the change date within lookback window
     for (const boundary of boundaries) {
-      const phaseLabel = `Pre- ${boundary.changeLabel}`;
+      const phaseLabel = boundary.changeLabel;
 
       for (const w of windows) {
-        let s = null;
-        let startDt, endDt;
-        // Try 7-day windows going backwards until we find readings (up to 8 attempts = 56 days)
-        for (let attempt = 0; attempt < 8; attempt++) {
-          endDt = new Date(boundary.date.getTime() - attempt * 7 * 86400000);
-          startDt = new Date(endDt.getTime() - 7 * 86400000);
-          s = phaseStats(rs, startDt, endDt, w);
-          if (s.n > 0) break;
+        const subset = getLastNReadings(rs, boundary.date, N, lookbackMonths, w);
+        const s = phaseStatsFromReadings(subset);
+        let dateLabel = '—';
+        if (subset.length > 0) {
+          dateLabel = `${fmtDateShort(subset[0].t)} – ${fmtDateShort(subset[subset.length-1].t)}`;
         }
-        const dateLabel = `${fmtDateShort(startDt)} – ${fmtDateShort(endDt)}`;
         const d_mean = (prev[w] && s.meanSBP != null && prev[w].meanSBP != null) ? s.meanSBP - prev[w].meanSBP : null;
         const d_meanDBP = (prev[w] && s.meanDBP != null && prev[w].meanDBP != null) ? s.meanDBP - prev[w].meanDBP : null;
         const d_sev = (prev[w] && s.severe != null && prev[w].severe != null) ? s.severe - prev[w].severe : null;
@@ -1323,30 +1403,33 @@
       }
     }
 
-    // Last 2 rows: most recent 7 days labeled "Most recent on: [current meds]"
+    // Last rows: most recent readings within configurable window
     const currentMeds = getCurrentMeds();
     const recentLabel = currentMeds.length
-      ? `Most recent on: ${currentMeds.join(' + ')}`
-      : 'Most recent 7 days';
-    const rEnd = xMax;
-    const rStart = new Date(rEnd.getTime() - 7 * 86400000);
-    const recentDateLabel = `${fmtDateShort(rStart)} – ${fmtDateShort(rEnd)}`;
+      ? `Current: ${currentMeds.join(' + ')}`
+      : `Most recent ${recentWeeks} weeks`;
 
     for (const w of windows) {
-      const s = phaseStats(rs, rStart, new Date(rEnd.getTime() + 86400000), w); // +1 day to include last day
+      const subset = getRecentReadings(rs, recentWeeks, w);
+      const s = phaseStatsFromReadings(subset);
+      let dateLabel = '—';
+      if (subset.length > 0) {
+        dateLabel = `${fmtDateShort(subset[0].t)} – ${fmtDateShort(subset[subset.length-1].t)}`;
+      }
       const d_mean = (prev[w] && s.meanSBP != null && prev[w].meanSBP != null) ? s.meanSBP - prev[w].meanSBP : null;
       const d_meanDBP = (prev[w] && s.meanDBP != null && prev[w].meanDBP != null) ? s.meanDBP - prev[w].meanDBP : null;
       const d_sev = (prev[w] && s.severe != null && prev[w].severe != null) ? s.severe - prev[w].severe : null;
-      tableRows.push({ phase: recentLabel, dateLabel: recentDateLabel, window: w, ...s, d_mean, d_meanDBP, d_sev, isRecent: true });
+      tableRows.push({ phase: recentLabel, dateLabel, window: w, ...s, d_mean, d_meanDBP, d_sev, isRecent: true });
     }
 
     if (!tableRows.length || tableRows.every(r => r.n === 0)) {
       container.innerHTML = '<div class="muted">Not enough data to compute phase comparisons.</div>';
+      legend.style.display='none';
       return;
     }
 
     let html = '<table class="phase-table"><thead><tr>';
-    html += '<th>Phase</th><th>Date Window</th><th>Time of Day</th>';
+    html += '<th>Phase</th><th>Readings Span</th><th>Time of Day</th>';
     html += '<th>Mean SBP</th><th>Mean DBP</th><th>&Delta; SBP</th><th>&Delta; DBP</th>';
     html += '<th>% Green</th><th>% Red</th><th>% Severe</th><th>&Delta; %Sev</th><th>N</th>';
     html += '</tr></thead><tbody>';
@@ -1369,6 +1452,57 @@
     }
     html += '</tbody></table>';
     container.innerHTML = html;
+
+    // Show legend
+    legend.style.display = 'block';
+
+    // Clinical decision support suggestions
+    const sugBox = $('phaseSuggestions');
+    const suggestions = [];
+    // Analyze the table data for actionable patterns
+    const recentRows = tableRows.filter(r => r.isRecent);
+    const preRows = tableRows.filter(r => !r.isRecent);
+
+    // Check if recent severe % is still high
+    const recentAll = recentRows.length ? recentRows : [];
+    const avgRecentSev = recentAll.length ? mean(recentAll.map(r => r.severe || 0)) : 0;
+    const avgRecentMean = recentAll.length ? mean(recentAll.filter(r=>r.meanSBP!=null).map(r => r.meanSBP)) : null;
+
+    if (avgRecentSev > 10) {
+      suggestions.push('⚠️ Current severe-range burden is elevated (' + avgRecentSev.toFixed(0) + '%). Consider uptitration or adding a complementary medication class.');
+    }
+    if (avgRecentMean != null && avgRecentMean > 140) {
+      suggestions.push('📊 Current mean SBP remains above 140. Review medication adherence and lifestyle factors, and consider titration.');
+    }
+
+    // Check for AM vs PM differences in recent data
+    const recentAM = recentRows.find(r => r.window === 'Morning');
+    const recentPM = recentRows.find(r => r.window === 'Afternoon/Evening');
+    if (recentAM && recentPM && recentAM.meanSBP != null && recentPM.meanSBP != null) {
+      const diff = recentPM.meanSBP - recentAM.meanSBP;
+      if (diff > 8) {
+        suggestions.push('🌙 Afternoon/evening BP runs ' + Math.round(diff) + ' mmHg higher than morning. Consider split dosing or evening administration.');
+      } else if (diff < -8) {
+        suggestions.push('☀️ Morning BP runs ' + Math.round(Math.abs(diff)) + ' mmHg higher than afternoon/evening. Bedtime dosing may help with morning surge.');
+      }
+    }
+
+    // Check for improvement trend across phases
+    if (preRows.length >= 4) {
+      const firstPairMean = mean(preRows.slice(0,2).filter(r=>r.meanSBP!=null).map(r=>r.meanSBP));
+      const lastPairMean = mean(preRows.slice(-2).filter(r=>r.meanSBP!=null).map(r=>r.meanSBP));
+      if (firstPairMean != null && lastPairMean != null) {
+        const net = lastPairMean - firstPairMean;
+        if (net <= -5) suggestions.push('✅ Treatment changes have progressively lowered mean SBP by ~' + Math.abs(net).toFixed(0) + ' mmHg. Current trajectory is favorable.');
+        else if (net >= 5) suggestions.push('📈 Mean SBP has risen across phases (+' + net.toFixed(0) + '). Consider re-evaluating the treatment approach.');
+      }
+    }
+
+    if (suggestions.length === 0) {
+      suggestions.push('💡 Adjust the parameters above (N readings, lookback window) to capture more or fewer readings per phase for a different perspective on treatment response.');
+    }
+
+    sugBox.innerHTML = suggestions.map(s => `<div style="margin-bottom:4px;">${s}</div>`).join('');
   }
 
   // =============================================
@@ -1724,19 +1858,56 @@
     }
   }
 
+  // =============================================
+  // LOCAL STORAGE PERSISTENCE
+  // =============================================
+  function saveToLocalStorage(name, base64) {
+    try { localStorage.setItem('hbp_fileName', name); localStorage.setItem('hbp_fileData', base64); } catch(e) { console.warn('localStorage save failed:', e); }
+  }
+  function loadFromLocalStorage() {
+    try {
+      const name = localStorage.getItem('hbp_fileName');
+      const data = localStorage.getItem('hbp_fileData');
+      if (!name || !data) return null;
+      return { name, data };
+    } catch(e) { return null; }
+  }
+  function arrayBufferToBase64(buf) {
+    const bytes = new Uint8Array(buf);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  }
+  function base64ToArrayBuffer(b64) {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes.buffer;
+  }
+
+  function loadFileData(name, buf) {
+    const nm = name.toLowerCase();
+    if (nm.endsWith('.csv')) {
+      const dec = new TextDecoder();
+      const text = dec.decode(buf);
+      handleLoadedRows(parseCSV(text));
+    } else if (nm.endsWith('.xlsx') || nm.endsWith('.xls')) {
+      const wb = XLSX.read(buf, {type:'array'});
+      handleLoadedRows(excelAoaToRows(sheetToAoa(wb)));
+    } else {
+      alert('Unsupported file type.');
+      return false;
+    }
+    return true;
+  }
+
   $('file').addEventListener('change',async e=>{
     const f=e.target.files?.[0];if(!f)return;
-    const name=(f.name||'').toLowerCase();
     try{
-      if(name.endsWith('.csv')){
-        const text=await f.text();handleLoadedRows(parseCSV(text));return;
+      const buf = await f.arrayBuffer();
+      if (loadFileData(f.name, buf)) {
+        saveToLocalStorage(f.name, arrayBufferToBase64(buf));
       }
-      if(name.endsWith('.xlsx')||name.endsWith('.xls')){
-        const buf=await f.arrayBuffer();
-        const wb=XLSX.read(buf,{type:'array'});
-        handleLoadedRows(excelAoaToRows(sheetToAoa(wb)));return;
-      }
-      alert('Unsupported file type.');
     }catch(err){console.error(err);alert('Could not read file. Try re-exporting from Omron Connect.');}
   });
 
@@ -1753,6 +1924,7 @@
   });
   $('goalSys').addEventListener('change',renderAll);
   $('goalDia').addEventListener('change',renderAll);
+  $('phaseApplyBtn').addEventListener('click',()=>{renderPhaseTable(getRangeFiltered());});
   $('printBtn').addEventListener('click',()=>window.print());
 
   // Browse button triggers the hidden file input
@@ -1763,13 +1935,12 @@
   function handleDroppedFile(file) {
     if (!file) return;
     const name = (file.name||'').toLowerCase();
-    if (name.endsWith('.csv')) {
-      file.text().then(text => { handleLoadedRows(parseCSV(text)); dropZone.style.display='none'; });
-    } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+    if (name.endsWith('.csv') || name.endsWith('.xlsx') || name.endsWith('.xls')) {
       file.arrayBuffer().then(buf => {
-        const wb = XLSX.read(buf, {type:'array'});
-        handleLoadedRows(excelAoaToRows(sheetToAoa(wb)));
-        dropZone.style.display='none';
+        if (loadFileData(file.name, buf)) {
+          saveToLocalStorage(file.name, arrayBufferToBase64(buf));
+          dropZone.style.display='none';
+        }
       });
     } else { alert('Unsupported file type. Please use .xlsx, .xls, or .csv'); }
   }
@@ -1787,6 +1958,17 @@
   // Resize handler
   let resizeTimer;
   window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(renderAll,150);});
+
+  // Auto-restore last file from localStorage
+  const saved = loadFromLocalStorage();
+  if (saved) {
+    try {
+      const buf = base64ToArrayBuffer(saved.data);
+      if (loadFileData(saved.name, buf)) {
+        dropZone.style.display = 'none';
+      }
+    } catch(e) { console.warn('Failed to restore saved file:', e); }
+  }
 
   // Initial render
   renderAll();
