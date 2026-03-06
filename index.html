@@ -101,7 +101,7 @@
       main{ padding:2px 8px; }
       header{ border:none; padding:2px 10px 0; text-align:center; }
       h1{ font-size:16px; margin-bottom:0px; }
-      .sub{ font-size:9px; margin-bottom:0; }
+      .sub{ display:none; }
       .card{ box-shadow:none; border:1px solid #ccc; background:#fff; padding:4px; margin-bottom:4px; }
       #tab-timeline > .card:first-child{ page-break-inside:avoid; }
       canvas{ border:1px solid #ccc; image-rendering:-webkit-optimize-contrast; }
@@ -112,10 +112,11 @@
       .warn{ color:#8a5200; }
       .ok{ color:#0a6a2c; }
       .legend-bar{ background:#f8f8f8; border-color:#ccc; padding:3px 8px; margin-top:2px; font-size:10px; gap:10px; }
+      .legend-swatch{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
       .phase-table th{ background:#eee; }
       .phase-table th,.phase-table td{ border-color:#ccc; color:#000; }
       .chart-stack{ gap:0px; }
-      .sidebar-grid{ display:block; margin-top:4px; }
+      .sidebar-grid{ page-break-before:always; display:block; margin-top:4px; }
       .sidebar-grid > .card{ margin-bottom:4px; }
       .kpi .box{ padding:6px 8px; }
       .big{ font-size:18px; }
@@ -222,7 +223,7 @@
         <div class="legend-item"><span class="legend-swatch" style="background:#7B1FA2"></span> Hypotensive: SBP &lt;100 or DBP &lt;60</div>
         <div class="legend-item"><span class="legend-swatch" style="background:#00C853"></span> Green: SBP &le;135 AND DBP &le;85</div>
         <div class="legend-item"><span class="legend-swatch" style="background:#FF4444"></span> Red: SBP 136-159 or DBP &gt;85</div>
-        <div class="legend-item"><span class="legend-swatch" style="background:#FF0000; background-image:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,.7) 2px,rgba(255,255,255,.7) 4px);"></span> Severe: SBP &ge;160 or DBP &ge;95</div>
+        <div class="legend-item"><span style="display:inline-block;width:16px;height:12px;border-radius:3px;vertical-align:middle;"><svg width="16" height="12" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="12" rx="2" fill="#FF0000"/><line x1="0" y1="12" x2="12" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="4" y1="12" x2="16" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="8" y1="12" x2="20" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="-4" y1="12" x2="8" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/></svg></span> Severe: SBP &ge;160 or DBP &ge;95</div>
         <div class="legend-item"><span style="display:inline-block;width:18px;height:2px;background:#8a8a8a;vertical-align:middle;"></span> Heart Rate</div>
         <div class="legend-item"><span style="display:inline-block;width:18px;height:0;border-top:2px dashed #888;vertical-align:middle;"></span> Targets (SBP 135, DBP 85)</div>
         <div class="legend-item"><span style="font-size:16px;">&#9733;</span> Hold HTN meds</div>
@@ -614,11 +615,12 @@
 
   function medSigLabel(med, dose) {
     const nm = med.toLowerCase();
+    // Standardized format: always "dose mg freq" (never mg/day)
     if (nm==='valsartan') { return dose<=80.001?'80 mg qd':'80 mg bid'; }
-    if (nm==='metoprolol') { return Math.abs(dose-12.5)<0.1?'12.5 mg qd':`${dose} mg/day`; }
-    if (nm==='candesartan') { return Math.abs(dose-160)<0.1?'160 mg qd':`${dose} mg qd`; }
-    if (nm==='irbesartan') { return Math.abs(dose-150)<0.1?'150 mg qd':`${dose} mg/day`; }
-    return `${dose} mg/day`;
+    if (nm==='metoprolol') { return `${dose} mg qd`; }
+    if (nm==='candesartan') { return `${dose} mg qd`; }
+    if (nm==='irbesartan') { return `${dose} mg qd`; }
+    return `${dose} mg qd`;
   }
 
   function parseMedIntervals(readingsAll, startDt, endDt) {
@@ -1476,8 +1478,16 @@
             // Entirely new drug — show whole segment in blue bold
             return `<b style="color:var(--accent)">${cs.full}</b>`;
           } else if (prevDetail !== cs.detail) {
-            // Same drug, different dose/sig — drug name in blue, changed dose in red
-            return `<b style="color:var(--accent)">${cs.drugDisplay}</b> <b style="color:#c62828">${cs.detail}</b>`;
+            // Same drug, different detail — do word-level diff
+            const prevWords = prevDetail.split(/\s+/);
+            const currWords = cs.detail.split(/\s+/);
+            const detailHtml = currWords.map((w, wi) => {
+              if (wi >= prevWords.length || w !== prevWords[wi]) {
+                return `<b style="color:#c62828">${w}</b>`;
+              }
+              return w;
+            }).join(' ');
+            return `<b style="color:var(--accent)">${cs.drugDisplay}</b> ${detailHtml}`;
           }
           return cs.full; // unchanged
         }).join(' + ');
@@ -1958,7 +1968,7 @@
 
   // Re-render canvases at high DPR for print, then restore
   window.addEventListener('beforeprint', () => {
-    printDPR = 5;
+    printDPR = 6;
     renderAll();
   });
   window.addEventListener('afterprint', () => {
