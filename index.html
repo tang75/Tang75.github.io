@@ -280,7 +280,7 @@
         <div class="hr"></div>
         <div style="font-weight:600; font-size:12px; margin-bottom:6px; color:var(--accent);">Methodology &amp; Parameters</div>
         <div class="muted small" style="line-height:1.6; margin-bottom:8px;">
-          For each medication change, statistics are computed from the <b>last N readings</b> recorded before that change, provided they fall within the lookback window. If fewer than N readings exist in that window, all available readings before the change are used. The final row reports the most recent readings within a configurable time window. <span style="color:var(--accent)">Δ columns</span> show the change from the prior phase to help track treatment response.
+          For each medication phase, statistics are computed from the <b>last N readings before the next medication change</b>, capturing the effect of that regimen at steady state. If fewer than N readings exist within the lookback window, all available readings are used. The final row reports the most recent readings within a configurable time window. <span style="color:var(--accent)">Δ columns</span> show the change from the prior phase to help track treatment response.
         </div>
         <div class="row no-print" style="gap:8px; flex-wrap:wrap; margin-top:4px;">
           <div class="pill" style="padding:5px 8px;">
@@ -1384,12 +1384,22 @@
     const tableRows = [];
     const prev = { Morning: null, 'Afternoon/Evening': null };
 
-    // Each boundary: take last N readings before the change date within lookback window
-    for (const boundary of boundaries) {
-      const phaseLabel = boundary.changeLabel;
+    // For each boundary[i], take the last N readings BEFORE the NEXT boundary[i+1].
+    // This captures the effect of the medication started at boundary[i].
+    // For the last boundary, use the recent window (most recent W weeks).
+    for (let bi = 0; bi < boundaries.length; bi++) {
+      const phaseLabel = boundaries[bi].changeLabel;
+      const isLast = (bi === boundaries.length - 1);
 
       for (const w of windows) {
-        const subset = getLastNReadings(rs, boundary.date, N, lookbackMonths, w);
+        let subset;
+        if (isLast) {
+          // Last phase: use recent readings within the configurable window
+          subset = getRecentReadings(rs, recentWeeks, w);
+        } else {
+          // Take last N readings before the NEXT med change, within lookback window
+          subset = getLastNReadings(rs, boundaries[bi + 1].date, N, lookbackMonths, w);
+        }
         const s = phaseStatsFromReadings(subset);
         let dateLabel = '—';
         if (subset.length > 0) {
@@ -1398,28 +1408,9 @@
         const d_mean = (prev[w] && s.meanSBP != null && prev[w].meanSBP != null) ? s.meanSBP - prev[w].meanSBP : null;
         const d_meanDBP = (prev[w] && s.meanDBP != null && prev[w].meanDBP != null) ? s.meanDBP - prev[w].meanDBP : null;
         const d_sev = (prev[w] && s.severe != null && prev[w].severe != null) ? s.severe - prev[w].severe : null;
-        tableRows.push({ phase: phaseLabel, dateLabel, window: w, ...s, d_mean, d_meanDBP, d_sev });
+        tableRows.push({ phase: phaseLabel, dateLabel, window: w, ...s, d_mean, d_meanDBP, d_sev, isRecent: isLast });
         prev[w] = s;
       }
-    }
-
-    // Last rows: most recent readings within configurable window
-    const currentMeds = getCurrentMeds();
-    const recentLabel = currentMeds.length
-      ? `Current: ${currentMeds.join(' + ')}`
-      : `Most recent ${recentWeeks} weeks`;
-
-    for (const w of windows) {
-      const subset = getRecentReadings(rs, recentWeeks, w);
-      const s = phaseStatsFromReadings(subset);
-      let dateLabel = '—';
-      if (subset.length > 0) {
-        dateLabel = `${fmtDateShort(subset[0].t)} – ${fmtDateShort(subset[subset.length-1].t)}`;
-      }
-      const d_mean = (prev[w] && s.meanSBP != null && prev[w].meanSBP != null) ? s.meanSBP - prev[w].meanSBP : null;
-      const d_meanDBP = (prev[w] && s.meanDBP != null && prev[w].meanDBP != null) ? s.meanDBP - prev[w].meanDBP : null;
-      const d_sev = (prev[w] && s.severe != null && prev[w].severe != null) ? s.severe - prev[w].severe : null;
-      tableRows.push({ phase: recentLabel, dateLabel, window: w, ...s, d_mean, d_meanDBP, d_sev, isRecent: true });
     }
 
     if (!tableRows.length || tableRows.every(r => r.n === 0)) {
@@ -1916,14 +1907,19 @@
   // =============================================
   $('applyMapBtn').addEventListener('click', applyMappingFromUI);
   $('range').addEventListener('change', renderAll);
-  $('amStart').addEventListener('change',()=>{processData();renderAll();});
-  $('amEnd').addEventListener('change',()=>{processData();renderAll();});
+  // Use 'input' event for number fields so updates happen immediately on every keystroke/spinner click
+  $('amStart').addEventListener('input',()=>{processData();renderAll();});
+  $('amEnd').addEventListener('input',()=>{processData();renderAll();});
   $('profile').addEventListener('change',()=>{
     $('customGoalPill').style.display=$('profile').value==='custom'?'inline-flex':'none';
     renderAll();
   });
-  $('goalSys').addEventListener('change',renderAll);
-  $('goalDia').addEventListener('change',renderAll);
+  $('goalSys').addEventListener('input',renderAll);
+  $('goalDia').addEventListener('input',renderAll);
+  // Phase table parameters — update immediately on change
+  $('phaseN').addEventListener('input', ()=>{renderPhaseTable(getRangeFiltered());});
+  $('phaseLookback').addEventListener('input', ()=>{renderPhaseTable(getRangeFiltered());});
+  $('phaseRecentWeeks').addEventListener('input', ()=>{renderPhaseTable(getRangeFiltered());});
   $('phaseApplyBtn').addEventListener('click',()=>{renderPhaseTable(getRangeFiltered());});
   $('printBtn').addEventListener('click',()=>window.print());
 
