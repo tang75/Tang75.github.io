@@ -1311,11 +1311,15 @@
     html += '<th>% Green</th><th>% Red</th><th>% Severe</th><th>&Delta; %Sev</th><th>p90 SBP</th><th>N</th>';
     html += '</tr></thead><tbody>';
 
-    for (const r of tableRows) {
+    for (let i = 0; i < tableRows.length; i++) {
+      const r = tableRows[i];
+      const pairIdx = Math.floor(i / 2);
+      const isOddPair = pairIdx % 2 === 1;
       const dMeanStr = r.d_mean != null ? `<span style="color:${r.d_mean <= -3 ? 'var(--ok)' : r.d_mean >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_mean >= 0 ? '+' : ''}${r.d_mean.toFixed(1)}</span>` : '—';
       const dSevStr = r.d_sev != null ? `<span style="color:${r.d_sev <= -3 ? 'var(--ok)' : r.d_sev >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_sev >= 0 ? '+' : ''}${r.d_sev.toFixed(1)}%</span>` : '—';
-      const rowStyle = r.isRecent ? ' style="border-top:2px solid rgba(122,162,255,.4);"' : '';
-      html += `<tr${rowStyle}>`;
+      const bgStyle = isOddPair ? 'background:rgba(255,255,255,.04);' : '';
+      const borderStyle = r.isRecent && r.window === 'Morning' ? 'border-top:2px solid rgba(122,162,255,.4);' : '';
+      html += `<tr style="${bgStyle}${borderStyle}">`;
       html += `<td>${r.phase}</td><td class="muted small">${r.dateLabel}</td><td>${r.window}</td>`;
       html += `<td>${fmtNum(r.meanSBP)}</td><td>${fmtNum(r.meanDBP)}</td><td>${dMeanStr}</td>`;
       html += `<td>${fmtPct(r.green)}</td><td>${fmtPct(r.red)}</td><td>${fmtPct(r.severe)}</td><td>${dSevStr}</td>`;
