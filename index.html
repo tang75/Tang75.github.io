@@ -339,8 +339,8 @@
 
   const MED_PALETTE = ['#2f6db3','#1b9e77','#d95f02','#7570b3','#66a61e','#e7298a','#a6761d','#e6ab02','#1f78b4','#b2df8a','#fb9a99','#cab2d6'];
 
-  const DOSE_SHADE_LEVELS = 8;
-  const ALPHA_MIN = 0.18, ALPHA_MAX = 0.86, ALPHA_GAMMA = 0.55;
+  const ALPHA_MIN = 0.15, ALPHA_MAX = 0.85;
+  const DOSE_RATIO_MAX = 4; // starting dose → 4× starting dose = full shade range
 
   const STARTING_DOSES = { valsartan:80, candesartan:8, irbesartan:150, metoprolol:12.5 };
 
@@ -754,10 +754,9 @@
     if (!startMg||startMg<=0) return ALPHA_MIN;
     const ratio = dailyMg/startMg;
     if (ratio<=0) return ALPHA_MIN;
-    const level = Math.max(1, Math.min(DOSE_SHADE_LEVELS, Math.ceil(ratio-1e-9)));
-    let frac = (level-1)/(DOSE_SHADE_LEVELS-1);
-    frac = Math.pow(frac, ALPHA_GAMMA);
-    return ALPHA_MIN + (ALPHA_MAX-ALPHA_MIN)*frac;
+    // Linear: starting dose = ALPHA_MIN, 4× starting dose = ALPHA_MAX
+    const frac = Math.min(1, (ratio - 1) / (DOSE_RATIO_MAX - 1));
+    return ALPHA_MIN + (ALPHA_MAX - ALPHA_MIN) * Math.max(0, frac);
   }
 
   function getMedColor(drug) {
@@ -1489,7 +1488,7 @@
               if (wi >= prevWords.length || w !== prevWords[wi]) {
                 return `<b style="color:#c62828">${w}</b>`;
               }
-              return `<span style="color:var(--accent)">${w}</span>`;
+              return `<b style="color:var(--accent)">${w}</b>`;
             }).join(' ');
             return `<b style="color:var(--accent)">${cs.drugDisplay}</b> ${detailHtml}`;
           }
