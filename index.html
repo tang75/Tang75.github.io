@@ -2007,6 +2007,16 @@
   // Hide drop overlay when file is loaded via the normal file input
   $('file').addEventListener('change', () => { if ($('file').files?.length) dropZone.style.display='none'; });
 
+  // Drag-and-drop on the control bar (for loading a new file after initial load)
+  const controlBar = $('file').closest('.card');
+  controlBar.addEventListener('dragover', (e) => { e.preventDefault(); controlBar.style.outline='2px dashed var(--accent)'; controlBar.style.outlineOffset='-2px'; });
+  controlBar.addEventListener('dragleave', () => { controlBar.style.outline=''; controlBar.style.outlineOffset=''; });
+  controlBar.addEventListener('drop', (e) => {
+    e.preventDefault(); controlBar.style.outline=''; controlBar.style.outlineOffset='';
+    const file = e.dataTransfer.files?.[0];
+    handleDroppedFile(file);
+  });
+
   // Resize handler
   let resizeTimer;
   window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(renderAll,150);});
