@@ -1721,14 +1721,45 @@
         }
       }
 
-      // Net trajectory summary
+      // Net trajectory summary with full justification
       const first = validPhases[0];
       const last = validPhases[validPhases.length - 1];
       const netSBP = last.all.meanSBP - first.all.meanSBP;
-      const netGreen = (last.all.green || 0) - (first.all.green || 0);
-      html += `<br><b>Net effect:</b> SBP ${netSBP >= 0 ? '+' : ''}${netSBP.toFixed(0)} mmHg over ${validPhases.length} phases`;
-      if (Math.abs(netGreen) >= 3) html += `; goal attainment ${netGreen >= 0 ? '+' : ''}${netGreen.toFixed(0)} pp`;
-      html += '.';
+      const netDBPtot = last.all.meanDBP - first.all.meanDBP;
+      const firstGreen = first.all.green || 0;
+      const lastGreen = last.all.green || 0;
+      const netGreen = lastGreen - firstGreen;
+      const firstSev = first.all.severe || 0;
+      const lastSev = last.all.severe || 0;
+      const netSev = lastSev - firstSev;
+
+      html += `<br><b>Net effect across ${validPhases.length} treatment phases:</b> `;
+      html += `Comparing <b>${first.label}</b> (mean ${Math.round(first.all.meanSBP)}/${Math.round(first.all.meanDBP)}, n=${first.all.n}) `;
+      html += `→ <b>${last.label}</b> (mean ${Math.round(last.all.meanSBP)}/${Math.round(last.all.meanDBP)}, n=${last.all.n}): `;
+      html += `SBP ${netSBP >= 0 ? '+' : ''}${netSBP.toFixed(0)}/${netDBPtot >= 0 ? '+' : ''}${netDBPtot.toFixed(0)} mmHg`;
+      html += `; goal attainment (SBP≤135 & DBP≤85, all windows) ${firstGreen.toFixed(0)}% → ${lastGreen.toFixed(0)}% (${netGreen >= 0 ? '+' : ''}${netGreen.toFixed(0)} pp)`;
+      html += `; severe burden ${firstSev.toFixed(0)}% → ${lastSev.toFixed(0)}% (${netSev >= 0 ? '+' : ''}${netSev.toFixed(0)} pp)`;
+      html += '. ';
+
+      // Interpretation
+      if (netSBP <= -8 && netGreen >= 5) {
+        html += `<span class="ok">The cumulative treatment effect is clearly positive — both mean BP and goal attainment have improved substantially.</span>`;
+      } else if (netSBP <= -3) {
+        html += `<span class="ok">Mean BP has improved modestly overall.</span>`;
+        if (netGreen < -5) html += ` However, goal attainment has declined, suggesting increased variability despite a lower mean.`;
+      } else if (Math.abs(netSBP) < 3 && Math.abs(netGreen) < 5) {
+        html += `Despite ${validPhases.length - 1} medication changes, the net BP and goal attainment are essentially unchanged, raising the question of whether these drug classes and doses are adequate.`;
+      } else if (netSBP >= 3) {
+        html += `<span class="warn">Mean BP has risen despite treatment changes.</span>`;
+        if (netGreen < -5) html += ` Goal attainment has also declined, suggesting the current approach may need reassessment.`;
+      } else {
+        // netSBP is near zero but green shifted meaningfully
+        if (netGreen >= 10) {
+          html += `While mean SBP is similar, goal attainment has improved meaningfully, suggesting better consistency.`;
+        } else if (netGreen <= -10) {
+          html += `While mean SBP is similar, goal attainment has worsened, suggesting more variable control.`;
+        }
+      }
 
       html += '</p></div>';
     }
@@ -1755,18 +1786,20 @@
         html += `the most recent readings on ${currentMedStr} show <span class="danger"><b>BP still above the 135/85 target</b></span> (${Math.round(recentPhase.all.meanSBP)}/${Math.round(recentPhase.all.meanDBP)}). `;
       }
 
-      // Characterize trajectory direction — are treatment changes working?
+      // Characterize trajectory direction — reference the net effect from Treatment Trajectory above
       if (validPhases.length >= 2) {
-        const first = validPhases[0];
-        const netSBP = recentPhase.all.meanSBP - first.all.meanSBP;
-        if (netSBP <= -8) {
-          html += `Treatment changes have produced a <span class="ok">meaningful cumulative drop of ${Math.abs(netSBP).toFixed(0)} mmHg</span>, suggesting the current drug classes are effective. `;
+        const firstP = validPhases[0];
+        const netSBPoa = recentPhase.all.meanSBP - firstP.all.meanSBP;
+        const netGreenOA = (recentPhase.all.green || 0) - (firstP.all.green || 0);
+        if (netSBPoa <= -8) {
+          html += `As detailed above, ${validPhases.length - 1} medication changes have produced a <span class="ok">meaningful cumulative SBP drop of ${Math.abs(netSBPoa).toFixed(0)} mmHg</span>, suggesting the current drug classes are effective. `;
           if (!recentAtGoal) html += `Further titration within the same classes may be warranted. `;
-        } else if (netSBP <= -3) {
-          html += `Treatment changes have produced a modest improvement (${Math.abs(netSBP).toFixed(0)} mmHg). `;
-          if (!recentAtGoal) html += `Consider whether the response justifies continued uptitration vs. switching or adding a different drug class. `;
+        } else if (netSBPoa <= -3) {
+          html += `Across ${validPhases.length - 1} medication changes, the cumulative SBP improvement is modest (${Math.abs(netSBPoa).toFixed(0)} mmHg). `;
+          if (!recentAtGoal) html += `Consider whether this response justifies continued uptitration vs. switching or adding a different drug class. `;
         } else {
-          html += `Despite treatment changes, the net BP response has been limited (${netSBP >= 0 ? '+' : ''}${netSBP.toFixed(0)} mmHg). `;
+          html += `Despite ${validPhases.length - 1} medication changes, the net SBP response has been limited (${netSBPoa >= 0 ? '+' : ''}${netSBPoa.toFixed(0)} mmHg). `;
+          if (netGreenOA <= -10) html += `Goal attainment has also declined (${netGreenOA.toFixed(0)} pp). `;
           if (!recentAtGoal) html += `This suggests the current approach may not be sufficient — consider switching to a different drug class or evaluating for secondary causes. `;
         }
       }
