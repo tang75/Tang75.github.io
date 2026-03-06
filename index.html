@@ -6,7 +6,7 @@
   <title>HomeBP Insight — Timeline</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    :root { --bg:#0b0f17; --card:#121a26; --muted:#8aa0b8; --text:#e8f0ff; --accent:#7aa2ff; --warn:#ffcc66; --danger:#ff6b6b; --ok:#7ee787; --canvas-bg:#0e1522; }
+    :root { --bg:#0b0f17; --card:#121a26; --muted:#8aa0b8; --text:#e8f0ff; --accent:#7aa2ff; --warn:#ffcc66; --danger:#ff6b6b; --ok:#7ee787; --canvas-bg:#ffffff; }
     *{box-sizing:border-box;}
     body{ margin:0; font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--text); }
     header{ padding:18px 18px 10px; border-bottom:1px solid rgba(255,255,255,.08); }
@@ -55,7 +55,7 @@
 
     /* Chart canvases */
     .chart-stack{ display:flex; flex-direction:column; gap:2px; }
-    .chart-stack canvas{ width:100%; background:var(--canvas-bg); border:1px solid rgba(255,255,255,.10); border-radius:8px; }
+    .chart-stack canvas{ width:100%; background:var(--canvas-bg); border:1px solid rgba(0,0,0,.15); border-radius:8px; }
 
     /* Legend */
     .legend-bar{ display:flex; flex-wrap:wrap; gap:14px; padding:10px 14px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:10px; margin-top:6px; font-size:12px; }
@@ -77,6 +77,7 @@
     .sidebar-grid{ display:grid; gap:14px; grid-template-columns:1.2fr .8fr; margin-top:14px; }
     @media(max-width:980px){ .sidebar-grid{ grid-template-columns:1fr; } }
 
+    @page { size: landscape; margin: 0.4in; }
     @media print {
       body{ background:#fff; color:#000; }
       header{ border:none; }
@@ -91,6 +92,10 @@
       .legend-bar{ background:#f8f8f8; border-color:#ccc; }
       .phase-table th{ background:#eee; }
       .phase-table th,.phase-table td{ border-color:#ccc; color:#000; }
+      .sidebar-grid{ page-break-before:always; display:block; }
+      .sidebar-grid > .card{ margin-bottom:14px; }
+      #tab-phases{ page-break-before:always; }
+      #tab-insights{ page-break-before:always; }
     }
   </style>
 </head>
@@ -182,7 +187,7 @@
       <div class="legend-bar">
         <div class="legend-item"><span class="legend-swatch" style="background:#00C853"></span> Green: SBP &le;135 AND DBP &le;85</div>
         <div class="legend-item"><span class="legend-swatch" style="background:#FF4444"></span> Red: SBP 136-159 or DBP &gt;85</div>
-        <div class="legend-item"><span class="legend-swatch" style="background:#FF0000; background-image:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,.5) 2px,rgba(255,255,255,.5) 4px);"></span> Severe: SBP &ge;160 or DBP &ge;95</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#FF0000; background-image:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(0,0,0,.3) 2px,rgba(0,0,0,.3) 4px);"></span> Severe: SBP &ge;160 or DBP &ge;95</div>
         <div class="legend-item"><span style="display:inline-block;width:18px;height:2px;background:#8a8a8a;vertical-align:middle;"></span> Heart Rate</div>
         <div class="legend-item"><span style="display:inline-block;width:18px;height:0;border-top:2px dashed #888;vertical-align:middle;"></span> Targets (SBP 135, DBP 85)</div>
         <div class="legend-item"><span style="font-size:16px;">&#9733;</span> Hold HTN meds</div>
@@ -207,11 +212,6 @@
             <div class="big" id="avgPm">&mdash;</div>
             <div class="muted small" id="avgPmDetail">&mdash;</div>
           </div>
-        </div>
-        <div class="hr"></div>
-        <div id="recommendations" class="note">
-          <strong>Recommendations</strong>
-          <div class="muted small">Upload data to generate a report.</div>
         </div>
       </div>
       <div class="card">
@@ -267,8 +267,8 @@
   const COLOR_RED = '#FF4444';
   const COLOR_SEVERE = '#FF0000';
   const HR_COLOR = '#8a8a8a';
-  const TARGET_COLOR = 'rgba(255,255,255,.3)';
-  const HOLD_STAR_COLOR = '#FFD700';
+  const TARGET_COLOR = 'rgba(0,0,0,.25)';
+  const HOLD_STAR_COLOR = '#B8860B';
 
   const TARGET_SBP = 135, TARGET_DBP = 85;
   const GREEN_SBP_MAX = 135, GREEN_DBP_MAX = 85;
@@ -283,7 +283,7 @@
   const DOSE_SHADE_LEVELS = 8;
   const ALPHA_MIN = 0.18, ALPHA_MAX = 0.86, ALPHA_GAMMA = 0.55;
 
-  const STARTING_DOSES = { valsartan:80, candesartan:8, irbesartan:150, metoprolol:25 };
+  const STARTING_DOSES = { valsartan:80, candesartan:8, irbesartan:150, metoprolol:12.5 };
 
   const FREQ_CANON = {
     'qd':'qd','daily':'qd','once daily':'qd',
@@ -292,7 +292,7 @@
     'q d':'qd','b i d':'bid','t i d':'tid',
   };
 
-  const CANVAS_BG = [14/255, 21/255, 34/255]; // rgb for #0e1522
+  const CANVAS_BG = [1, 1, 1]; // white background
 
   // =============================================
   // UTILITY FUNCTIONS
@@ -787,21 +787,21 @@
     const yOf=y=>PAD.t+(1-(y-yMin)/(yMax-yMin))*plotH;
 
     // Background
-    ctx.fillStyle='#0e1522';
+    ctx.fillStyle='#ffffff';
     ctx.fillRect(0,0,W,H);
 
     // Title
-    ctx.fillStyle='rgba(255,255,255,.85)';
+    ctx.fillStyle='rgba(0,0,0,.85)';
     ctx.font='bold 13px system-ui';
     ctx.fillText(title, PAD.l, 18);
 
     // Grid
-    ctx.strokeStyle='rgba(255,255,255,.08)';
+    ctx.strokeStyle='rgba(0,0,0,.10)';
     ctx.lineWidth=1;
     for(let y=50;y<=200;y+=25){
       const yy=yOf(y);
       ctx.beginPath();ctx.moveTo(PAD.l,yy);ctx.lineTo(W-PAD.r,yy);ctx.stroke();
-      ctx.fillStyle='rgba(255,255,255,.5)';ctx.font='11px system-ui';
+      ctx.fillStyle='rgba(0,0,0,.50)';ctx.font='11px system-ui';
       ctx.fillText(String(y), 8, yy+4);
     }
 
@@ -813,7 +813,7 @@
     ctx.setLineDash([]);
 
     if(!rs.length){
-      ctx.fillStyle='rgba(255,255,255,.4)';ctx.font='13px system-ui';
+      ctx.fillStyle='rgba(0,0,0,.4)';ctx.font='13px system-ui';
       ctx.fillText('No readings in this window.',W/2-80,H/2);
       drawXAxis(ctx,W,H,xMinMs,xMaxMs);
       return;
@@ -836,7 +836,7 @@
       if(r.severe){
         ctx.save();
         ctx.beginPath();ctx.rect(x-bw/2,ySys,bw,bh);ctx.clip();
-        ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1;
+        ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=1;
         for(let i=-bh;i<bw+bh;i+=5){
           ctx.beginPath();ctx.moveTo(x-bw/2+i,ySys);ctx.lineTo(x-bw/2+i-bh,ySys+bh);ctx.stroke();
         }
@@ -896,7 +896,7 @@
           }
           if(!overlap){
             ctx.fillStyle='rgba(130,0,0,.95)';
-            ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=0.5;
+            ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=0.5;
             ctx.fillText(lab, lx+2, ly+th);
             placedBoxes.push({x:lx,y:ly,w:lw,h:lh});
             placed=true;break;
@@ -923,7 +923,7 @@
 
     // Y-axis label
     ctx.save();ctx.translate(14,H/2);ctx.rotate(-Math.PI/2);
-    ctx.fillStyle='rgba(255,255,255,.5)';ctx.font='11px system-ui';ctx.textAlign='center';
+    ctx.fillStyle='rgba(0,0,0,.50)';ctx.font='11px system-ui';ctx.textAlign='center';
     ctx.fillText('mmHg / bpm',0,0);ctx.restore();
 
     drawXAxis(ctx,W,H,xMinMs,xMaxMs);
@@ -934,11 +934,11 @@
     const ticks = computeDateTicks(xMinMs, xMaxMs, 2);
     const plotW=W-PAD.l-PAD.r;
     const xOf=t=>PAD.l+((t-xMinMs)/Math.max(1,xMaxMs-xMinMs))*plotW;
-    ctx.fillStyle='rgba(255,255,255,.5)';ctx.font='10px system-ui';ctx.textAlign='center';
+    ctx.fillStyle='rgba(0,0,0,.55)';ctx.font='10px system-ui';ctx.textAlign='center';
     for(const t of ticks){
       const x=xOf(t);
       if(x<PAD.l||x>W-PAD.r)continue;
-      ctx.beginPath();ctx.strokeStyle='rgba(255,255,255,.15)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.strokeStyle='rgba(0,0,0,.15)';ctx.lineWidth=1;
       ctx.moveTo(x,H-PAD.b);ctx.lineTo(x,H-PAD.b+5);ctx.stroke();
       ctx.fillText(fmtDateShort(new Date(t)), x, H-PAD.b+17);
     }
@@ -969,10 +969,10 @@
     const ctx = setupCanvas(canvas, displayW, displayH);
     const W=displayW, H=displayH;
 
-    ctx.fillStyle='#0e1522';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
 
     if(!meds.length){
-      ctx.fillStyle='rgba(255,255,255,.4)';ctx.font='12px system-ui';
+      ctx.fillStyle='rgba(0,0,0,.4)';ctx.font='12px system-ui';
       ctx.fillText('No medications detected in Notes column.',PAD.l,H/2+4);
       return;
     }
@@ -995,7 +995,7 @@
       const baseColor=getMedColor(med);
 
       // Med name
-      ctx.fillStyle='rgba(255,255,255,.85)';ctx.font='bold 10px system-ui';ctx.textAlign='left';
+      ctx.fillStyle='rgba(0,0,0,.85)';ctx.font='bold 10px system-ui';ctx.textAlign='left';
       ctx.fillText(med, 6, yCenter+4);
 
       for(const seg of (intervals[med]||[])){
@@ -1024,9 +1024,9 @@
           ctx.fillText(label, midX, yCenter+3);
         } else {
           // Callout to the right
-          ctx.fillStyle='rgba(255,255,255,.7)';ctx.font='9px system-ui';ctx.textAlign='left';
+          ctx.fillStyle='rgba(0,0,0,.7)';ctx.font='9px system-ui';ctx.textAlign='left';
           ctx.fillText(label, x1+4, yCenter+3);
-          ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=0.5;
+          ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=0.5;
           ctx.beginPath();ctx.moveTo(x1,yCenter);ctx.lineTo(x1+3,yCenter);ctx.stroke();
         }
       }
@@ -1051,7 +1051,7 @@
   function ensureTip() {
     if(tip)return;
     tip=document.createElement('div');tip.id='tip';
-    Object.assign(tip.style,{position:'fixed',pointerEvents:'none',zIndex:'9999',padding:'8px 10px',borderRadius:'10px',border:'1px solid rgba(255,255,255,.14)',background:'rgba(10,14,20,.92)',color:'rgba(232,240,255,.92)',font:'12px system-ui',display:'none'});
+    Object.assign(tip.style,{position:'fixed',pointerEvents:'none',zIndex:'9999',padding:'8px 10px',borderRadius:'10px',border:'1px solid rgba(0,0,0,.18)',background:'rgba(255,255,255,.96)',color:'rgba(20,20,30,.92)',font:'12px system-ui',display:'none',boxShadow:'0 2px 8px rgba(0,0,0,.15)'});
     document.body.appendChild(tip);
   }
 
@@ -1109,30 +1109,6 @@
     $('avgAmDetail').textContent=`n=${m.amCount}`;
     $('avgPm').textContent=fmtBP(m.avgPmSys,m.avgPmDia);
     $('avgPmDetail').textContent=`n=${m.pmCount}`;
-  }
-
-  // =============================================
-  // RECOMMENDATIONS
-  // =============================================
-  function buildRecommendations(rs, m) {
-    if(!rs.length)return '<strong>Recommendations</strong><div class="muted small">Upload data to generate a report.</div>';
-    const lines=[];const g=m.goal;
-    if(m.severe.length){
-      const last=m.severe[m.severe.length-1];
-      lines.push(`<div class="danger"><b>Alert:</b> ${m.severe.length} reading(s) in severe range (SBP&ge;160 or DBP&ge;95). Most recent: ${fmtDate(last.t)} — ${fmtBP(last.sys,last.dia)}.</div>`);
-    }
-    if(m.count>=6){
-      const above=m.avgSys>=g.sys||m.avgDia>=g.dia;
-      if(above)lines.push(`<div class="warn"><b>Above goal:</b> Average BP is above ${g.sys}/${g.dia}. Discuss with clinician.</div>`);
-      else lines.push(`<div class="ok"><b>On track:</b> Average BP below ${g.sys}/${g.dia}.</div>`);
-    }
-    if(m.avgAmSys!=null&&m.avgPmSys!=null){
-      const diff=m.avgPmSys-m.avgAmSys;
-      if(diff>=8)lines.push(`<div><b>Pattern:</b> Afternoon/Evening SBP ~${Math.round(diff)} higher than Morning. Consider timing of meds.</div>`);
-      else if(m.avgAmSys-m.avgPmSys>=8)lines.push(`<div><b>Pattern:</b> Morning SBP ~${Math.round(m.avgAmSys-m.avgPmSys)} higher than Afternoon/Evening.</div>`);
-    }
-    if(m.sdSys!=null&&m.sdSys>=15&&m.count>=10)lines.push(`<div><b>Variability:</b> SBP SD ~${Math.round(m.sdSys)}. Review factors around spikes.</div>`);
-    return `<strong>Recommendations</strong><div style="margin-top:8px;display:grid;gap:6px">${lines.join('')}</div>`;
   }
 
   // =============================================
@@ -1278,8 +1254,9 @@
       for (const w of windows) {
         const s = phaseStats(rs, startDt, endDt, w);
         const d_mean = (prev[w] && s.meanSBP != null && prev[w].meanSBP != null) ? s.meanSBP - prev[w].meanSBP : null;
+        const d_meanDBP = (prev[w] && s.meanDBP != null && prev[w].meanDBP != null) ? s.meanDBP - prev[w].meanDBP : null;
         const d_sev = (prev[w] && s.severe != null && prev[w].severe != null) ? s.severe - prev[w].severe : null;
-        tableRows.push({ phase: phaseLabel, dateLabel, window: w, ...s, d_mean, d_sev });
+        tableRows.push({ phase: phaseLabel, dateLabel, window: w, ...s, d_mean, d_meanDBP, d_sev });
         prev[w] = s;
       }
     }
@@ -1296,8 +1273,9 @@
     for (const w of windows) {
       const s = phaseStats(rs, rStart, new Date(rEnd.getTime() + 86400000), w); // +1 day to include last day
       const d_mean = (prev[w] && s.meanSBP != null && prev[w].meanSBP != null) ? s.meanSBP - prev[w].meanSBP : null;
+      const d_meanDBP = (prev[w] && s.meanDBP != null && prev[w].meanDBP != null) ? s.meanDBP - prev[w].meanDBP : null;
       const d_sev = (prev[w] && s.severe != null && prev[w].severe != null) ? s.severe - prev[w].severe : null;
-      tableRows.push({ phase: recentLabel, dateLabel: recentDateLabel, window: w, ...s, d_mean, d_sev, isRecent: true });
+      tableRows.push({ phase: recentLabel, dateLabel: recentDateLabel, window: w, ...s, d_mean, d_meanDBP, d_sev, isRecent: true });
     }
 
     if (!tableRows.length || tableRows.every(r => r.n === 0)) {
@@ -1307,8 +1285,8 @@
 
     let html = '<table class="phase-table"><thead><tr>';
     html += '<th>Phase</th><th>7-Day Window</th><th>Time of Day</th>';
-    html += '<th>Mean SBP</th><th>Mean DBP</th><th>&Delta; SBP</th>';
-    html += '<th>% Green</th><th>% Red</th><th>% Severe</th><th>&Delta; %Sev</th><th>p90 SBP</th><th>N</th>';
+    html += '<th>Mean SBP</th><th>Mean DBP</th><th>&Delta; SBP</th><th>&Delta; DBP</th>';
+    html += '<th>% Green</th><th>% Red</th><th>% Severe</th><th>&Delta; %Sev</th><th>N</th>';
     html += '</tr></thead><tbody>';
 
     for (let i = 0; i < tableRows.length; i++) {
@@ -1316,14 +1294,15 @@
       const pairIdx = Math.floor(i / 2);
       const isOddPair = pairIdx % 2 === 1;
       const dMeanStr = r.d_mean != null ? `<span style="color:${r.d_mean <= -3 ? 'var(--ok)' : r.d_mean >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_mean >= 0 ? '+' : ''}${r.d_mean.toFixed(1)}</span>` : '—';
+      const dMeanDBPStr = r.d_meanDBP != null ? `<span style="color:${r.d_meanDBP <= -3 ? 'var(--ok)' : r.d_meanDBP >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_meanDBP >= 0 ? '+' : ''}${r.d_meanDBP.toFixed(1)}</span>` : '—';
       const dSevStr = r.d_sev != null ? `<span style="color:${r.d_sev <= -3 ? 'var(--ok)' : r.d_sev >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_sev >= 0 ? '+' : ''}${r.d_sev.toFixed(1)}%</span>` : '—';
       const bgStyle = isOddPair ? 'background:rgba(255,255,255,.04);' : '';
       const borderStyle = r.isRecent && r.window === 'Morning' ? 'border-top:2px solid rgba(122,162,255,.4);' : '';
       html += `<tr style="${bgStyle}${borderStyle}">`;
       html += `<td>${r.phase}</td><td class="muted small">${r.dateLabel}</td><td>${r.window}</td>`;
-      html += `<td>${fmtNum(r.meanSBP)}</td><td>${fmtNum(r.meanDBP)}</td><td>${dMeanStr}</td>`;
+      html += `<td>${fmtNum(r.meanSBP)}</td><td>${fmtNum(r.meanDBP)}</td><td>${dMeanStr}</td><td>${dMeanDBPStr}</td>`;
       html += `<td>${fmtPct(r.green)}</td><td>${fmtPct(r.red)}</td><td>${fmtPct(r.severe)}</td><td>${dSevStr}</td>`;
-      html += `<td>${fmtNum(r.p90)}</td><td>${r.n}</td>`;
+      html += `<td>${r.n}</td>`;
       html += `</tr>`;
     }
     html += '</tbody></table>';
@@ -1331,129 +1310,220 @@
   }
 
   // =============================================
-  // CLINICAL INSIGHTS
+  // CLINICAL INSIGHTS — Global Pattern Narrative
   // =============================================
   function renderInsights(rs) {
     const container = $('insightsContainer');
     if (!rs.length) { container.innerHTML = '<div class="muted">Upload data to see clinical insights.</div>'; return; }
 
     const xMin = rs[0].t, xMax = rs[rs.length-1].t;
+    const totalDays = Math.max(1, daysBetween(xMin, xMax));
     $('insightsRange').textContent = `${fmtDateShort(xMin)}, ${xMin.getFullYear()} – ${fmtDateShort(xMax)}, ${xMax.getFullYear()}`;
 
     const morning = rs.filter(r => r.window === 'Morning');
     const ae = rs.filter(r => r.window === 'Afternoon/Evening');
-    const sections = [];
+    const m = computeMetrics(rs);
+    const phases = buildTreatmentPhases(rs);
+    const medNames = Object.keys(medIntervals);
 
-    // ------- 1. Circadian pattern -------
+    // Compute per-phase full stats for narrative
+    const phaseData = phases.map(p => ({
+      label: p.label,
+      start: p.start,
+      end: p.end,
+      days: daysBetween(p.start, p.end),
+      all: phaseStats(rs, p.start, p.end, 'All'),
+      am: phaseStats(rs, p.start, p.end, 'Morning'),
+      pm: phaseStats(rs, p.start, p.end, 'Afternoon/Evening'),
+    }));
+
+    // Trend: split data into thirds
+    const thirdLen = Math.floor(rs.length / 3);
+    const thirds = thirdLen >= 5 ? [
+      rs.slice(0, thirdLen),
+      rs.slice(thirdLen, thirdLen * 2),
+      rs.slice(thirdLen * 2),
+    ] : null;
+
+    // Hold-day data
+    const holdDaySet = new Set(holdEvents.map(d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`));
+    const holdReadings = rs.filter(r => holdDaySet.has(`${r.t.getFullYear()}-${r.t.getMonth()}-${r.t.getDate()}`));
+    const nonHoldReadings = rs.filter(r => !holdDaySet.has(`${r.t.getFullYear()}-${r.t.getMonth()}-${r.t.getDate()}`));
+
+    // HR data
+    const hrReadings = rs.filter(r => r.hr != null);
+    const meanHR = hrReadings.length ? mean(hrReadings.map(x => x.hr)) : null;
+
     const mornMean = mean(morning.map(x => x.sys));
     const aeMean = mean(ae.map(x => x.sys));
     const mornMeanDBP = mean(morning.map(x => x.dia));
     const aeMeanDBP = mean(ae.map(x => x.dia));
-    if (mornMean != null && aeMean != null) {
-      const diff = aeMean - mornMean;
-      const mornSev = morning.length ? 100 * morning.filter(x => x.severe).length / morning.length : 0;
-      const aeSev = ae.length ? 100 * ae.filter(x => x.severe).length / ae.length : 0;
-      const mornGreen = morning.length ? 100 * morning.filter(x => x.green).length / morning.length : 0;
-      const aeGreen = ae.length ? 100 * ae.filter(x => x.green).length / ae.length : 0;
-      const higher = diff > 0 ? 'Afternoon/Evening' : 'Morning';
-      const lower = diff > 0 ? 'Morning' : 'Afternoon/Evening';
+    const sd = stddev(rs.map(x => x.sys));
+    const sdDBP = stddev(rs.map(x => x.dia));
 
-      let circText = `<b>Circadian Pattern (${higher} &gt; ${lower}):</b> `;
-      circText += `${higher} mean SBP is ~${Math.abs(diff).toFixed(1)} mmHg higher than ${lower} `;
-      circText += `(${Math.round(aeMean)}/${Math.round(aeMeanDBP)} vs ${Math.round(mornMean)}/${Math.round(mornMeanDBP)}). `;
-      circText += `Severe readings: ${higher === 'Afternoon/Evening' ? aeSev.toFixed(1) : mornSev.toFixed(1)}% vs ${higher === 'Afternoon/Evening' ? mornSev.toFixed(1) : aeSev.toFixed(1)}%. `;
-      circText += `Green (at goal): Morning ${mornGreen.toFixed(0)}% vs Afternoon/Evening ${aeGreen.toFixed(0)}%.`;
-      if (Math.abs(diff) >= 8) {
-        circText += ` <span class="warn">This is a clinically notable circadian difference that may warrant discussion of medication timing.</span>`;
+    // ===== BUILD NARRATIVE =====
+    let html = '';
+
+    // --- 1. Overview Narrative ---
+    html += '<div style="margin-bottom:18px; line-height:1.7;">';
+    html += '<div style="font-weight:650; font-size:14px; margin-bottom:8px; color:var(--accent);">Overall Assessment</div>';
+    html += `<p>Over ${Math.round(totalDays)} days (${rs.length} readings), `;
+
+    // Overall control assessment
+    const atGoal = m.avgSys < 135 && m.avgDia < 85;
+    const nearGoal = m.avgSys < 140 && m.avgDia < 90;
+    if (atGoal) {
+      html += `the overall mean BP of ${Math.round(m.avgSys)}/${Math.round(m.avgDia)} is <span class="ok"><b>at the home BP target of 135/85</b></span>. `;
+    } else if (nearGoal) {
+      html += `the overall mean BP of ${Math.round(m.avgSys)}/${Math.round(m.avgDia)} is <span class="warn"><b>close to but not yet at the 135/85 home target</b></span>. `;
+    } else {
+      html += `the overall mean BP of ${Math.round(m.avgSys)}/${Math.round(m.avgDia)} <span class="danger"><b>remains above the 135/85 home target</b></span>. `;
+    }
+
+    // Green/severe burden
+    html += `${m.pctGreen.toFixed(0)}% of all readings are at goal (green), while ${m.pctSevere.toFixed(0)}% reach severe range (SBP&ge;160 or DBP&ge;95). `;
+
+    // Trajectory
+    if (thirds) {
+      const t1Mean = mean(thirds[0].map(x => x.sys));
+      const t3Mean = mean(thirds[2].map(x => x.sys));
+      const drift = t3Mean - t1Mean;
+      if (drift <= -5) html += `<span class="ok">The overall trajectory is improving, with mean SBP falling ~${Math.abs(drift).toFixed(0)} mmHg from the first third to the last third of the monitoring period.</span> `;
+      else if (drift >= 5) html += `<span class="warn">The overall trajectory shows a rising trend, with mean SBP increasing ~${drift.toFixed(0)} mmHg over the monitoring period.</span> `;
+      else html += `The overall SBP trajectory is relatively flat across the monitoring period. `;
+    }
+    html += '</p>';
+    html += '</div>';
+
+    // --- 2. Circadian Pattern ---
+    if (mornMean != null && aeMean != null && morning.length >= 5 && ae.length >= 5) {
+      html += '<div style="margin-bottom:18px; line-height:1.7;">';
+      html += '<div style="font-weight:650; font-size:14px; margin-bottom:8px; color:var(--accent);">Circadian Pattern</div>';
+      const circDiff = aeMean - mornMean;
+      const circDiffDBP = aeMeanDBP - mornMeanDBP;
+      const mornGreen = 100 * morning.filter(x => x.green).length / morning.length;
+      const aeGreen = 100 * ae.filter(x => x.green).length / ae.length;
+      const mornSev = 100 * morning.filter(x => x.severe).length / morning.length;
+      const aeSev = 100 * ae.filter(x => x.severe).length / ae.length;
+      const higher = circDiff > 0 ? 'afternoon/evening' : 'morning';
+      const lower = circDiff > 0 ? 'morning' : 'afternoon/evening';
+
+      html += `<p>There is a consistent circadian split: ${higher} readings run ~${Math.abs(circDiff).toFixed(0)}/${Math.abs(circDiffDBP).toFixed(0)} mmHg higher than ${lower} readings `;
+      html += `(AM ${Math.round(mornMean)}/${Math.round(mornMeanDBP)}, PM ${Math.round(aeMean)}/${Math.round(aeMeanDBP)}). `;
+      html += `Morning readings reach goal in ${mornGreen.toFixed(0)}% of cases vs ${aeGreen.toFixed(0)}% for afternoon/evening. `;
+      if (Math.abs(mornSev - aeSev) > 3) {
+        const burdenWindow = aeSev > mornSev ? 'Afternoon/evening' : 'Morning';
+        const burdenPct = Math.max(aeSev, mornSev);
+        html += `<span class="warn">${burdenWindow} carries the heavier severe-range burden (${burdenPct.toFixed(0)}% severe).</span> `;
       }
-      sections.push(circText);
-    }
-
-    // ------- 2. Hold-day impact -------
-    if (holdEvents.length >= 2) {
-      // Compare readings on hold days vs non-hold days
-      const holdDaySet = new Set(holdEvents.map(d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`));
-      const holdReadings = rs.filter(r => holdDaySet.has(`${r.t.getFullYear()}-${r.t.getMonth()}-${r.t.getDate()}`));
-      const nonHoldReadings = rs.filter(r => !holdDaySet.has(`${r.t.getFullYear()}-${r.t.getMonth()}-${r.t.getDate()}`));
-      if (holdReadings.length >= 3 && nonHoldReadings.length >= 5) {
-        const holdMean = mean(holdReadings.map(x => x.sys));
-        const nonHoldMean = mean(nonHoldReadings.map(x => x.sys));
-        const holdSev = 100 * holdReadings.filter(x => x.severe).length / holdReadings.length;
-        const nonHoldSev = 100 * nonHoldReadings.filter(x => x.severe).length / nonHoldReadings.length;
-        const d = holdMean - nonHoldMean;
-        let holdText = `<b>Hold-Medication Days (${holdEvents.length} days detected):</b> `;
-        holdText += `Mean SBP on hold days: ${Math.round(holdMean)} vs medicated days: ${Math.round(nonHoldMean)} `;
-        holdText += `(${d >= 0 ? '+' : ''}${d.toFixed(1)} mmHg). `;
-        holdText += `Severe%: hold days ${holdSev.toFixed(1)}% vs medicated ${nonHoldSev.toFixed(1)}%. `;
-        if (d >= 5) holdText += `<span class="warn">BP rises notably on hold days, suggesting medication effect is present.</span>`;
-        else holdText += `Minimal difference may suggest the meds have limited effect, or other factors dominate on hold days.`;
-        sections.push(holdText);
+      if (Math.abs(circDiff) >= 8) {
+        html += `This magnitude of circadian difference is clinically meaningful and could inform medication timing decisions.`;
       }
+      html += '</p></div>';
     }
 
-    // ------- 3. BP Variability analysis -------
-    const allSBP = rs.map(x => x.sys);
-    const sd = stddev(allSBP);
-    const p90All = quantile(allSBP, 0.9);
-    const p10All = quantile(allSBP, 0.1);
-    if (sd != null && rs.length >= 10) {
-      let varText = `<b>BP Variability:</b> SBP SD = ${sd.toFixed(1)} mmHg; range from p10 (${Math.round(p10All)}) to p90 (${Math.round(p90All)}). `;
-      if (sd >= 18) varText += `<span class="danger">High variability (SD &ge;18) is independently associated with cardiovascular risk. Consider reviewing measurement technique, adherence, and triggers for spikes.</span>`;
-      else if (sd >= 13) varText += `<span class="warn">Moderate variability. Review whether spikes cluster around specific times, activities, or medication holds.</span>`;
-      else varText += `<span class="ok">Variability is within a typical range.</span>`;
-      sections.push(varText);
-    }
+    // --- 3. Treatment Trajectory Narrative ---
+    if (phaseData.length >= 2) {
+      html += '<div style="margin-bottom:18px; line-height:1.7;">';
+      html += '<div style="font-weight:650; font-size:14px; margin-bottom:8px; color:var(--accent);">Treatment Trajectory</div>';
+      html += '<p>';
 
-    // ------- 4. Treatment phase comparisons -------
-    const phases = buildTreatmentPhases(rs);
-    if (phases.length >= 2) {
-      for (let i = 1; i < phases.length; i++) {
-        const prev = phases[i - 1];
-        const curr = phases[i];
+      // Find the first and last phase with enough data
+      const validPhases = phaseData.filter(p => p.all.n >= 3);
+      if (validPhases.length >= 2) {
+        const first = validPhases[0];
+        const last = validPhases[validPhases.length - 1];
+        const netSBP = (last.all.meanSBP || 0) - (first.all.meanSBP || 0);
+        const netDBP = (last.all.meanDBP || 0) - (first.all.meanDBP || 0);
+        const netGreen = (last.all.green || 0) - (first.all.green || 0);
+        const netSev = (last.all.severe || 0) - (first.all.severe || 0);
 
-        // Compare Afternoon/Evening stats between consecutive phases
-        for (const w of ['Afternoon/Evening', 'Morning']) {
-          const sPrev = phaseStats(rs, prev.start, prev.end, w);
-          const sCurr = phaseStats(rs, curr.start, curr.end, w);
-          if (sPrev.n >= 3 && sCurr.n >= 3 && sPrev.meanSBP != null && sCurr.meanSBP != null) {
-            const dMean = sCurr.meanSBP - sPrev.meanSBP;
-            const dP90 = (sCurr.p90 != null && sPrev.p90 != null) ? sCurr.p90 - sPrev.p90 : null;
-            const dSev = sCurr.severe - sPrev.severe;
-            const dGreen = sCurr.green - sPrev.green;
+        html += `From initial monitoring through the current regimen, `;
+        if (netSBP <= -5) {
+          html += `mean SBP has <span class="ok">dropped ~${Math.abs(netSBP).toFixed(0)} mmHg</span> `;
+        } else if (netSBP >= 5) {
+          html += `mean SBP has <span class="warn">risen ~${netSBP.toFixed(0)} mmHg</span> `;
+        } else {
+          html += `mean SBP has remained roughly stable `;
+        }
+        html += `(${Math.round(first.all.meanSBP)}/${Math.round(first.all.meanDBP)} → ${Math.round(last.all.meanSBP)}/${Math.round(last.all.meanDBP)}). `;
 
-            // Only report if there's a meaningful change
-            if (Math.abs(dMean) >= 2 || Math.abs(dSev) >= 3) {
-              const improved = dMean < -2;
-              const worsened = dMean > 2;
-              let phaseText = `<b>${w} — ${prev.label} → ${curr.label}:</b> `;
-              phaseText += `Mean SBP ${dMean >= 0 ? '+' : ''}${dMean.toFixed(1)} mmHg `;
-              phaseText += `(${Math.round(sPrev.meanSBP)} → ${Math.round(sCurr.meanSBP)}). `;
-              if (dP90 != null) phaseText += `p90 SBP ${dP90 >= 0 ? '+' : ''}${Math.round(dP90)} mmHg. `;
-              phaseText += `Severe% ${dSev >= 0 ? '+' : ''}${dSev.toFixed(1)} pp (${sPrev.severe.toFixed(0)}% → ${sCurr.severe.toFixed(0)}%). `;
-              phaseText += `Green% ${dGreen >= 0 ? '+' : ''}${dGreen.toFixed(1)} pp. `;
-              phaseText += `(n: ${sPrev.n} → ${sCurr.n})`;
+        if (Math.abs(netGreen) >= 5) {
+          html += `Goal attainment (green %) has ${netGreen > 0 ? 'improved' : 'declined'} by ${Math.abs(netGreen).toFixed(0)} percentage points. `;
+        }
 
-              if (improved) phaseText = `<span class="ok">${phaseText}</span>`;
-              else if (worsened) phaseText = `<span class="warn">${phaseText}</span>`;
-              sections.push(phaseText);
-            }
+        // Walk through each transition
+        for (let i = 1; i < validPhases.length; i++) {
+          const prev = validPhases[i - 1];
+          const curr = validPhases[i];
+          if (prev.all.meanSBP == null || curr.all.meanSBP == null) continue;
+          const dSBP = curr.all.meanSBP - prev.all.meanSBP;
+          const dSev = (curr.all.severe || 0) - (prev.all.severe || 0);
+          if (Math.abs(dSBP) >= 3 || Math.abs(dSev) >= 5) {
+            const dir = dSBP < -2 ? 'improved' : dSBP > 2 ? 'worsened' : 'held steady';
+            html += `The transition to <b>${curr.label}</b> ${dir} `;
+            html += `(SBP ${dSBP >= 0 ? '+' : ''}${dSBP.toFixed(0)}, severe ${dSev >= 0 ? '+' : ''}${dSev.toFixed(0)} pp). `;
           }
         }
       }
+      html += '</p></div>';
     }
 
-    // ------- 5. Persistent late-day burden -------
+    // --- 4. Key Observations (the "so what") ---
+    html += '<div style="margin-bottom:18px; line-height:1.7;">';
+    html += '<div style="font-weight:650; font-size:14px; margin-bottom:8px; color:var(--accent);">Key Clinical Observations</div>';
+    html += '<ul style="margin:0 0 0 18px; padding:0;">';
+
+    // Variability
+    if (sd != null && rs.length >= 10) {
+      const p10 = quantile(rs.map(x => x.sys), 0.1);
+      const p90 = quantile(rs.map(x => x.sys), 0.9);
+      const varLabel = sd >= 18 ? '<span class="danger">high</span>' : sd >= 13 ? '<span class="warn">moderate</span>' : '<span class="ok">typical</span>';
+      html += `<li>SBP variability is ${varLabel} (SD ${sd.toFixed(1)}, p10–p90 range: ${Math.round(p10)}–${Math.round(p90)} mmHg). `;
+      if (sd >= 15) html += `Wide swings suggest exploring triggers — white-coat effect, dietary salt, inconsistent med timing, or measurement technique.`;
+      html += `</li>`;
+    }
+
+    // Persistent circadian burden
     if (ae.length >= 10 && morning.length >= 10) {
-      const aeSevCount = ae.filter(x => x.severe).length;
-      const mornSevCount = morning.filter(x => x.severe).length;
-      const aeSevPct = 100 * aeSevCount / ae.length;
-      const mornSevPct = 100 * mornSevCount / morning.length;
-      if (aeSevPct > mornSevPct + 5 && aeSevPct > 10) {
-        sections.push(`<b>Persistent Late-Day BP Burden:</b> ${aeSevPct.toFixed(0)}% of Afternoon/Evening readings are severe vs ${mornSevPct.toFixed(0)}% of Morning readings (${aeSevCount} vs ${mornSevCount} severe readings). <span class="warn">Late-day severe excursions persist across treatment phases, suggesting this window deserves focused attention (e.g., dosing timing, activity patterns, or evening add-on therapy).</span>`);
+      const aeSev = 100 * ae.filter(x => x.severe).length / ae.length;
+      const mornSev = 100 * morning.filter(x => x.severe).length / morning.length;
+      if (aeSev > mornSev + 5 && aeSev > 8) {
+        html += `<li><span class="warn">Late-day BP burden persists across treatment phases</span> — ${aeSev.toFixed(0)}% of afternoon/evening readings are severe vs ${mornSev.toFixed(0)}% morning. This pattern may warrant split dosing or an evening add-on.</li>`;
+      } else if (mornSev > aeSev + 5 && mornSev > 8) {
+        html += `<li><span class="warn">Morning BP burden is elevated</span> — ${mornSev.toFixed(0)}% of morning readings are severe vs ${aeSev.toFixed(0)}% afternoon/evening. Evening or bedtime dosing may help.</li>`;
       }
     }
 
-    // ------- 6. Trend over time (most recent 14d vs 14d before that) -------
+    // Hold-day signal
+    if (holdReadings.length >= 3 && nonHoldReadings.length >= 5) {
+      const holdMean = mean(holdReadings.map(x => x.sys));
+      const nonHoldMean = mean(nonHoldReadings.map(x => x.sys));
+      const d = holdMean - nonHoldMean;
+      if (d >= 5) {
+        html += `<li>On <b>${holdEvents.length} medication-hold days</b>, SBP averages ${Math.round(d)} mmHg higher (${Math.round(holdMean)} vs ${Math.round(nonHoldMean)}), confirming current medications are providing measurable BP lowering.</li>`;
+      } else if (d < 2 && holdEvents.length >= 3) {
+        html += `<li>On <b>${holdEvents.length} medication-hold days</b>, SBP difference is minimal (+${d.toFixed(0)} mmHg). Consider whether the current regimen is providing meaningful BP reduction vs. natural variation.</li>`;
+      }
+    }
+
+    // HR observations with beta-blocker context
+    if (meanHR != null && hrReadings.length >= 10) {
+      const hrLow = hrReadings.filter(x => x.hr <= 55);
+      const hrHigh = hrReadings.filter(x => x.hr >= 90);
+      const onBeta = medNames.some(n => n.toLowerCase().includes('metoprolol') || n.toLowerCase().includes('atenolol') || n.toLowerCase().includes('propranolol'));
+      html += `<li>Mean heart rate is ${Math.round(meanHR)} bpm. `;
+      if (hrLow.length >= 3 && onBeta) {
+        html += `<span class="warn">${hrLow.length} readings show HR &le;55 bpm while on a beta-blocker — monitor for symptomatic bradycardia.</span> `;
+      }
+      if (hrHigh.length >= 3) {
+        const hrHighSev = 100 * hrHigh.filter(x => x.severe).length / hrHigh.length;
+        html += `${hrHigh.length} readings with HR &ge;90 bpm (${hrHighSev.toFixed(0)}% also severe BP), which may reflect sympathetic surges or deconditioning.`;
+      }
+      html += '</li>';
+    }
+
+    // Recent trend (14d vs prior 14d)
     if (rs.length >= 20) {
       const cutoff1 = new Date(xMax.getTime() - 14 * 86400000);
       const cutoff2 = new Date(xMax.getTime() - 28 * 86400000);
@@ -1462,43 +1532,60 @@
       if (recent.length >= 5 && prior.length >= 5) {
         const recMean = mean(recent.map(x => x.sys));
         const priMean = mean(prior.map(x => x.sys));
-        const recSev = 100 * recent.filter(x => x.severe).length / recent.length;
-        const priSev = 100 * prior.filter(x => x.severe).length / prior.length;
         const d = recMean - priMean;
-        let trendText = `<b>Recent Trend (last 14d vs prior 14d):</b> `;
-        trendText += `Mean SBP ${d >= 0 ? '+' : ''}${d.toFixed(1)} mmHg (${Math.round(priMean)} → ${Math.round(recMean)}). `;
-        trendText += `Severe% ${(recSev - priSev).toFixed(1)} pp (${priSev.toFixed(0)}% → ${recSev.toFixed(0)}%). `;
-        if (d <= -5) trendText += `<span class="ok">Improving trend.</span>`;
-        else if (d >= 5) trendText += `<span class="warn">Worsening trend — consider reviewing adherence, salt intake, or medication changes.</span>`;
-        else trendText += `<span class="muted">Stable.</span>`;
-        sections.push(trendText);
+        const recGreen = 100 * recent.filter(x => x.green).length / recent.length;
+        if (d <= -5) html += `<li><span class="ok">Recent 14-day trend is improving:</span> mean SBP dropped ${Math.abs(d).toFixed(0)} mmHg vs the prior 2 weeks, with ${recGreen.toFixed(0)}% at goal.</li>`;
+        else if (d >= 5) html += `<li><span class="warn">Recent 14-day trend is worsening:</span> mean SBP rose ${d.toFixed(0)} mmHg vs the prior 2 weeks. Review recent changes in meds, diet, or adherence.</li>`;
+        else html += `<li>Recent 14-day SBP is stable vs the prior 2 weeks (${Math.round(priMean)} → ${Math.round(recMean)}), with ${recGreen.toFixed(0)}% at goal.</li>`;
       }
     }
 
-    // ------- 7. HR correlation note -------
-    const hrReadings = rs.filter(r => r.hr != null);
-    if (hrReadings.length >= 10) {
-      const meanHR = mean(hrReadings.map(x => x.hr));
-      const hrHigh = hrReadings.filter(x => x.hr >= 90);
-      const hrLow = hrReadings.filter(x => x.hr <= 55);
-      if (hrHigh.length >= 3 || hrLow.length >= 3 || meanHR != null) {
-        let hrText = `<b>Heart Rate Overview:</b> Mean HR: ${Math.round(meanHR)} bpm. `;
-        if (hrHigh.length) {
-          const hrHighSev = 100 * hrHigh.filter(x => x.severe).length / hrHigh.length;
-          hrText += `${hrHigh.length} reading(s) with HR &ge;90 bpm (severe BP in ${hrHighSev.toFixed(0)}% of those). `;
+    html += '</ul></div>';
+
+    // --- 5. Bottom Line ---
+    html += '<div style="padding:12px 14px; border-radius:12px; background:rgba(122,162,255,.08); border:1px solid rgba(122,162,255,.2); line-height:1.7;">';
+    html += '<div style="font-weight:650; font-size:14px; margin-bottom:6px; color:var(--accent);">Bottom Line</div>';
+    html += '<p style="margin:0;">';
+
+    // Build a synthesized bottom line
+    const currentMeds = getCurrentMeds();
+    const currentMedStr = currentMeds.length ? currentMeds.join(' + ') : 'current regimen';
+
+    if (atGoal && m.pctSevere < 5) {
+      html += `On ${currentMedStr}, the overall BP is at the home target with a low severe-reading burden. `;
+      if (sd >= 15) html += `The main concern is variability — spikes could be addressed with lifestyle review. `;
+      html += `Continue current management and reassess in follow-up.`;
+    } else if (atGoal && m.pctSevere >= 5) {
+      html += `Mean BP is at target on ${currentMedStr}, but ${m.pctSevere.toFixed(0)}% of readings still reach severe range, suggesting intermittent BP surges despite overall control. `;
+      html += `Consider exploring triggers for these spikes (stress, salt, missed doses, measurement conditions) and whether peak-dose timing aligns with the highest-burden window.`;
+    } else {
+      html += `BP remains above the home target on ${currentMedStr}. `;
+      if (ae.length >= 5 && morning.length >= 5) {
+        const aeSev = 100 * ae.filter(x => x.severe).length / ae.length;
+        const mornSev = 100 * morning.filter(x => x.severe).length / morning.length;
+        if (aeSev > mornSev + 5) {
+          html += `The afternoon/evening window carries the heaviest burden, which may respond to dose timing adjustment or an evening add-on. `;
+        } else if (mornSev > aeSev + 5) {
+          html += `Morning readings show more severe excursions, suggesting bedtime or evening dosing may help. `;
         }
-        if (hrLow.length) {
-          hrText += `${hrLow.length} reading(s) with HR &le;55 bpm (possible over-suppression if on beta-blocker). `;
-        }
-        sections.push(hrText);
       }
+      if (phases.length >= 2) {
+        const lastPhase = phaseData[phaseData.length - 1];
+        const firstPhase = phaseData[0];
+        if (lastPhase.all.meanSBP != null && firstPhase.all.meanSBP != null) {
+          const net = lastPhase.all.meanSBP - firstPhase.all.meanSBP;
+          if (net <= -5) html += `Treatment changes have moved BP in the right direction (net ${net.toFixed(0)} mmHg), but further titration is needed. `;
+          else html += `The cumulative effect of medication changes has been modest so far. `;
+        }
+      }
+      html += `Consider uptitration, adding a complementary class, or reviewing adherence and lifestyle factors.`;
     }
+    html += '</p></div>';
 
-    // ------- Disclaimers -------
-    sections.push(`<b>Clinical Takeaway:</b> The timeline reveals patterns in BP burden across time windows and treatment phases. Persistent late-day elevation, hold-day effects, and phase-to-phase changes can guide discussion of medication timing, dose adjustments, and lifestyle factors. Attribution is uncertain without controlling for adherence, measurement conditions, diet/activity, and regression-to-mean.`);
-    sections.push(`<span class="muted"><b>Interpretation Note:</b> These are observational patterns on home measurements; not a controlled trial. Differences may reflect medication changes, adherence, measurement timing, activity, salt/stress, and regression to the mean. Best used as hypothesis-generating context, not causal proof.</span>`);
+    // Disclaimer (brief, not a separate bullet)
+    html += '<div class="muted small" style="margin-top:12px;">These patterns are observational and should be interpreted alongside clinical context, adherence history, and measurement conditions.</div>';
 
-    container.innerHTML = sections.map(s => `<div class="insight-bullet">&bull; ${s}</div>`).join('');
+    container.innerHTML = html;
   }
 
   // =============================================
@@ -1528,7 +1615,6 @@
     attachBPHover($('chartEvening'), ae, xMinMs, xMaxMs);
 
     renderKPIs(m);
-    $('recommendations').innerHTML=buildRecommendations(rs,m);
     $('reportText').innerHTML=buildReport(rs,m);
     renderSevereTable(m.severe);
     renderPhaseTable(rs);
