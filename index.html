@@ -233,17 +233,17 @@
       <div class="card">
         <div class="kpi">
           <div class="box">
-            <div class="muted small" id="avgAllLabel">Recent 2-week avg (all)</div>
+            <div style="font-size:14px; font-weight:650; color:var(--text);" id="avgAllLabel">Recent 2-week avg (all)</div>
             <div class="big" id="avgAll">&mdash;</div>
             <div class="muted small" id="avgAllDetail">&mdash;</div>
           </div>
           <div class="box">
-            <div class="muted small" id="avgAmLabel">Recent 2-week Morning avg</div>
+            <div style="font-size:14px; font-weight:650; color:var(--text);" id="avgAmLabel">Recent 2-week Morning avg</div>
             <div class="big" id="avgAm">&mdash;</div>
             <div class="muted small" id="avgAmDetail">&mdash;</div>
           </div>
           <div class="box">
-            <div class="muted small" id="avgPmLabel">Recent 2-week Afternoon/Evening avg</div>
+            <div style="font-size:14px; font-weight:650; color:var(--text);" id="avgPmLabel">Recent 2-week Afternoon/Evening avg</div>
             <div class="big" id="avgPm">&mdash;</div>
             <div class="muted small" id="avgPmDetail">&mdash;</div>
           </div>
@@ -817,8 +817,9 @@
   // =============================================
   // CANVAS SETUP
   // =============================================
+  let printDPR = 0; // 0 = use screen DPR; >0 = override for print
   function setupCanvas(canvas, displayW, displayH) {
-    const dpr = Math.max(3, window.devicePixelRatio||1);
+    const dpr = printDPR > 0 ? printDPR : Math.max(3, window.devicePixelRatio||1);
     canvas.width = displayW*dpr;
     canvas.height = displayH*dpr;
     canvas.style.width = displayW+'px';
@@ -1022,7 +1023,7 @@
     const displayW = container.clientWidth - 4;
     const meds = getMedOrder(intervals);
     const n = Math.max(1, meds.length);
-    const displayH = Math.max(80, n*36+20);
+    const displayH = Math.max(60, n*24+16);
     canvas.style.height = displayH+'px';
     const ctx = setupCanvas(canvas, displayW, displayH);
     const W=displayW, H=displayH;
@@ -1037,8 +1038,8 @@
 
     const plotW=W-PAD.l-PAD.r;
     const xOf=t=>PAD.l+((t-xMinMs)/Math.max(1,xMaxMs-xMinMs))*plotW;
-    const rowH = (H-10)/n;
-    const gap=4, bandH=rowH-gap;
+    const rowH = (H-8)/n;
+    const gap=3, bandH=rowH-gap;
     const SHORT_BAR_DAYS=5;
 
     const startDose = {};
@@ -1078,11 +1079,11 @@
         const midX=(x0+x1)/2;
         if(widthDays>=SHORT_BAR_DAYS){
           const tc=chooseSigTextColor(baseColor,alpha);
-          ctx.fillStyle=tc;ctx.font='9px system-ui';ctx.textAlign='center';
+          ctx.fillStyle=tc;ctx.font='bold 9px system-ui';ctx.textAlign='center';
           ctx.fillText(label, midX, yCenter+3);
         } else {
           // Callout to the right
-          ctx.fillStyle='rgba(0,0,0,.7)';ctx.font='9px system-ui';ctx.textAlign='left';
+          ctx.fillStyle='rgba(0,0,0,.85)';ctx.font='bold 9px system-ui';ctx.textAlign='left';
           ctx.fillText(label, x1+4, yCenter+3);
           ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=0.5;
           ctx.beginPath();ctx.moveTo(x1,yCenter);ctx.lineTo(x1+3,yCenter);ctx.stroke();
@@ -1441,10 +1442,12 @@
       return;
     }
 
-    // Detect which drugs changed between consecutive phases for highlighting
-    function parseDrugsFromLabel(label) {
-      // Split on " + " and extract drug names (first word of each segment)
-      return new Set(label.split(/\s*\+\s*/).map(s => s.split(/\s+/)[0].toLowerCase()));
+    // Parse phase label into [{drug, detail}] for comparison
+    function parseSegments(label) {
+      return label.split(/\s*\+\s*/).map(seg => {
+        const parts = seg.trim().split(/\s+/);
+        return { drug: parts[0].toLowerCase(), full: seg.trim(), drugDisplay: parts[0], detail: parts.slice(1).join(' ') };
+      });
     }
 
     let html = '<table class="phase-table"><thead><tr>';
@@ -1462,18 +1465,21 @@
       let phaseCell = r.phase;
       if (pairIdx > 0) {
         const prevPhase = tableRows[(pairIdx - 1) * 2].phase;
-        const prevDrugs = parseDrugsFromLabel(prevPhase);
-        const currDrugs = parseDrugsFromLabel(r.phase);
-        // Bold any drug segment that is new or changed
-        phaseCell = r.phase.split(/\s*\+\s*/).map(seg => {
-          const drugName = seg.split(/\s+/)[0].toLowerCase();
-          const isNew = !prevDrugs.has(drugName);
-          // Check if dose changed (drug existed before but full segment differs)
-          const prevSegs = prevPhase.split(/\s*\+\s*/);
-          const matchingPrev = prevSegs.find(ps => ps.split(/\s+/)[0].toLowerCase() === drugName);
-          const doseChanged = matchingPrev && matchingPrev.trim() !== seg.trim();
-          if (isNew || doseChanged) return `<b style="color:var(--accent)">${seg.trim()}</b>`;
-          return seg.trim();
+        const prevSegs = parseSegments(prevPhase);
+        const currSegs = parseSegments(r.phase);
+        const prevMap = {}; // drug -> detail
+        for (const ps of prevSegs) prevMap[ps.drug] = ps.detail;
+
+        phaseCell = currSegs.map(cs => {
+          const prevDetail = prevMap[cs.drug];
+          if (prevDetail === undefined) {
+            // Entirely new drug — show whole segment in blue bold
+            return `<b style="color:var(--accent)">${cs.full}</b>`;
+          } else if (prevDetail !== cs.detail) {
+            // Same drug, different dose/sig — drug name in blue, changed dose in red
+            return `<b style="color:var(--accent)">${cs.drugDisplay}</b> <b style="color:#c62828">${cs.detail}</b>`;
+          }
+          return cs.full; // unchanged
         }).join(' + ');
       }
 
@@ -1949,6 +1955,16 @@
   $('phaseLookback').addEventListener('input', ()=>{renderPhaseTable(getRangeFiltered());});
   $('phaseRecentWeeks').addEventListener('input', ()=>{renderPhaseTable(getRangeFiltered());});
   $('printBtn').addEventListener('click',()=>window.print());
+
+  // Re-render canvases at high DPR for print, then restore
+  window.addEventListener('beforeprint', () => {
+    printDPR = 5;
+    renderAll();
+  });
+  window.addEventListener('afterprint', () => {
+    printDPR = 0;
+    renderAll();
+  });
 
   // Browse button triggers the hidden file input
   $('browseBtn').addEventListener('click',(e)=>{ e.preventDefault(); $('file').click(); });
