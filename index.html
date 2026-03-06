@@ -6,30 +6,30 @@
   <title>HomeBP Insight — Timeline</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    :root { --bg:#0b0f17; --card:#121a26; --muted:#8aa0b8; --text:#e8f0ff; --accent:#7aa2ff; --warn:#ffcc66; --danger:#ff6b6b; --ok:#7ee787; --canvas-bg:#ffffff; }
+    :root { --bg:#ffffff; --card:#ffffff; --muted:#5a6a7a; --text:#1a1a2e; --accent:#2c5dcd; --warn:#b87800; --danger:#c62828; --ok:#1b7a3d; --canvas-bg:#ffffff; }
     *{box-sizing:border-box;}
     body{ margin:0; font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--text); }
-    header{ padding:18px 18px 10px; border-bottom:1px solid rgba(255,255,255,.08); }
+    header{ padding:18px 18px 10px; border-bottom:1px solid rgba(0,0,0,.10); }
     h1{ margin:0 0 6px; font-size:18px; }
     .sub{ color:var(--muted); }
     main{ padding:18px; max-width:1200px; margin:0 auto; }
-    .card{ background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:14px; box-shadow:0 10px 30px rgba(0,0,0,.25); margin-bottom:14px; }
+    .card{ background:var(--card); border:1px solid rgba(0,0,0,.10); border-radius:14px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:14px; }
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     label{ color:var(--muted); font-size:12px; }
     input[type="file"]{ color:var(--muted); }
     select, input[type="number"], input[type="text"]{
-      background:#0e1522; color:var(--text); border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:8px 10px;
+      background:#fff; color:var(--text); border:1px solid rgba(0,0,0,.15); border-radius:10px; padding:8px 10px;
     }
     button{
-      background:linear-gradient(180deg,rgba(122,162,255,.22),rgba(122,162,255,.08));
-      border:1px solid rgba(122,162,255,.35); color:var(--text);
+      background:linear-gradient(180deg,rgba(44,93,205,.12),rgba(44,93,205,.04));
+      border:1px solid rgba(44,93,205,.30); color:var(--text);
       padding:9px 12px; border-radius:12px; cursor:pointer;
     }
-    button:hover{ filter:brightness(1.05); }
-    .pill{ display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.03); }
+    button:hover{ filter:brightness(0.97); }
+    .pill{ display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; border:1px solid rgba(0,0,0,.12); background:rgba(0,0,0,.02); }
     .kpi{ display:grid; gap:10px; grid-template-columns:repeat(3,1fr); }
     @media(max-width:680px){ .kpi{ grid-template-columns:1fr; } }
-    .kpi .box{ padding:12px; border-radius:12px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); }
+    .kpi .box{ padding:12px; border-radius:12px; background:rgba(0,0,0,.02); border:1px solid rgba(0,0,0,.08); }
     .big{ font-size:22px; font-weight:650; letter-spacing:.2px; margin-top:4px; }
     .muted{ color:var(--muted); }
     .danger{ color:var(--danger); }
@@ -37,19 +37,19 @@
     .ok{ color:var(--ok); }
     .small{ font-size:12px; }
     .table{ width:100%; border-collapse:collapse; }
-    .table th,.table td{ border-bottom:1px solid rgba(255,255,255,.08); padding:8px 6px; text-align:left; }
+    .table th,.table td{ border-bottom:1px solid rgba(0,0,0,.10); padding:8px 6px; text-align:left; }
     .table th{ color:var(--muted); font-weight:600; font-size:12px; }
-    .hr{ height:1px; background:rgba(255,255,255,.08); margin:12px 0; }
-    .note{ padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); }
+    .hr{ height:1px; background:rgba(0,0,0,.08); margin:12px 0; }
+    .note{ padding:10px 12px; border-radius:12px; background:rgba(0,0,0,.02); border:1px solid rgba(0,0,0,.08); }
     .note strong{ font-weight:650; }
     .mapping{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     @media(max-width:680px){ .mapping{ grid-template-columns:1fr; } }
 
     /* Tabs */
     .tabs{ display:flex; gap:4px; margin-bottom:14px; }
-    .tabs .tab-btn{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.10); color:var(--muted); padding:10px 18px; border-radius:12px 12px 0 0; cursor:pointer; font-size:13px; font-weight:600; transition:all .15s; }
+    .tabs .tab-btn{ background:rgba(0,0,0,.03); border:1px solid rgba(0,0,0,.10); color:var(--muted); padding:10px 18px; border-radius:12px 12px 0 0; cursor:pointer; font-size:13px; font-weight:600; transition:all .15s; }
     .tabs .tab-btn.active{ background:var(--card); color:var(--text); border-bottom-color:var(--card); }
-    .tabs .tab-btn:hover:not(.active){ background:rgba(255,255,255,.08); }
+    .tabs .tab-btn:hover:not(.active){ background:rgba(0,0,0,.06); }
     .tab-content{ display:none; }
     .tab-content.active{ display:block; }
 
@@ -58,14 +58,14 @@
     .chart-stack canvas{ width:100%; background:var(--canvas-bg); border:1px solid rgba(0,0,0,.15); border-radius:8px; }
 
     /* Legend */
-    .legend-bar{ display:flex; flex-wrap:wrap; gap:14px; padding:10px 14px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:10px; margin-top:6px; font-size:12px; }
+    .legend-bar{ display:flex; flex-wrap:wrap; gap:14px; padding:10px 14px; background:rgba(0,0,0,.02); border:1px solid rgba(0,0,0,.10); border-radius:10px; margin-top:6px; font-size:12px; }
     .legend-item{ display:flex; align-items:center; gap:6px; }
     .legend-swatch{ width:16px; height:12px; border-radius:3px; display:inline-block; }
 
     /* Phase table */
     .phase-table{ width:100%; border-collapse:collapse; font-size:13px; }
-    .phase-table th,.phase-table td{ border:1px solid rgba(255,255,255,.10); padding:8px 10px; text-align:center; }
-    .phase-table th{ background:rgba(255,255,255,.06); font-weight:650; font-size:12px; color:var(--muted); }
+    .phase-table th,.phase-table td{ border:1px solid rgba(0,0,0,.12); padding:8px 10px; text-align:center; }
+    .phase-table th{ background:rgba(0,0,0,.04); font-weight:650; font-size:12px; color:var(--muted); }
     .phase-table td:first-child{ text-align:left; }
 
     /* Insights */
@@ -77,23 +77,30 @@
     .sidebar-grid{ display:grid; gap:14px; grid-template-columns:1.2fr .8fr; margin-top:14px; }
     @media(max-width:980px){ .sidebar-grid{ grid-template-columns:1fr; } }
 
-    @page { size: landscape; margin: 0.4in; }
+    @page { size: landscape; margin: 0.35in; }
     @media print {
-      body{ background:#fff; color:#000; }
-      header{ border:none; }
-      .card{ box-shadow:none; border:1px solid #ccc; background:#fff; }
+      body{ background:#fff; color:#000; margin:0; }
+      main{ padding:4px 10px; }
+      header{ border:none; padding:2px 10px 2px; }
+      h1{ font-size:14px; margin-bottom:1px; }
+      .sub{ font-size:10px; }
+      .card{ box-shadow:none; border:1px solid #ccc; background:#fff; padding:4px; margin-bottom:4px; }
+      #tab-timeline > .card:first-child{ page-break-inside:avoid; }
       canvas{ border:1px solid #ccc; }
+      #chartMorning, #chartEvening{ max-height:200px; }
+      #chartMeds{ max-height:100px; }
       button, input, select, .no-print, .tabs{ display:none !important; }
       .tab-content{ display:block !important; }
       .muted{ color:#333; }
       .danger{ color:#b00020; }
       .warn{ color:#8a5200; }
       .ok{ color:#0a6a2c; }
-      .legend-bar{ background:#f8f8f8; border-color:#ccc; }
+      .legend-bar{ background:#f8f8f8; border-color:#ccc; padding:4px 8px; margin-top:2px; font-size:10px; gap:10px; }
       .phase-table th{ background:#eee; }
       .phase-table th,.phase-table td{ border-color:#ccc; color:#000; }
+      .chart-stack{ gap:0px; }
       .sidebar-grid{ page-break-before:always; display:block; }
-      .sidebar-grid > .card{ margin-bottom:14px; }
+      .sidebar-grid > .card{ margin-bottom:6px; }
       #tab-phases{ page-break-before:always; }
       #tab-insights{ page-break-before:always; }
     }
@@ -185,9 +192,10 @@
         <canvas id="chartMeds" height="160"></canvas>
       </div>
       <div class="legend-bar">
+        <div class="legend-item"><span class="legend-swatch" style="background:#7B1FA2"></span> Hypotensive: SBP &lt;100 or DBP &lt;60</div>
         <div class="legend-item"><span class="legend-swatch" style="background:#00C853"></span> Green: SBP &le;135 AND DBP &le;85</div>
         <div class="legend-item"><span class="legend-swatch" style="background:#FF4444"></span> Red: SBP 136-159 or DBP &gt;85</div>
-        <div class="legend-item"><span class="legend-swatch" style="background:#FF0000; background-image:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(0,0,0,.3) 2px,rgba(0,0,0,.3) 4px);"></span> Severe: SBP &ge;160 or DBP &ge;95</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#FF0000; background-image:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,.7) 2px,rgba(255,255,255,.7) 4px);"></span> Severe: SBP &ge;160 or DBP &ge;95</div>
         <div class="legend-item"><span style="display:inline-block;width:18px;height:2px;background:#8a8a8a;vertical-align:middle;"></span> Heart Rate</div>
         <div class="legend-item"><span style="display:inline-block;width:18px;height:0;border-top:2px dashed #888;vertical-align:middle;"></span> Targets (SBP 135, DBP 85)</div>
         <div class="legend-item"><span style="font-size:16px;">&#9733;</span> Hold HTN meds</div>
@@ -198,17 +206,17 @@
       <div class="card">
         <div class="kpi">
           <div class="box">
-            <div class="muted small">Average (all)</div>
+            <div class="muted small" id="avgAllLabel">Recent 2-week avg (all)</div>
             <div class="big" id="avgAll">&mdash;</div>
             <div class="muted small" id="avgAllDetail">&mdash;</div>
           </div>
           <div class="box">
-            <div class="muted small">Morning avg</div>
+            <div class="muted small" id="avgAmLabel">Recent 2-week Morning avg</div>
             <div class="big" id="avgAm">&mdash;</div>
             <div class="muted small" id="avgAmDetail">&mdash;</div>
           </div>
           <div class="box">
-            <div class="muted small">Afternoon/Evening avg</div>
+            <div class="muted small" id="avgPmLabel">Recent 2-week Afternoon/Evening avg</div>
             <div class="big" id="avgPm">&mdash;</div>
             <div class="muted small" id="avgPmDetail">&mdash;</div>
           </div>
@@ -266,14 +274,16 @@
   const COLOR_GREEN = '#00C853';
   const COLOR_RED = '#FF4444';
   const COLOR_SEVERE = '#FF0000';
+  const COLOR_HYPO = '#7B1FA2';
   const HR_COLOR = '#8a8a8a';
   const TARGET_COLOR = 'rgba(0,0,0,.25)';
-  const HOLD_STAR_COLOR = '#B8860B';
+  const HOLD_STAR_COLOR = '#000000';
 
   const TARGET_SBP = 135, TARGET_DBP = 85;
   const GREEN_SBP_MAX = 135, GREEN_DBP_MAX = 85;
   const SEVERE_SBP_MIN = 160, SEVERE_DBP_MIN = 95;
   const SEVERE_LABEL_SBP_MIN = 160;
+  const HYPO_SBP_MAX = 100, HYPO_DBP_MAX = 60;
 
   const BASE_BAR_W = 0.28;   // in days
   const SEVERE_BAR_W = 0.44; // in days
@@ -443,10 +453,11 @@
   // BP CLASSIFICATION
   // =============================================
   function classifyBP(sys, dia) {
+    const hypo = sys < HYPO_SBP_MAX || dia < HYPO_DBP_MAX;
     const severe = sys >= SEVERE_SBP_MIN || dia >= SEVERE_DBP_MIN;
-    const green = sys <= GREEN_SBP_MAX && dia <= GREEN_DBP_MAX && !severe;
-    const red = !green && !severe;
-    return { severe, green, red };
+    const green = !hypo && sys <= GREEN_SBP_MAX && dia <= GREEN_DBP_MAX && !severe;
+    const red = !green && !severe && !hypo;
+    return { severe, green, red, hypo };
   }
 
   // =============================================
@@ -486,7 +497,7 @@
         hr: Number.isFinite(pulse) ? pulse : null,
         notes,
         window,
-        green: cls.green, red: cls.red, severe: cls.severe,
+        green: cls.green, red: cls.red, severe: cls.severe, hypo: cls.hypo,
         dateOnly: new Date(t.getFullYear(), t.getMonth(), t.getDate()),
       });
     }
@@ -829,14 +840,14 @@
       const bw=r.severe?barWSevere:barWBase;
       const bh=yDia-ySys;
 
-      ctx.fillStyle=r.severe?COLOR_SEVERE:r.green?COLOR_GREEN:COLOR_RED;
+      ctx.fillStyle=r.hypo?COLOR_HYPO:r.severe?COLOR_SEVERE:r.green?COLOR_GREEN:COLOR_RED;
       ctx.fillRect(x-bw/2, ySys, bw, bh);
 
       // Hatch for severe
       if(r.severe){
         ctx.save();
         ctx.beginPath();ctx.rect(x-bw/2,ySys,bw,bh);ctx.clip();
-        ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=1;
+        ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1;
         for(let i=-bh;i<bw+bh;i+=5){
           ctx.beginPath();ctx.moveTo(x-bw/2+i,ySys);ctx.lineTo(x-bw/2+i-bh,ySys+bh);ctx.stroke();
         }
@@ -882,7 +893,7 @@
         const x=xOf(times[wi]);
         const y=yOf(sbps[wi]);
         const lab=String(Math.round(sbps[wi]));
-        ctx.font='bold 10px system-ui';
+        ctx.font='10px system-ui';
         const tw=ctx.measureText(lab).width;
         const th=12;
         // Try placing above the bar
@@ -895,15 +906,14 @@
             if(lx<b.x+b.w&&lx+lw>b.x&&ly<b.y+b.h&&ly+lh>b.y){overlap=true;break;}
           }
           if(!overlap){
-            ctx.fillStyle='rgba(130,0,0,.95)';
-            ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=0.5;
+            ctx.fillStyle='rgba(160,0,0,.90)';
             ctx.fillText(lab, lx+2, ly+th);
             placedBoxes.push({x:lx,y:ly,w:lw,h:lh});
             placed=true;break;
           }
         }
         if(!placed){
-          ctx.fillStyle='rgba(130,0,0,.95)';
+          ctx.fillStyle='rgba(160,0,0,.90)';
           ctx.fillText(lab, x-tw/2+2, PAD.t+12);
         }
       }
@@ -1067,9 +1077,10 @@
       let best=null,bestD=Infinity;
       for(const r of rs){const dx=mx-xOf(r.t.getTime());const d=dx*dx;if(d<bestD){bestD=d;best=r;}}
       if(!best||bestD>400){tip.style.display='none';return;}
-      const severe=best.severe?'<span style="color:#ff6b6b"><b>SEVERE</b></span>':'';
-      const cls=best.green?'<span style="color:#7ee787">Green</span>':best.red?'<span style="color:#ffcc66">Red</span>':severe;
-      tip.innerHTML=`<div style="font-weight:650;margin-bottom:2px">${fmtDate(best.t)}</div><div>BP: <b>${fmtBP(best.sys,best.dia)}</b> ${severe} ${cls}</div><div>HR: ${best.hr??'—'} &bull; ${best.window}</div>${best.notes?'<div style="color:#8aa0b8;margin-top:2px">'+best.notes+'</div>':''}`;
+      const severe=best.severe?'<span style="color:#c62828"><b>SEVERE</b></span>':'';
+      const hypoTag=best.hypo?'<span style="color:#7B1FA2"><b>HYPO</b></span>':'';
+      const cls=best.hypo?hypoTag:best.green?'<span style="color:#1b7a3d">Green</span>':best.red?'<span style="color:#b87800">Red</span>':severe;
+      tip.innerHTML=`<div style="font-weight:650;margin-bottom:2px">${fmtDate(best.t)}</div><div>BP: <b>${fmtBP(best.sys,best.dia)}</b> ${severe||hypoTag} ${cls}</div><div>HR: ${best.hr??'—'} &bull; ${best.window}</div>${best.notes?'<div style="color:#5a6a7a;margin-top:2px">'+best.notes+'</div>':''}`;
       tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY+14)+'px';tip.style.display='block';
     };
     canvas.onmouseleave=()=>{tip.style.display='none';};
@@ -1084,6 +1095,7 @@
     const am=rs.filter(x=>x.window==='Morning');
     const pm=rs.filter(x=>x.window==='Afternoon/Evening');
     const severe=rs.filter(x=>x.severe);
+    const hypo=rs.filter(x=>x.hypo);
     const aboveGoal=rs.filter(x=>x.sys>=goal.sys||x.dia>=goal.dia);
     return {
       count:rs.length, amCount:am.length, pmCount:pm.length,
@@ -1093,7 +1105,8 @@
       pctGreen:rs.length?100*rs.filter(x=>x.green).length/rs.length:0,
       pctRed:rs.length?100*rs.filter(x=>x.red).length/rs.length:0,
       pctSevere:rs.length?100*severe.length/rs.length:0,
-      severe, aboveGoalPct:rs.length?100*aboveGoal.length/rs.length:0,
+      pctHypo:rs.length?100*hypo.length/rs.length:0,
+      severe, hypo, aboveGoalPct:rs.length?100*aboveGoal.length/rs.length:0,
       goal
     };
   }
@@ -1101,14 +1114,29 @@
   // =============================================
   // KPIs
   // =============================================
-  function renderKPIs(m) {
-    const g=m.goal;
-    $('avgAll').textContent=fmtBP(m.avgSys,m.avgDia);
-    $('avgAllDetail').innerHTML=`n=${m.count} &bull; Green ${fmtPct(m.pctGreen)} &bull; Red ${fmtPct(m.pctRed)} &bull; <span class="danger">Severe ${fmtPct(m.pctSevere)}</span>`;
-    $('avgAm').textContent=fmtBP(m.avgAmSys,m.avgAmDia);
-    $('avgAmDetail').textContent=`n=${m.amCount}`;
-    $('avgPm').textContent=fmtBP(m.avgPmSys,m.avgPmDia);
-    $('avgPmDetail').textContent=`n=${m.pmCount}`;
+  function renderKPIs(m, rs) {
+    // Compute most recent 14-day stats
+    let rec = rs;
+    let labelSuffix = '';
+    if (rs.length > 0) {
+      const latest = rs[rs.length - 1].t.getTime();
+      const cutoff = latest - 14 * 86400000;
+      rec = rs.filter(x => x.t.getTime() >= cutoff);
+      const cutDate = new Date(cutoff);
+      labelSuffix = ` (${fmtDateShort(cutDate)} – ${fmtDateShort(new Date(latest))})`;
+    }
+    const rm = computeMetrics(rec);
+
+    $('avgAllLabel').textContent = `Recent 2-week avg (all)${labelSuffix}`;
+    $('avgAmLabel').textContent = `Recent 2-week Morning avg`;
+    $('avgPmLabel').textContent = `Recent 2-week Afternoon/Evening avg`;
+
+    $('avgAll').textContent=fmtBP(rm.avgSys,rm.avgDia);
+    $('avgAllDetail').innerHTML=`n=${rm.count} &bull; Green ${fmtPct(rm.pctGreen)} &bull; Red ${fmtPct(rm.pctRed)} &bull; <span class="danger">Severe ${fmtPct(rm.pctSevere)}</span>${rm.pctHypo>0?' &bull; <span style="color:#7B1FA2">Hypo '+fmtPct(rm.pctHypo)+'</span>':''}`;
+    $('avgAm').textContent=fmtBP(rm.avgAmSys,rm.avgAmDia);
+    $('avgAmDetail').textContent=`n=${rm.amCount}`;
+    $('avgPm').textContent=fmtBP(rm.avgPmSys,rm.avgPmDia);
+    $('avgPmDetail').textContent=`n=${rm.pmCount}`;
   }
 
   // =============================================
@@ -1244,15 +1272,22 @@
     const tableRows = [];
     const prev = { Morning: null, 'Afternoon/Evening': null };
 
-    // Each boundary gets a "Pre-[change]" row showing 7-day stats before that change
+    // Each boundary gets a "Pre-[change]" row showing 7-day stats before that change.
+    // If the immediate 7-day window has no readings, search backward in 7-day chunks.
     for (const boundary of boundaries) {
-      const endDt = boundary.date;
-      const startDt = new Date(endDt.getTime() - 7 * 86400000);
-      const dateLabel = `${fmtDateShort(startDt)} – ${fmtDateShort(endDt)}`;
       const phaseLabel = `Pre- ${boundary.changeLabel}`;
 
       for (const w of windows) {
-        const s = phaseStats(rs, startDt, endDt, w);
+        let s = null;
+        let startDt, endDt;
+        // Try 7-day windows going backwards until we find readings (up to 8 attempts = 56 days)
+        for (let attempt = 0; attempt < 8; attempt++) {
+          endDt = new Date(boundary.date.getTime() - attempt * 7 * 86400000);
+          startDt = new Date(endDt.getTime() - 7 * 86400000);
+          s = phaseStats(rs, startDt, endDt, w);
+          if (s.n > 0) break;
+        }
+        const dateLabel = `${fmtDateShort(startDt)} – ${fmtDateShort(endDt)}`;
         const d_mean = (prev[w] && s.meanSBP != null && prev[w].meanSBP != null) ? s.meanSBP - prev[w].meanSBP : null;
         const d_meanDBP = (prev[w] && s.meanDBP != null && prev[w].meanDBP != null) ? s.meanDBP - prev[w].meanDBP : null;
         const d_sev = (prev[w] && s.severe != null && prev[w].severe != null) ? s.severe - prev[w].severe : null;
@@ -1284,7 +1319,7 @@
     }
 
     let html = '<table class="phase-table"><thead><tr>';
-    html += '<th>Phase</th><th>7-Day Window</th><th>Time of Day</th>';
+    html += '<th>Phase</th><th>Date Window</th><th>Time of Day</th>';
     html += '<th>Mean SBP</th><th>Mean DBP</th><th>&Delta; SBP</th><th>&Delta; DBP</th>';
     html += '<th>% Green</th><th>% Red</th><th>% Severe</th><th>&Delta; %Sev</th><th>N</th>';
     html += '</tr></thead><tbody>';
@@ -1296,7 +1331,7 @@
       const dMeanStr = r.d_mean != null ? `<span style="color:${r.d_mean <= -3 ? 'var(--ok)' : r.d_mean >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_mean >= 0 ? '+' : ''}${r.d_mean.toFixed(1)}</span>` : '—';
       const dMeanDBPStr = r.d_meanDBP != null ? `<span style="color:${r.d_meanDBP <= -3 ? 'var(--ok)' : r.d_meanDBP >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_meanDBP >= 0 ? '+' : ''}${r.d_meanDBP.toFixed(1)}</span>` : '—';
       const dSevStr = r.d_sev != null ? `<span style="color:${r.d_sev <= -3 ? 'var(--ok)' : r.d_sev >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_sev >= 0 ? '+' : ''}${r.d_sev.toFixed(1)}%</span>` : '—';
-      const bgStyle = isOddPair ? 'background:rgba(255,255,255,.04);' : '';
+      const bgStyle = isOddPair ? 'background:rgba(0,0,0,.03);' : '';
       const borderStyle = r.isRecent && r.window === 'Morning' ? 'border-top:2px solid rgba(122,162,255,.4);' : '';
       html += `<tr style="${bgStyle}${borderStyle}">`;
       html += `<td>${r.phase}</td><td class="muted small">${r.dateLabel}</td><td>${r.window}</td>`;
@@ -1614,7 +1649,7 @@
     attachBPHover($('chartMorning'), morning, xMinMs, xMaxMs);
     attachBPHover($('chartEvening'), ae, xMinMs, xMaxMs);
 
-    renderKPIs(m);
+    renderKPIs(m, rs);
     $('reportText').innerHTML=buildReport(rs,m);
     renderSevereTable(m.severe);
     renderPhaseTable(rs);
