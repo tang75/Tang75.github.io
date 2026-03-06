@@ -1463,29 +1463,33 @@
       const pairIdx = Math.floor(i / 2);
       const isOddPair = pairIdx % 2 === 1;
 
-      // Highlight changed drugs in the phase label compared to previous phase
+      // Highlight changed drugs in the phase label compared to previous phases
       let phaseCell = r.phase;
       if (pairIdx > 0) {
-        const prevPhase = tableRows[(pairIdx - 1) * 2].phase;
-        const prevSegs = parseSegments(prevPhase);
         const currSegs = parseSegments(r.phase);
-        const prevMap = {}; // drug -> detail
-        for (const ps of prevSegs) prevMap[ps.drug] = ps.detail;
+
+        // Build a map of each drug's most recent detail from ALL prior phases
+        const priorDetailMap = {}; // drug -> most recent detail
+        for (let pp = 0; pp < pairIdx; pp++) {
+          const priorSegs = parseSegments(tableRows[pp * 2].phase);
+          for (const ps of priorSegs) priorDetailMap[ps.drug] = ps.detail;
+        }
 
         phaseCell = currSegs.map(cs => {
-          const prevDetail = prevMap[cs.drug];
+          const prevDetail = priorDetailMap[cs.drug];
           if (prevDetail === undefined) {
             // Entirely new drug — show whole segment in blue bold
             return `<b style="color:var(--accent)">${cs.full}</b>`;
           } else if (prevDetail !== cs.detail) {
-            // Same drug, different detail — do word-level diff
+            // Same drug, different detail — word-level diff
+            // Drug name in blue; unchanged detail words in blue; changed words in red
             const prevWords = prevDetail.split(/\s+/);
             const currWords = cs.detail.split(/\s+/);
             const detailHtml = currWords.map((w, wi) => {
               if (wi >= prevWords.length || w !== prevWords[wi]) {
                 return `<b style="color:#c62828">${w}</b>`;
               }
-              return w;
+              return `<span style="color:var(--accent)">${w}</span>`;
             }).join(' ');
             return `<b style="color:var(--accent)">${cs.drugDisplay}</b> ${detailHtml}`;
           }
