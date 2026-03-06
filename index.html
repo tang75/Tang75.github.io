@@ -1171,60 +1171,53 @@
   // PHASE COMPARISON TABLE
   // =============================================
 
-  // Build named treatment phases from med intervals.
-  // A "phase" is a distinct treatment regimen defined by which drugs are active.
-  // When multiple meds change on the same day, they form one phase boundary.
-  function buildTreatmentPhases(rs) {
-    if (!rs.length) return [];
-    const xMin = rs[0].t, xMax = rs[rs.length-1].t;
-
-    // Collect all boundary dates (starts and stops) from medIntervals
-    const boundarySet = new Map(); // timestamp -> label parts
+  // Collect medication change boundaries from medIntervals.
+  // Each boundary = a date when the treatment regimen changed.
+  // Returns [{date, changeLabel}] sorted chronologically.
+  function buildMedChangeBoundaries() {
+    const boundaryMap = new Map(); // timestamp -> [description strings]
     for (const [drug, segs] of Object.entries(medIntervals)) {
       for (const seg of segs) {
         const key = seg[0].getTime();
-        if (!boundarySet.has(key)) boundarySet.set(key, []);
+        if (!boundaryMap.has(key)) boundaryMap.set(key, []);
         const sigLabel = seg[2] != null ? `${drug} ${medSigLabel(drug, seg[2])}` : drug;
-        boundarySet.get(key).push(sigLabel);
+        boundaryMap.get(key).push(sigLabel);
       }
     }
-
-    // Sort boundaries chronologically
-    const boundaries = [...boundarySet.entries()]
-      .map(([ts, labels]) => ({ date: new Date(ts), label: labels.join(' + ') }))
+    const boundaries = [...boundaryMap.entries()]
+      .map(([ts, labels]) => ({ date: new Date(ts), changeLabel: labels.join(' + ') }))
       .sort((a, b) => a.date - b.date);
 
     // Merge boundaries within 2 days of each other
     const merged = [];
     for (const b of boundaries) {
       if (merged.length && daysBetween(merged[merged.length-1].date, b.date) < 2) {
-        merged[merged.length-1].label += ' + ' + b.label;
-        // Keep later date as boundary
+        merged[merged.length-1].changeLabel += ' + ' + b.changeLabel;
         merged[merged.length-1].date = b.date;
       } else {
         merged.push({ ...b });
       }
     }
+    return merged;
+  }
 
-    // Build phase intervals: each phase runs from one boundary to the next
-    const phases = [];
-    // Phase before first med change
-    if (merged.length > 0 && merged[0].date > xMin) {
-      phases.push({
-        label: 'Baseline (pre-treatment)',
-        start: xMin,
-        end: merged[0].date,
-      });
+  // Determine which meds are currently active at the end of the data
+  function getCurrentMeds() {
+    const current = [];
+    for (const [drug, segs] of Object.entries(medIntervals)) {
+      if (!segs.length) continue;
+      const lastSeg = segs[segs.length - 1];
+      const [start, end, daily, sig] = lastSeg;
+      // If the last segment's end is near the data end (within 1 day), it's current
+      if (readings.length > 0) {
+        const dataEnd = readings[readings.length - 1].t;
+        if (end.getTime() >= dataEnd.getTime() - 86400000) {
+          const label = daily != null ? `${drug} ${medSigLabel(drug, daily)}` : drug;
+          current.push(label);
+        }
+      }
     }
-    for (let i = 0; i < merged.length; i++) {
-      const end = (i + 1 < merged.length) ? merged[i+1].date : xMax;
-      phases.push({
-        label: merged[i].label,
-        start: merged[i].date,
-        end: end,
-      });
-    }
-    return phases;
+    return current;
   }
 
   function phaseStats(rs, startDt, endDt, windowLabel) {
@@ -1242,6 +1235,22 @@
     };
   }
 
+  // Also used by clinical insights
+  function buildTreatmentPhases(rs) {
+    if (!rs.length) return [];
+    const xMin = rs[0].t, xMax = rs[rs.length-1].t;
+    const boundaries = buildMedChangeBoundaries();
+    const phases = [];
+    if (boundaries.length > 0 && boundaries[0].date > xMin) {
+      phases.push({ label: 'Baseline (pre-treatment)', start: xMin, end: boundaries[0].date });
+    }
+    for (let i = 0; i < boundaries.length; i++) {
+      const end = (i + 1 < boundaries.length) ? boundaries[i+1].date : xMax;
+      phases.push({ label: boundaries[i].changeLabel, start: boundaries[i].date, end });
+    }
+    return phases;
+  }
+
   function renderPhaseTable(rs) {
     const container = $('phaseTableContainer');
     if (!rs.length) { container.innerHTML = '<div class="muted">Upload data to see phase comparison.</div>'; return; }
@@ -1249,8 +1258,8 @@
     const xMin = rs[0].t, xMax = rs[rs.length-1].t;
     $('phaseRange').textContent = `${fmtDateShort(xMin)}, ${xMin.getFullYear()} – ${fmtDateShort(xMax)}, ${xMax.getFullYear()}`;
 
-    const phases = buildTreatmentPhases(rs);
-    if (!phases.length) {
+    const boundaries = buildMedChangeBoundaries();
+    if (!boundaries.length) {
       container.innerHTML = '<div class="muted">No medication phases detected. Add medication info to the Notes column.</div>';
       return;
     }
@@ -1259,17 +1268,36 @@
     const tableRows = [];
     const prev = { Morning: null, 'Afternoon/Evening': null };
 
-    for (const phase of phases) {
-      const days = daysBetween(phase.start, phase.end);
-      const dateLabel = `${fmtDateShort(phase.start)} – ${fmtDateShort(phase.end)} (${Math.round(days)}d)`;
+    // Each boundary gets a "Pre-[change]" row showing 7-day stats before that change
+    for (const boundary of boundaries) {
+      const endDt = boundary.date;
+      const startDt = new Date(endDt.getTime() - 7 * 86400000);
+      const dateLabel = `${fmtDateShort(startDt)} – ${fmtDateShort(endDt)}`;
+      const phaseLabel = `Pre- ${boundary.changeLabel}`;
 
       for (const w of windows) {
-        const s = phaseStats(rs, phase.start, phase.end, w);
+        const s = phaseStats(rs, startDt, endDt, w);
         const d_mean = (prev[w] && s.meanSBP != null && prev[w].meanSBP != null) ? s.meanSBP - prev[w].meanSBP : null;
         const d_sev = (prev[w] && s.severe != null && prev[w].severe != null) ? s.severe - prev[w].severe : null;
-        tableRows.push({ phase: phase.label, dateLabel, window: w, ...s, d_mean, d_sev });
+        tableRows.push({ phase: phaseLabel, dateLabel, window: w, ...s, d_mean, d_sev });
         prev[w] = s;
       }
+    }
+
+    // Last 2 rows: most recent 7 days labeled "Most recent on: [current meds]"
+    const currentMeds = getCurrentMeds();
+    const recentLabel = currentMeds.length
+      ? `Most recent on: ${currentMeds.join(' + ')}`
+      : 'Most recent 7 days';
+    const rEnd = xMax;
+    const rStart = new Date(rEnd.getTime() - 7 * 86400000);
+    const recentDateLabel = `${fmtDateShort(rStart)} – ${fmtDateShort(rEnd)}`;
+
+    for (const w of windows) {
+      const s = phaseStats(rs, rStart, new Date(rEnd.getTime() + 86400000), w); // +1 day to include last day
+      const d_mean = (prev[w] && s.meanSBP != null && prev[w].meanSBP != null) ? s.meanSBP - prev[w].meanSBP : null;
+      const d_sev = (prev[w] && s.severe != null && prev[w].severe != null) ? s.severe - prev[w].severe : null;
+      tableRows.push({ phase: recentLabel, dateLabel: recentDateLabel, window: w, ...s, d_mean, d_sev, isRecent: true });
     }
 
     if (!tableRows.length || tableRows.every(r => r.n === 0)) {
@@ -1278,7 +1306,7 @@
     }
 
     let html = '<table class="phase-table"><thead><tr>';
-    html += '<th>Treatment Phase</th><th>Date Range</th><th>Window</th>';
+    html += '<th>Phase</th><th>7-Day Window</th><th>Time of Day</th>';
     html += '<th>Mean SBP</th><th>Mean DBP</th><th>&Delta; SBP</th>';
     html += '<th>% Green</th><th>% Red</th><th>% Severe</th><th>&Delta; %Sev</th><th>p90 SBP</th><th>N</th>';
     html += '</tr></thead><tbody>';
@@ -1286,7 +1314,8 @@
     for (const r of tableRows) {
       const dMeanStr = r.d_mean != null ? `<span style="color:${r.d_mean <= -3 ? 'var(--ok)' : r.d_mean >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_mean >= 0 ? '+' : ''}${r.d_mean.toFixed(1)}</span>` : '—';
       const dSevStr = r.d_sev != null ? `<span style="color:${r.d_sev <= -3 ? 'var(--ok)' : r.d_sev >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_sev >= 0 ? '+' : ''}${r.d_sev.toFixed(1)}%</span>` : '—';
-      html += `<tr>`;
+      const rowStyle = r.isRecent ? ' style="border-top:2px solid rgba(122,162,255,.4);"' : '';
+      html += `<tr${rowStyle}>`;
       html += `<td>${r.phase}</td><td class="muted small">${r.dateLabel}</td><td>${r.window}</td>`;
       html += `<td>${fmtNum(r.meanSBP)}</td><td>${fmtNum(r.meanDBP)}</td><td>${dMeanStr}</td>`;
       html += `<td>${fmtPct(r.green)}</td><td>${fmtPct(r.red)}</td><td>${fmtPct(r.severe)}</td><td>${dSevStr}</td>`;
