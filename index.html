@@ -9,8 +9,8 @@
     :root { --bg:#ffffff; --card:#ffffff; --muted:#5a6a7a; --text:#1a1a2e; --accent:#2c5dcd; --warn:#b87800; --danger:#c62828; --ok:#1b7a3d; --canvas-bg:#ffffff; }
     *{box-sizing:border-box;}
     body{ margin:0; font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--text); }
-    header{ padding:18px 18px 10px; border-bottom:1px solid rgba(0,0,0,.10); }
-    h1{ margin:0 0 6px; font-size:18px; }
+    header{ padding:18px 18px 10px; border-bottom:1px solid rgba(0,0,0,.10); text-align:center; }
+    h1{ margin:0 0 6px; font-size:26px; }
     .sub{ color:var(--muted); }
     main{ padding:18px; max-width:1200px; margin:0 auto; }
     .card{ background:var(--card); border:1px solid rgba(0,0,0,.10); border-radius:14px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:14px; }
@@ -55,12 +55,12 @@
 
     /* Chart canvases */
     .chart-stack{ display:flex; flex-direction:column; gap:2px; }
-    .chart-stack canvas{ width:100%; background:var(--canvas-bg); border:1px solid rgba(0,0,0,.15); border-radius:8px; }
+    .chart-stack canvas{ width:100%; background:var(--canvas-bg); border:1px solid rgba(0,0,0,.15); border-radius:8px; image-rendering:auto; }
 
     /* Legend */
     .legend-bar{ display:flex; flex-wrap:wrap; gap:14px; padding:10px 14px; background:rgba(0,0,0,.02); border:1px solid rgba(0,0,0,.10); border-radius:10px; margin-top:6px; font-size:12px; }
     .legend-item{ display:flex; align-items:center; gap:6px; }
-    .legend-swatch{ width:16px; height:12px; border-radius:3px; display:inline-block; }
+    .legend-swatch{ width:16px; height:12px; border-radius:3px; display:inline-block; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 
     /* Phase table */
     .phase-table{ width:100%; border-collapse:collapse; font-size:13px; }
@@ -72,6 +72,24 @@
     .insight-bullet{ margin-bottom:14px; line-height:1.55; }
     .insight-bullet b{ color:var(--accent); }
 
+    /* Drop zone / welcome overlay */
+    #dropOverlay{
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      border:3px dashed rgba(44,93,205,.4); border-radius:18px; padding:48px 24px; margin-bottom:18px;
+      background:rgba(44,93,205,.03); cursor:pointer; transition:all .2s;
+    }
+    #dropOverlay:hover, #dropOverlay.drag-over{
+      border-color:var(--accent); background:rgba(44,93,205,.08);
+    }
+    #dropOverlay .drop-icon{ font-size:48px; margin-bottom:12px; color:var(--accent); }
+    #dropOverlay .drop-title{ font-size:20px; font-weight:650; margin-bottom:6px; }
+    #dropOverlay .drop-sub{ color:var(--muted); font-size:14px; }
+    #dropOverlay .drop-btn{
+      margin-top:16px; padding:12px 28px; font-size:15px; font-weight:600;
+      background:var(--accent); color:#fff; border:none; border-radius:12px; cursor:pointer;
+    }
+    #dropOverlay .drop-btn:hover{ filter:brightness(1.1); }
+
     /* Grid layout */
     .main-grid{ display:grid; gap:14px; grid-template-columns:1fr; }
     .sidebar-grid{ display:grid; gap:14px; grid-template-columns:1.2fr .8fr; margin-top:14px; }
@@ -81,14 +99,12 @@
     @media print {
       body{ background:#fff; color:#000; margin:0; }
       main{ padding:4px 10px; }
-      header{ border:none; padding:2px 10px 2px; }
-      h1{ font-size:14px; margin-bottom:1px; }
+      header{ border:none; padding:2px 10px 2px; text-align:center; }
+      h1{ font-size:16px; margin-bottom:1px; }
       .sub{ font-size:10px; }
       .card{ box-shadow:none; border:1px solid #ccc; background:#fff; padding:4px; margin-bottom:4px; }
       #tab-timeline > .card:first-child{ page-break-inside:avoid; }
-      canvas{ border:1px solid #ccc; }
-      #chartMorning, #chartEvening{ max-height:200px; }
-      #chartMeds{ max-height:100px; }
+      canvas{ border:1px solid #ccc; image-rendering:auto; }
       button, input, select, .no-print, .tabs{ display:none !important; }
       .tab-content{ display:block !important; }
       .muted{ color:#333; }
@@ -99,8 +115,10 @@
       .phase-table th{ background:#eee; }
       .phase-table th,.phase-table td{ border-color:#ccc; color:#000; }
       .chart-stack{ gap:0px; }
-      .sidebar-grid{ page-break-before:always; display:block; }
+      .sidebar-grid{ display:block; margin-top:4px; }
       .sidebar-grid > .card{ margin-bottom:6px; }
+      .kpi .box{ padding:6px 8px; }
+      .big{ font-size:18px; }
       #tab-phases{ page-break-before:always; }
       #tab-insights{ page-break-before:always; }
     }
@@ -154,6 +172,15 @@
       </div>
       <button id="printBtn">Print / PDF</button>
     </div>
+  </div>
+
+  <!-- Drop zone / Welcome -->
+  <div id="dropOverlay" class="no-print">
+    <div class="drop-icon">&#128202;</div>
+    <div class="drop-title">Drop your Omron BP file here</div>
+    <div class="drop-sub">or click the button below to browse</div>
+    <button class="drop-btn" id="browseBtn">Choose File</button>
+    <div class="drop-sub" style="margin-top:10px">Accepts .xlsx, .xls, or .csv &mdash; all processing is local</div>
   </div>
 
   <!-- Column mapping (shown when auto-detection fails) -->
@@ -770,7 +797,7 @@
   // CANVAS SETUP
   // =============================================
   function setupCanvas(canvas, displayW, displayH) {
-    const dpr = window.devicePixelRatio||1;
+    const dpr = Math.max(2, window.devicePixelRatio||1);
     canvas.width = displayW*dpr;
     canvas.height = displayH*dpr;
     canvas.style.width = displayW+'px';
@@ -1132,7 +1159,7 @@
     $('avgPmLabel').textContent = `Recent 2-week Afternoon/Evening avg`;
 
     $('avgAll').textContent=fmtBP(rm.avgSys,rm.avgDia);
-    $('avgAllDetail').innerHTML=`n=${rm.count} &bull; Green ${fmtPct(rm.pctGreen)} &bull; Red ${fmtPct(rm.pctRed)} &bull; <span class="danger">Severe ${fmtPct(rm.pctSevere)}</span>${rm.pctHypo>0?' &bull; <span style="color:#7B1FA2">Hypo '+fmtPct(rm.pctHypo)+'</span>':''}`;
+    $('avgAllDetail').innerHTML=`n=${rm.count} &bull; <span class="ok"><b>Green</b> ${fmtPct(rm.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Red</b> ${fmtPct(rm.pctRed)}</span> &bull; <span class="danger"><b>Severe</b> ${fmtPct(rm.pctSevere)}</span>${rm.pctHypo>0?' &bull; <span style="color:#7B1FA2"><b>Hypo</b> '+fmtPct(rm.pctHypo)+'</span>':''}`;
     $('avgAm').textContent=fmtBP(rm.avgAmSys,rm.avgAmDia);
     $('avgAmDetail').textContent=`n=${rm.amCount}`;
     $('avgPm').textContent=fmtBP(rm.avgPmSys,rm.avgPmDia);
@@ -1150,7 +1177,7 @@
     bullets.push(`<li><b>Average:</b> ${fmtBP(m.avgSys,m.avgDia)} (goal ${g.sys}/${g.dia}); ${Math.round(m.aboveGoalPct)}% above goal</li>`);
     if(m.avgAmSys!=null)bullets.push(`<li><b>AM avg:</b> ${fmtBP(m.avgAmSys,m.avgAmDia)}</li>`);
     if(m.avgPmSys!=null)bullets.push(`<li><b>PM avg:</b> ${fmtBP(m.avgPmSys,m.avgPmDia)}</li>`);
-    bullets.push(`<li><b>Classification:</b> Green ${fmtPct(m.pctGreen)}, Red ${fmtPct(m.pctRed)}, Severe ${fmtPct(m.pctSevere)}</li>`);
+    bullets.push(`<li><b>Classification:</b> <span class="ok"><b>Green</b> ${fmtPct(m.pctGreen)}</span>, <span style="color:#d32f2f"><b>Red</b> ${fmtPct(m.pctRed)}</span>, <span class="danger"><b>Severe</b> ${fmtPct(m.pctSevere)}</span>${m.pctHypo>0?', <span style="color:#7B1FA2"><b>Hypo</b> '+fmtPct(m.pctHypo)+'</span>':''}</li>`);
     if(m.severe.length)bullets.push(`<li class="danger"><b>Severe:</b> ${m.severe.length} readings (SBP&ge;160 or DBP&ge;95)</li>`);
     const medNames=Object.keys(medIntervals);
     if(medNames.length)bullets.push(`<li><b>Medications detected:</b> ${medNames.join(', ')}</li>`);
@@ -1331,7 +1358,7 @@
       const dMeanStr = r.d_mean != null ? `<span style="color:${r.d_mean <= -3 ? 'var(--ok)' : r.d_mean >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_mean >= 0 ? '+' : ''}${r.d_mean.toFixed(1)}</span>` : '—';
       const dMeanDBPStr = r.d_meanDBP != null ? `<span style="color:${r.d_meanDBP <= -3 ? 'var(--ok)' : r.d_meanDBP >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_meanDBP >= 0 ? '+' : ''}${r.d_meanDBP.toFixed(1)}</span>` : '—';
       const dSevStr = r.d_sev != null ? `<span style="color:${r.d_sev <= -3 ? 'var(--ok)' : r.d_sev >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_sev >= 0 ? '+' : ''}${r.d_sev.toFixed(1)}%</span>` : '—';
-      const bgStyle = isOddPair ? 'background:rgba(0,0,0,.03);' : '';
+      const bgStyle = isOddPair ? 'background:rgba(44,93,205,.07);' : '';
       const borderStyle = r.isRecent && r.window === 'Morning' ? 'border-top:2px solid rgba(122,162,255,.4);' : '';
       html += `<tr style="${bgStyle}${borderStyle}">`;
       html += `<td>${r.phase}</td><td class="muted small">${r.dateLabel}</td><td>${r.window}</td>`;
@@ -1723,6 +1750,35 @@
   $('goalSys').addEventListener('change',renderAll);
   $('goalDia').addEventListener('change',renderAll);
   $('printBtn').addEventListener('click',()=>window.print());
+
+  // Browse button triggers the hidden file input
+  $('browseBtn').addEventListener('click',(e)=>{ e.preventDefault(); $('file').click(); });
+
+  // Drag-and-drop on the overlay
+  const dropZone = $('dropOverlay');
+  function handleDroppedFile(file) {
+    if (!file) return;
+    const name = (file.name||'').toLowerCase();
+    if (name.endsWith('.csv')) {
+      file.text().then(text => { handleLoadedRows(parseCSV(text)); dropZone.style.display='none'; });
+    } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+      file.arrayBuffer().then(buf => {
+        const wb = XLSX.read(buf, {type:'array'});
+        handleLoadedRows(excelAoaToRows(sheetToAoa(wb)));
+        dropZone.style.display='none';
+      });
+    } else { alert('Unsupported file type. Please use .xlsx, .xls, or .csv'); }
+  }
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('drag-over'); });
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files?.[0];
+    handleDroppedFile(file);
+  });
+
+  // Hide drop overlay when file is loaded via the normal file input
+  $('file').addEventListener('change', () => { if ($('file').files?.length) dropZone.style.display='none'; });
 
   // Resize handler
   let resizeTimer;
