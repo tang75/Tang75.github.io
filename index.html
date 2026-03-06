@@ -99,27 +99,26 @@
     @media print {
       body{ background:#fff; color:#000; margin:0; }
       main{ padding:2px 8px; }
-      header{ border:none; padding:1px 10px 1px; text-align:center; }
-      h1{ font-size:14px; margin-bottom:0px; }
+      header{ border:none; padding:2px 10px 0; text-align:center; }
+      h1{ font-size:16px; margin-bottom:0px; }
       .sub{ font-size:9px; margin-bottom:0; }
-      .card{ box-shadow:none; border:1px solid #ccc; background:#fff; padding:3px; margin-bottom:3px; }
+      .card{ box-shadow:none; border:1px solid #ccc; background:#fff; padding:4px; margin-bottom:4px; }
       #tab-timeline > .card:first-child{ page-break-inside:avoid; }
       canvas{ border:1px solid #ccc; image-rendering:-webkit-optimize-contrast; }
-      #chartMeds{ max-height:70px !important; }
       button, input, select, .no-print, .tabs{ display:none !important; }
       .tab-content{ display:block !important; }
       .muted{ color:#333; }
       .danger{ color:#b00020; }
       .warn{ color:#8a5200; }
       .ok{ color:#0a6a2c; }
-      .legend-bar{ background:#f8f8f8; border-color:#ccc; padding:2px 6px; margin-top:1px; font-size:9px; gap:8px; }
+      .legend-bar{ background:#f8f8f8; border-color:#ccc; padding:3px 8px; margin-top:2px; font-size:10px; gap:10px; }
       .phase-table th{ background:#eee; }
       .phase-table th,.phase-table td{ border-color:#ccc; color:#000; }
       .chart-stack{ gap:0px; }
-      .sidebar-grid{ display:block; margin-top:2px; }
+      .sidebar-grid{ display:block; margin-top:4px; }
       .sidebar-grid > .card{ margin-bottom:4px; }
-      .kpi .box{ padding:4px 6px; }
-      .big{ font-size:16px; }
+      .kpi .box{ padding:6px 8px; }
+      .big{ font-size:18px; }
       #tab-phases{ page-break-before:always; }
       #tab-insights{ page-break-before:always; }
     }
@@ -292,14 +291,10 @@
             <input id="phaseLookback" type="number" min="1" max="12" value="3" style="width:54px; font-size:12px; padding:4px 6px;" />
           </div>
           <div class="pill" style="padding:5px 8px;">
-            <label style="font-size:11px;">Recent window (weeks)</label>
+            <label style="font-size:11px;">Most recent date window (weeks)</label>
             <input id="phaseRecentWeeks" type="number" min="1" max="12" value="2" style="width:54px; font-size:12px; padding:4px 6px;" />
           </div>
-          <button id="phaseApplyBtn" style="font-size:12px; padding:6px 12px;">Update Table</button>
         </div>
-        <div class="hr" style="margin:8px 0;"></div>
-        <div style="font-weight:600; font-size:12px; margin-bottom:4px; color:var(--accent);">Clinical Decision Support Suggestions</div>
-        <div class="muted small" style="line-height:1.6;" id="phaseSuggestions"></div>
       </div>
     </div>
   </div>
@@ -1387,28 +1382,55 @@
     // For each boundary[i], take the last N readings BEFORE the NEXT boundary[i+1].
     // This captures the effect of the medication started at boundary[i].
     // For the last boundary, use the recent window (most recent W weeks).
+    // Unify reading spans: for each phase pair (AM/PM), use the later start date
+    // so both windows cover the same time span.
     for (let bi = 0; bi < boundaries.length; bi++) {
       const phaseLabel = boundaries[bi].changeLabel;
       const isLast = (bi === boundaries.length - 1);
 
+      // Collect subsets for both windows first
+      const subsets = {};
       for (const w of windows) {
-        let subset;
         if (isLast) {
-          // Last phase: use recent readings within the configurable window
-          subset = getRecentReadings(rs, recentWeeks, w);
+          subsets[w] = getRecentReadings(rs, recentWeeks, w);
         } else {
-          // Take last N readings before the NEXT med change, within lookback window
-          subset = getLastNReadings(rs, boundaries[bi + 1].date, N, lookbackMonths, w);
+          subsets[w] = getLastNReadings(rs, boundaries[bi + 1].date, N, lookbackMonths, w);
         }
-        const s = phaseStatsFromReadings(subset);
-        let dateLabel = '—';
-        if (subset.length > 0) {
-          dateLabel = `${fmtDateShort(subset[0].t)} – ${fmtDateShort(subset[subset.length-1].t)}`;
+      }
+
+      // Unify span: find the later start date among the two windows
+      let unifiedStart = null;
+      for (const w of windows) {
+        if (subsets[w].length > 0) {
+          const first = subsets[w][0].t;
+          if (unifiedStart == null || first.getTime() > unifiedStart.getTime()) {
+            unifiedStart = first;
+          }
         }
+      }
+
+      // Re-filter both subsets to start no earlier than unifiedStart
+      if (unifiedStart) {
+        for (const w of windows) {
+          subsets[w] = subsets[w].filter(r => r.t >= unifiedStart);
+        }
+      }
+
+      // Compute unified date label
+      let unifiedDateLabel = '—';
+      const allReadings = [...subsets[windows[0]], ...subsets[windows[1]]].sort((a,b) => a.t - b.t);
+      if (allReadings.length > 0) {
+        unifiedDateLabel = `${fmtDateShort(allReadings[0].t)} – ${fmtDateShort(allReadings[allReadings.length-1].t)}`;
+      }
+
+      for (const w of windows) {
+        const s = phaseStatsFromReadings(subsets[w]);
         const d_mean = (prev[w] && s.meanSBP != null && prev[w].meanSBP != null) ? s.meanSBP - prev[w].meanSBP : null;
         const d_meanDBP = (prev[w] && s.meanDBP != null && prev[w].meanDBP != null) ? s.meanDBP - prev[w].meanDBP : null;
         const d_sev = (prev[w] && s.severe != null && prev[w].severe != null) ? s.severe - prev[w].severe : null;
-        tableRows.push({ phase: phaseLabel, dateLabel, window: w, ...s, d_mean, d_meanDBP, d_sev, isRecent: isLast });
+        const d_green = (prev[w] && s.green != null && prev[w].green != null) ? s.green - prev[w].green : null;
+        const d_red = (prev[w] && s.red != null && prev[w].red != null) ? s.red - prev[w].red : null;
+        tableRows.push({ phase: phaseLabel, dateLabel: unifiedDateLabel, window: w, ...s, d_mean, d_meanDBP, d_sev, d_green, d_red, isRecent: isLast });
         prev[w] = s;
       }
     }
@@ -1419,25 +1441,64 @@
       return;
     }
 
+    // Detect which drugs changed between consecutive phases for highlighting
+    function parseDrugsFromLabel(label) {
+      // Split on " + " and extract drug names (first word of each segment)
+      return new Set(label.split(/\s*\+\s*/).map(s => s.split(/\s+/)[0].toLowerCase()));
+    }
+
     let html = '<table class="phase-table"><thead><tr>';
     html += '<th>Phase</th><th>Readings Span</th><th>Time of Day</th>';
     html += '<th>Mean SBP</th><th>Mean DBP</th><th>&Delta; SBP</th><th>&Delta; DBP</th>';
-    html += '<th>% Green</th><th>% Red</th><th>% Severe</th><th>&Delta; %Sev</th><th>N</th>';
+    html += '<th>% Green</th><th>&Delta; %Grn</th><th>% Red</th><th>&Delta; %Red</th><th>% Severe</th><th>&Delta; %Sev</th><th>N</th>';
     html += '</tr></thead><tbody>';
 
     for (let i = 0; i < tableRows.length; i++) {
       const r = tableRows[i];
       const pairIdx = Math.floor(i / 2);
       const isOddPair = pairIdx % 2 === 1;
-      const dMeanStr = r.d_mean != null ? `<span style="color:${r.d_mean <= -3 ? 'var(--ok)' : r.d_mean >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_mean >= 0 ? '+' : ''}${r.d_mean.toFixed(1)}</span>` : '—';
-      const dMeanDBPStr = r.d_meanDBP != null ? `<span style="color:${r.d_meanDBP <= -3 ? 'var(--ok)' : r.d_meanDBP >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_meanDBP >= 0 ? '+' : ''}${r.d_meanDBP.toFixed(1)}</span>` : '—';
-      const dSevStr = r.d_sev != null ? `<span style="color:${r.d_sev <= -3 ? 'var(--ok)' : r.d_sev >= 3 ? 'var(--danger)' : 'var(--muted)'}">${r.d_sev >= 0 ? '+' : ''}${r.d_sev.toFixed(1)}%</span>` : '—';
+
+      // Highlight changed drugs in the phase label compared to previous phase
+      let phaseCell = r.phase;
+      if (pairIdx > 0) {
+        const prevPhase = tableRows[(pairIdx - 1) * 2].phase;
+        const prevDrugs = parseDrugsFromLabel(prevPhase);
+        const currDrugs = parseDrugsFromLabel(r.phase);
+        // Bold any drug segment that is new or changed
+        phaseCell = r.phase.split(/\s*\+\s*/).map(seg => {
+          const drugName = seg.split(/\s+/)[0].toLowerCase();
+          const isNew = !prevDrugs.has(drugName);
+          // Check if dose changed (drug existed before but full segment differs)
+          const prevSegs = prevPhase.split(/\s*\+\s*/);
+          const matchingPrev = prevSegs.find(ps => ps.split(/\s+/)[0].toLowerCase() === drugName);
+          const doseChanged = matchingPrev && matchingPrev.trim() !== seg.trim();
+          if (isNew || doseChanged) return `<b style="color:var(--accent)">${seg.trim()}</b>`;
+          return seg.trim();
+        }).join(' + ');
+      }
+
+      const fmtDelta = (val, invertColor) => {
+        if (val == null) return '—';
+        // For green: positive is good (ok), negative is bad (danger). For red/severe: inverted.
+        const goodDir = invertColor ? (val <= -3) : (val >= 3);
+        const badDir = invertColor ? (val >= 3) : (val <= -3);
+        const color = goodDir ? 'var(--ok)' : badDir ? 'var(--danger)' : 'var(--muted)';
+        return `<span style="color:${color}">${val >= 0 ? '+' : ''}${val.toFixed(1)}%</span>`;
+      };
+      const fmtDeltaBP = (val) => {
+        if (val == null) return '—';
+        const color = val <= -3 ? 'var(--ok)' : val >= 3 ? 'var(--danger)' : 'var(--muted)';
+        return `<span style="color:${color}">${val >= 0 ? '+' : ''}${val.toFixed(1)}</span>`;
+      };
+
       const bgStyle = isOddPair ? 'background:rgba(44,93,205,.07);' : '';
       const borderStyle = r.isRecent && r.window === 'Morning' ? 'border-top:2px solid rgba(122,162,255,.4);' : '';
       html += `<tr style="${bgStyle}${borderStyle}">`;
-      html += `<td>${r.phase}</td><td class="muted small">${r.dateLabel}</td><td>${r.window}</td>`;
-      html += `<td>${fmtNum(r.meanSBP)}</td><td>${fmtNum(r.meanDBP)}</td><td>${dMeanStr}</td><td>${dMeanDBPStr}</td>`;
-      html += `<td>${fmtPct(r.green)}</td><td>${fmtPct(r.red)}</td><td>${fmtPct(r.severe)}</td><td>${dSevStr}</td>`;
+      html += `<td>${phaseCell}</td><td class="muted small">${r.dateLabel}</td><td>${r.window}</td>`;
+      html += `<td>${fmtNum(r.meanSBP)}</td><td>${fmtNum(r.meanDBP)}</td><td>${fmtDeltaBP(r.d_mean)}</td><td>${fmtDeltaBP(r.d_meanDBP)}</td>`;
+      html += `<td>${fmtPct(r.green)}</td><td>${fmtDelta(r.d_green, false)}</td>`;
+      html += `<td>${fmtPct(r.red)}</td><td>${fmtDelta(r.d_red, true)}</td>`;
+      html += `<td>${fmtPct(r.severe)}</td><td>${fmtDelta(r.d_sev, true)}</td>`;
       html += `<td>${r.n}</td>`;
       html += `</tr>`;
     }
@@ -1446,54 +1507,6 @@
 
     // Show legend
     legend.style.display = 'block';
-
-    // Clinical decision support suggestions
-    const sugBox = $('phaseSuggestions');
-    const suggestions = [];
-    // Analyze the table data for actionable patterns
-    const recentRows = tableRows.filter(r => r.isRecent);
-    const preRows = tableRows.filter(r => !r.isRecent);
-
-    // Check if recent severe % is still high
-    const recentAll = recentRows.length ? recentRows : [];
-    const avgRecentSev = recentAll.length ? mean(recentAll.map(r => r.severe || 0)) : 0;
-    const avgRecentMean = recentAll.length ? mean(recentAll.filter(r=>r.meanSBP!=null).map(r => r.meanSBP)) : null;
-
-    if (avgRecentSev > 10) {
-      suggestions.push('⚠️ Current severe-range burden is elevated (' + avgRecentSev.toFixed(0) + '%). Consider uptitration or adding a complementary medication class.');
-    }
-    if (avgRecentMean != null && avgRecentMean > 140) {
-      suggestions.push('📊 Current mean SBP remains above 140. Review medication adherence and lifestyle factors, and consider titration.');
-    }
-
-    // Check for AM vs PM differences in recent data
-    const recentAM = recentRows.find(r => r.window === 'Morning');
-    const recentPM = recentRows.find(r => r.window === 'Afternoon/Evening');
-    if (recentAM && recentPM && recentAM.meanSBP != null && recentPM.meanSBP != null) {
-      const diff = recentPM.meanSBP - recentAM.meanSBP;
-      if (diff > 8) {
-        suggestions.push('🌙 Afternoon/evening BP runs ' + Math.round(diff) + ' mmHg higher than morning. Consider split dosing or evening administration.');
-      } else if (diff < -8) {
-        suggestions.push('☀️ Morning BP runs ' + Math.round(Math.abs(diff)) + ' mmHg higher than afternoon/evening. Bedtime dosing may help with morning surge.');
-      }
-    }
-
-    // Check for improvement trend across phases
-    if (preRows.length >= 4) {
-      const firstPairMean = mean(preRows.slice(0,2).filter(r=>r.meanSBP!=null).map(r=>r.meanSBP));
-      const lastPairMean = mean(preRows.slice(-2).filter(r=>r.meanSBP!=null).map(r=>r.meanSBP));
-      if (firstPairMean != null && lastPairMean != null) {
-        const net = lastPairMean - firstPairMean;
-        if (net <= -5) suggestions.push('✅ Treatment changes have progressively lowered mean SBP by ~' + Math.abs(net).toFixed(0) + ' mmHg. Current trajectory is favorable.');
-        else if (net >= 5) suggestions.push('📈 Mean SBP has risen across phases (+' + net.toFixed(0) + '). Consider re-evaluating the treatment approach.');
-      }
-    }
-
-    if (suggestions.length === 0) {
-      suggestions.push('💡 Adjust the parameters above (N readings, lookback window) to capture more or fewer readings per phase for a different perspective on treatment response.');
-    }
-
-    sugBox.innerHTML = suggestions.map(s => `<div style="margin-bottom:4px;">${s}</div>`).join('');
   }
 
   // =============================================
@@ -1513,16 +1526,31 @@
     const phases = buildTreatmentPhases(rs);
     const medNames = Object.keys(medIntervals);
 
-    // Compute per-phase full stats for narrative
-    const phaseData = phases.map(p => ({
-      label: p.label,
-      start: p.start,
-      end: p.end,
-      days: daysBetween(p.start, p.end),
-      all: phaseStats(rs, p.start, p.end, 'All'),
-      am: phaseStats(rs, p.start, p.end, 'Morning'),
-      pm: phaseStats(rs, p.start, p.end, 'Afternoon/Evening'),
-    }));
+    // Compute per-phase stats using last-N-readings methodology (consistent with Phase table)
+    const insightN = 5;
+    const insightLookback = 3;
+    const phaseData = phases.map((p, idx) => {
+      const nextStart = (idx + 1 < phases.length) ? phases[idx + 1].start : null;
+      let allSub, amSub, pmSub;
+      if (nextStart) {
+        allSub = getLastNReadings(rs, nextStart, insightN * 4, insightLookback, 'All');
+        amSub = getLastNReadings(rs, nextStart, insightN, insightLookback, 'Morning');
+        pmSub = getLastNReadings(rs, nextStart, insightN, insightLookback, 'Afternoon/Evening');
+      } else {
+        allSub = getRecentReadings(rs, 2, 'All');
+        amSub = getRecentReadings(rs, 2, 'Morning');
+        pmSub = getRecentReadings(rs, 2, 'Afternoon/Evening');
+      }
+      return {
+        label: p.label,
+        start: p.start,
+        end: p.end,
+        days: daysBetween(p.start, p.end),
+        all: phaseStatsFromReadings(allSub),
+        am: phaseStatsFromReadings(amSub),
+        pm: phaseStatsFromReadings(pmSub),
+      };
+    });
 
     // Trend: split data into thirds
     const thirdLen = Math.floor(rs.length / 3);
@@ -1920,7 +1948,6 @@
   $('phaseN').addEventListener('input', ()=>{renderPhaseTable(getRangeFiltered());});
   $('phaseLookback').addEventListener('input', ()=>{renderPhaseTable(getRangeFiltered());});
   $('phaseRecentWeeks').addEventListener('input', ()=>{renderPhaseTable(getRangeFiltered());});
-  $('phaseApplyBtn').addEventListener('click',()=>{renderPhaseTable(getRangeFiltered());});
   $('printBtn').addEventListener('click',()=>window.print());
 
   // Browse button triggers the hidden file input
