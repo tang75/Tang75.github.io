@@ -205,7 +205,7 @@
 
   <!-- Tabs -->
   <div class="tabs no-print">
-    <button class="tab-btn active" data-tab="timeline">Timeline</button>
+    <button class="tab-btn active" data-tab="timeline">TimeLine</button>
     <button class="tab-btn" data-tab="phases">Phase Comparison</button>
     <button class="tab-btn" data-tab="insights">Clinical Insights</button>
   </div>
@@ -1693,6 +1693,10 @@
       btn.classList.add('active');
       const tabId='tab-'+btn.dataset.tab;
       $(tabId).classList.add('active');
+      // Re-render canvases when switching to Timeline tab (container was display:none)
+      if(btn.dataset.tab==='timeline'){
+        requestAnimationFrame(()=>renderAll());
+      }
     });
   });
 
