@@ -562,14 +562,53 @@
     }
     readings.sort((a,b) => a.t - b.t);
 
-    // Deduplicate
-    const deduped = []; let prev = null;
+    // Deduplicate exact duplicates
+    const deduped = []; let prevKey = null;
     for (const x of readings) {
       const key = `${x.t.getTime()}|${x.sys}|${x.dia}|${x.hr??''}`;
-      if (prev === key) continue;
-      deduped.push(x); prev = key;
+      if (prevKey === key) continue;
+      deduped.push(x); prevKey = key;
     }
-    readings = deduped;
+
+    // Merge readings within 10 minutes: average SBP, DBP, HR and use the midpoint time
+    const MERGE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+    const merged = [];
+    let i = 0;
+    while (i < deduped.length) {
+      let j = i + 1;
+      while (j < deduped.length && (deduped[j].t.getTime() - deduped[i].t.getTime()) <= MERGE_WINDOW_MS) {
+        j++;
+      }
+      if (j - i === 1) {
+        // Single reading, no merge needed
+        merged.push(deduped[i]);
+      } else {
+        // Multiple readings within 10 min — average them
+        const group = deduped.slice(i, j);
+        const avgSys = Math.round(mean(group.map(r => r.sys)));
+        const avgDia = Math.round(mean(group.map(r => r.dia)));
+        const hrs = group.filter(r => r.hr != null).map(r => r.hr);
+        const avgHR = hrs.length ? Math.round(mean(hrs)) : null;
+        const midTime = new Date(Math.round(mean(group.map(r => r.t.getTime()))));
+        const notes = group.map(r => r.notes).filter(Boolean).join('; ');
+        const cls = classifyBP(avgSys, avgDia);
+        const hour = midTime.getHours();
+        const amStart = +$('amStart').value, amEnd = +$('amEnd').value;
+        let win;
+        if (hour >= amStart && hour < amEnd) win = 'Morning';
+        else if (hour >= 12 && hour < 24) win = 'Afternoon/Evening';
+        else win = 'Other';
+        merged.push({
+          t: midTime, sys: avgSys, dia: avgDia, hr: avgHR, notes,
+          window: win,
+          green: cls.green, red: cls.red, severe: cls.severe, hypo: cls.hypo,
+          dateOnly: new Date(midTime.getFullYear(), midTime.getMonth(), midTime.getDate()),
+          mergedCount: group.length,
+        });
+      }
+      i = j;
+    }
+    readings = merged;
   }
 
   function findHoldEventsFromReadings() {
@@ -927,13 +966,30 @@
       ctx.stroke();
     }
 
-    // Severe SBP labels — label ALL severe readings with anti-overlap stacking.
+    // Severe SBP labels — stack in white space ABOVE bars only, never overlay BP bars.
     // Fallback: if a label can't be placed, apply 48hr peak-picking on unplaced readings.
     const sevReadings = rs.filter(r=>r.sys>=SEVERE_LABEL_SBP_MIN).sort((a,b)=>a.t-b.t);
     if(sevReadings.length>0){
-      const placedBoxes = [];
+      // Collect all bar bounding boxes so labels never overlap any bar
+      const barBoxes = rs.map(r => {
+        const bx=xOf(r.t.getTime());
+        const bw=r.severe?barWSevere:barWBase;
+        return {x:bx-bw/2, y:yOf(r.sys), w:bw, h:yOf(r.dia)-yOf(r.sys)};
+      });
+
+      const placedLabels = [];
       const unplacedIdx = [];
       ctx.font='10px system-ui';
+
+      const overlapsAny = (lx, ly, lw, lh) => {
+        for(const b of barBoxes){
+          if(lx<b.x+b.w&&lx+lw>b.x&&ly<b.y+b.h&&ly+lh>b.y) return true;
+        }
+        for(const b of placedLabels){
+          if(lx<b.x+b.w&&lx+lw>b.x&&ly<b.y+b.h&&ly+lh>b.y) return true;
+        }
+        return false;
+      };
 
       for(let ri=0;ri<sevReadings.length;ri++){
         const sr=sevReadings[ri];
@@ -944,36 +1000,15 @@
         const th=12;
         const lw=tw+4, lh=th+2;
         let placed=false;
-        // Try stacking upward from the data point
-        for(let dy=-16;dy>=-80;dy-=7){
-          const lx=x-tw/2, ly=y+dy;
-          if(ly<PAD.t)continue;
-          let overlap=false;
-          for(const b of placedBoxes){
-            if(lx<b.x+b.w&&lx+lw>b.x&&ly<b.y+b.h&&ly+lh>b.y){overlap=true;break;}
-          }
-          if(!overlap){
+        // Stack upward only — into white space above the bar
+        for(let dy=-4;dy>=-100;dy-=6){
+          const lx=x-tw/2, ly=y+dy-lh;
+          if(ly<2)continue; // don't go above canvas
+          if(!overlapsAny(lx,ly,lw,lh)){
             ctx.fillStyle='rgba(160,0,0,.90)';
             ctx.fillText(lab, lx+2, ly+th);
-            placedBoxes.push({x:lx,y:ly,w:lw,h:lh});
+            placedLabels.push({x:lx,y:ly,w:lw,h:lh});
             placed=true;break;
-          }
-        }
-        // Try below the point
-        if(!placed){
-          for(let dy=4;dy<=40;dy+=7){
-            const lx=x-tw/2, ly=y+dy;
-            if(ly+lh>H-PAD.b)continue;
-            let overlap=false;
-            for(const b of placedBoxes){
-              if(lx<b.x+b.w&&lx+lw>b.x&&ly<b.y+b.h&&ly+lh>b.y){overlap=true;break;}
-            }
-            if(!overlap){
-              ctx.fillStyle='rgba(160,0,0,.90)';
-              ctx.fillText(lab, lx+2, ly+th);
-              placedBoxes.push({x:lx,y:ly,w:lw,h:lh});
-              placed=true;break;
-            }
           }
         }
         if(!placed) unplacedIdx.push(ri);
@@ -994,14 +1029,14 @@
           }
           if(maxIdx>=0) winners48.add(maxIdx);
         }
-        // Force-place the 48hr winners at default position
+        // Force-place the 48hr winners at top of chart
         for(const wi of winners48){
           const sr=sevReadings[wi];
           const x=xOf(sr.t.getTime());
           const lab=String(Math.round(sr.sys));
           const tw=ctx.measureText(lab).width;
           ctx.fillStyle='rgba(160,0,0,.90)';
-          ctx.fillText(lab, x-tw/2+2, PAD.t+12);
+          ctx.fillText(lab, x-tw/2+2, 12);
         }
       }
     }
@@ -1803,6 +1838,77 @@
       html += '</li>';
     }
 
+    // Within-window time-of-day patterns
+    // Split each window into early/late halves and check for systematic differences
+    if (rs.length >= 20) {
+      const amStart = +$('amStart').value, amEnd = +$('amEnd').value;
+      const amMid = (amStart + amEnd) / 2;
+      const pmMid = (12 + 24) / 2; // 18:00
+
+      const earlyAM = morning.filter(r => r.t.getHours() < amMid);
+      const lateAM = morning.filter(r => r.t.getHours() >= amMid);
+      const earlyPM = ae.filter(r => r.t.getHours() < pmMid);
+      const latePM = ae.filter(r => r.t.getHours() >= pmMid);
+
+      const subgroups = [
+        { label: 'early AM', sub: earlyAM, window: 'Morning', time: `${amStart}:00–${Math.floor(amMid)}:00` },
+        { label: 'late AM', sub: lateAM, window: 'Morning', time: `${Math.floor(amMid)}:00–${amEnd}:00` },
+        { label: 'early PM', sub: earlyPM, window: 'Afternoon', time: `12:00–${Math.floor(pmMid)}:00` },
+        { label: 'late PM', sub: latePM, window: 'Evening', time: `${Math.floor(pmMid)}:00–24:00` },
+      ];
+
+      const timeParts = [];
+      // Compare early vs late within each window
+      if (earlyAM.length >= 5 && lateAM.length >= 5) {
+        const eAM = mean(earlyAM.map(x => x.sys));
+        const lAM = mean(lateAM.map(x => x.sys));
+        const diff = lAM - eAM;
+        if (Math.abs(diff) >= 5) {
+          const higher = diff > 0 ? 'late' : 'early';
+          timeParts.push(`Within the morning window, <b>${higher} AM readings run ~${Math.abs(diff).toFixed(0)} mmHg higher</b> (early AM ${Math.round(eAM)}, n=${earlyAM.length} vs late AM ${Math.round(lAM)}, n=${lateAM.length})`);
+        }
+      }
+      if (earlyPM.length >= 5 && latePM.length >= 5) {
+        const ePM = mean(earlyPM.map(x => x.sys));
+        const lPM = mean(latePM.map(x => x.sys));
+        const diff = lPM - ePM;
+        if (Math.abs(diff) >= 5) {
+          const higher = diff > 0 ? 'evening' : 'afternoon';
+          timeParts.push(`Within the PM window, <b>${higher} readings run ~${Math.abs(diff).toFixed(0)} mmHg higher</b> (afternoon ${Math.round(ePM)}, n=${earlyPM.length} vs evening ${Math.round(lPM)}, n=${latePM.length})`);
+        }
+      }
+
+      // Also check: is there a specific hour with notably higher readings?
+      const hourBuckets = {};
+      for (const r of rs) {
+        const h = r.t.getHours();
+        if (!hourBuckets[h]) hourBuckets[h] = [];
+        hourBuckets[h].push(r.sys);
+      }
+      const overallMeanSBP = mean(rs.map(x => x.sys));
+      const hotHours = [];
+      for (const [h, vals] of Object.entries(hourBuckets)) {
+        if (vals.length >= 5) {
+          const hMean = mean(vals);
+          if (hMean - overallMeanSBP >= 8) {
+            hotHours.push({ hour: +h, mean: hMean, n: vals.length, diff: hMean - overallMeanSBP });
+          }
+        }
+      }
+      if (hotHours.length) {
+        hotHours.sort((a, b) => b.diff - a.diff);
+        const top = hotHours[0];
+        const hLabel = top.hour > 12 ? `${top.hour - 12}PM` : top.hour === 12 ? '12PM' : `${top.hour}AM`;
+        timeParts.push(`Readings around <b>${hLabel} are notably elevated</b> (mean SBP ${Math.round(top.mean)}, +${Math.round(top.diff)} vs overall mean, n=${top.n})`);
+      }
+
+      if (timeParts.length) {
+        html += `<li><b>Within-window time patterns:</b> ${timeParts.join('. ')}.</li>`;
+      } else {
+        html += `<li>No significant within-window time-of-day pattern was detected (early vs late halves of each window differ by &lt;5 mmHg SBP).</li>`;
+      }
+    }
+
     html += '</ul></div>';
 
     // --- 3. Treatment Trajectory ---
@@ -1811,33 +1917,56 @@
       html += '<div style="font-weight:650; font-size:14px; margin-bottom:8px; color:var(--accent);">Treatment Trajectory</div>';
       html += '<p>';
 
-      // Walk through each treatment change and describe its effect
+      // Walk through each treatment change and describe its effect, split by AM/PM
       for (let i = 0; i < validPhases.length; i++) {
         const curr = validPhases[i];
         if (i === 0) {
-          // Baseline or first phase
-          html += `<b>${curr.label}</b>: mean SBP/DBP ${Math.round(curr.all.meanSBP)}/${Math.round(curr.all.meanDBP)}, `;
-          html += `${(curr.all.green||0).toFixed(0)}% at goal, ${(curr.all.severe||0).toFixed(0)}% severe (n=${curr.all.n}). `;
+          // First phase
+          html += `<b>${curr.label}</b>: `;
+          const parts = [];
+          if (curr.am.n >= 2) parts.push(`AM ${Math.round(curr.am.meanSBP)}/${Math.round(curr.am.meanDBP)} (n=${curr.am.n})`);
+          if (curr.pm.n >= 2) parts.push(`PM ${Math.round(curr.pm.meanSBP)}/${Math.round(curr.pm.meanDBP)} (n=${curr.pm.n})`);
+          if (parts.length) html += parts.join(', ');
+          else html += `mean SBP/DBP ${Math.round(curr.all.meanSBP)}/${Math.round(curr.all.meanDBP)} (n=${curr.all.n})`;
+          html += `; ${(curr.all.green||0).toFixed(0)}% at goal, ${(curr.all.severe||0).toFixed(0)}% severe. `;
         } else {
           const prev = validPhases[i - 1];
           const dSBP = curr.all.meanSBP - prev.all.meanSBP;
-          const dDBP = curr.all.meanDBP - prev.all.meanDBP;
-          const dGreen = (curr.all.green || 0) - (prev.all.green || 0);
-          const dSev = (curr.all.severe || 0) - (prev.all.severe || 0);
 
-          // Characterize the response
+          // Characterize the overall response
           let response;
           if (dSBP <= -8) response = '<span class="ok"><b>strong improvement</b></span>';
           else if (dSBP <= -3) response = '<span class="ok">modest improvement</span>';
           else if (dSBP >= 8) response = '<span class="danger"><b>worsened significantly</b></span>';
           else if (dSBP >= 3) response = '<span class="warn">slight worsening</span>';
-          else response = 'minimal change in mean SBP';
+          else response = 'minimal change';
 
-          html += `Transition to <b>${curr.label}</b> showed ${response} `;
-          html += `(SBP ${dSBP >= 0 ? '+' : ''}${dSBP.toFixed(0)}/${dDBP >= 0 ? '+' : ''}${dDBP.toFixed(0)} mmHg → ${Math.round(curr.all.meanSBP)}/${Math.round(curr.all.meanDBP)}`;
+          html += `Transition to <b>${curr.label}</b> showed ${response}: `;
+
+          // AM/PM breakdown
+          const amPmParts = [];
+          if (curr.am.n >= 2 && prev.am.n >= 2) {
+            const dAM = curr.am.meanSBP - prev.am.meanSBP;
+            const dAMd = curr.am.meanDBP - prev.am.meanDBP;
+            amPmParts.push(`AM ${dAM >= 0 ? '+' : ''}${dAM.toFixed(0)}/${dAMd >= 0 ? '+' : ''}${dAMd.toFixed(0)} → ${Math.round(curr.am.meanSBP)}/${Math.round(curr.am.meanDBP)} (n=${curr.am.n})`);
+          }
+          if (curr.pm.n >= 2 && prev.pm.n >= 2) {
+            const dPM = curr.pm.meanSBP - prev.pm.meanSBP;
+            const dPMd = curr.pm.meanDBP - prev.pm.meanDBP;
+            amPmParts.push(`PM ${dPM >= 0 ? '+' : ''}${dPM.toFixed(0)}/${dPMd >= 0 ? '+' : ''}${dPMd.toFixed(0)} → ${Math.round(curr.pm.meanSBP)}/${Math.round(curr.pm.meanDBP)} (n=${curr.pm.n})`);
+          }
+          if (amPmParts.length) {
+            html += amPmParts.join('; ');
+          } else {
+            const dDBP = curr.all.meanDBP - prev.all.meanDBP;
+            html += `SBP/DBP ${dSBP >= 0 ? '+' : ''}${dSBP.toFixed(0)}/${dDBP >= 0 ? '+' : ''}${dDBP.toFixed(0)} → ${Math.round(curr.all.meanSBP)}/${Math.round(curr.all.meanDBP)} (n=${curr.all.n})`;
+          }
+
+          const dGreen = (curr.all.green || 0) - (prev.all.green || 0);
+          const dSev = (curr.all.severe || 0) - (prev.all.severe || 0);
           if (Math.abs(dGreen) >= 5) html += `; green ${dGreen >= 0 ? '+' : ''}${dGreen.toFixed(0)}pp`;
           if (Math.abs(dSev) >= 5) html += `; severe ${dSev >= 0 ? '+' : ''}${dSev.toFixed(0)}pp`;
-          html += `, n=${curr.all.n}). `;
+          html += '. ';
         }
       }
 
@@ -1856,7 +1985,7 @@
       html += `<br><b>Net effect across ${validPhases.length} treatment phases:</b> `;
       html += `Comparing <b>${first.label}</b> (mean ${Math.round(first.all.meanSBP)}/${Math.round(first.all.meanDBP)}, n=${first.all.n}) `;
       html += `→ <b>${last.label}</b> (mean ${Math.round(last.all.meanSBP)}/${Math.round(last.all.meanDBP)}, n=${last.all.n}): `;
-      html += `SBP ${netSBP >= 0 ? '+' : ''}${netSBP.toFixed(0)}/${netDBPtot >= 0 ? '+' : ''}${netDBPtot.toFixed(0)} mmHg`;
+      html += `SBP/DBP ${netSBP >= 0 ? '+' : ''}${netSBP.toFixed(0)}/${netDBPtot >= 0 ? '+' : ''}${netDBPtot.toFixed(0)} mmHg`;
       html += `; goal attainment (SBP≤135 & DBP≤85, all windows) ${firstGreen.toFixed(0)}% → ${lastGreen.toFixed(0)}% (${netGreen >= 0 ? '+' : ''}${netGreen.toFixed(0)} pp)`;
       html += `; severe burden ${firstSev.toFixed(0)}% → ${lastSev.toFixed(0)}% (${netSev >= 0 ? '+' : ''}${netSev.toFixed(0)} pp)`;
       html += '. ';
@@ -1998,7 +2127,7 @@
         title: 'Severe SBP Label Display (Timeline Chart)',
         rules: [
           `<b>Threshold:</b> Labels shown for all readings with SBP ≥ ${SEVERE_LABEL_SBP_MIN}`,
-          `<b>Anti-overlap:</b> Bounding-box collision detection — each label tries positions above the data point (dy from -16 to -80 in steps of 7px), then below (dy +4 to +40)`,
+          `<b>Placement:</b> Labels are placed in white space ABOVE the BP bars only — never overlaying any bar. Collision detection checks against all bar bounding boxes AND previously placed labels`,
           `<b>Fallback for dense clusters:</b> If a label can't be placed (all positions overlap), apply 48hr peak-picking: among unplaced readings, only force-label the highest SBP within each 48hr window`,
         ]
       },
@@ -2020,7 +2149,8 @@
           `<b>Lookback:</b> ${lookbackMonths} months before the next boundary date`,
           `<b>Last phase:</b> all readings in the most recent ${recentWeeks} week(s)`,
           `<b>Reasoning order:</b> 1. Circadian Pattern → 2. Key Clinical Observations → 3. Treatment Trajectory → 4. Overall Assessment`,
-          `<b>Treatment response characterization:</b> SBP Δ ≤ -8 = "strong improvement", ≤ -3 = "modest improvement", ≥ +3 = "slight worsening", ≥ +8 = "worsened significantly"`,
+          `<b>Treatment Trajectory:</b> Each phase shows AM and PM mean SBP/DBP separately (not just combined). Response characterization: SBP Δ ≤ -8 = "strong improvement", ≤ -3 = "modest improvement", ≥ +3 = "slight worsening", ≥ +8 = "worsened significantly"`,
+          `<b>Within-window time analysis:</b> Each window (AM/PM) is split at midpoint. Early vs late half compared; if SBP differs by ≥ 5 mmHg, reported. Also checks each clock hour for outlier means (≥ 8 mmHg above overall mean, n ≥ 5)`,
           `<b>Net effect:</b> Compares first validated phase vs last validated phase (both need n ≥ 3)`,
           `<b>Overall Assessment focus:</b> Most recent phase's readings (not grand mean over entire date range)`,
         ]
@@ -2039,6 +2169,14 @@
         rules: [
           `<b>Recent window:</b> last 14 days from the end of the selected date range`,
           `<b>Color coding:</b> SBP/DBP values color-coded by classification (green/red/severe/hypo)`,
+        ]
+      },
+      {
+        title: 'Reading Preprocessing',
+        rules: [
+          `<b>10-minute merge:</b> Readings within 10 minutes of each other are averaged into one data point (SBP, DBP, HR averaged; midpoint time used)`,
+          `<b>Deduplication:</b> Exact duplicate readings (same timestamp, SBP, DBP, HR) are removed`,
+          `<b>Validation:</b> Readings with SBP < 60 or > 260, or DBP < 30 or > 160, are excluded`,
         ]
       },
       {
