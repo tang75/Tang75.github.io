@@ -1715,6 +1715,8 @@
         amSub = getRecentReadings(rs, 2, 'Morning');
         pmSub = getRecentReadings(rs, 2, 'Afternoon/Evening');
       }
+      // Count hold events that fall within this phase's date range
+      const phaseHolds = holdEvents.filter(h => h.getTime() >= p.start.getTime() && h.getTime() < p.end.getTime());
       return {
         label: p.label,
         start: p.start,
@@ -1723,6 +1725,8 @@
         all: phaseStatsFromReadings(allSub),
         am: phaseStatsFromReadings(amSub),
         pm: phaseStatsFromReadings(pmSub),
+        holdCount: phaseHolds.length,
+        holdDays: new Set(phaseHolds.map(d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`)).size,
       };
     });
 
@@ -1933,27 +1937,29 @@
           const prev = validPhases[i - 1];
           const dSBP = curr.all.meanSBP - prev.all.meanSBP;
 
-          // Characterize the overall response
+          // Characterize the overall response (modest ≥5, significant ≥10)
           let response;
-          if (dSBP <= -8) response = '<span class="ok"><b>strong improvement</b></span>';
-          else if (dSBP <= -3) response = '<span class="ok">modest improvement</span>';
-          else if (dSBP >= 8) response = '<span class="danger"><b>worsened significantly</b></span>';
-          else if (dSBP >= 3) response = '<span class="warn">slight worsening</span>';
+          if (dSBP <= -10) response = '<span class="ok"><b>significant improvement</b></span>';
+          else if (dSBP <= -5) response = '<span class="ok">modest improvement</span>';
+          else if (dSBP >= 10) response = '<span class="danger"><b>significant worsening</b></span>';
+          else if (dSBP >= 5) response = '<span class="warn">modest worsening</span>';
           else response = 'minimal change';
 
           html += `Transition to <b>${curr.label}</b> showed ${response}: `;
 
-          // AM/PM breakdown
+          // AM/PM breakdown with per-window characterization
           const amPmParts = [];
           if (curr.am.n >= 2 && prev.am.n >= 2) {
             const dAM = curr.am.meanSBP - prev.am.meanSBP;
             const dAMd = curr.am.meanDBP - prev.am.meanDBP;
-            amPmParts.push(`AM ${dAM >= 0 ? '+' : ''}${dAM.toFixed(0)}/${dAMd >= 0 ? '+' : ''}${dAMd.toFixed(0)} → ${Math.round(curr.am.meanSBP)}/${Math.round(curr.am.meanDBP)} (n=${curr.am.n})`);
+            const amChar = dAM <= -10 ? ' <span class="ok">↓↓</span>' : dAM <= -5 ? ' <span class="ok">↓</span>' : dAM >= 10 ? ' <span class="danger">↑↑</span>' : dAM >= 5 ? ' <span class="warn">↑</span>' : '';
+            amPmParts.push(`AM ${dAM >= 0 ? '+' : ''}${dAM.toFixed(0)}/${dAMd >= 0 ? '+' : ''}${dAMd.toFixed(0)} → ${Math.round(curr.am.meanSBP)}/${Math.round(curr.am.meanDBP)} (n=${curr.am.n})${amChar}`);
           }
           if (curr.pm.n >= 2 && prev.pm.n >= 2) {
             const dPM = curr.pm.meanSBP - prev.pm.meanSBP;
             const dPMd = curr.pm.meanDBP - prev.pm.meanDBP;
-            amPmParts.push(`PM ${dPM >= 0 ? '+' : ''}${dPM.toFixed(0)}/${dPMd >= 0 ? '+' : ''}${dPMd.toFixed(0)} → ${Math.round(curr.pm.meanSBP)}/${Math.round(curr.pm.meanDBP)} (n=${curr.pm.n})`);
+            const pmChar = dPM <= -10 ? ' <span class="ok">↓↓</span>' : dPM <= -5 ? ' <span class="ok">↓</span>' : dPM >= 10 ? ' <span class="danger">↑↑</span>' : dPM >= 5 ? ' <span class="warn">↑</span>' : '';
+            amPmParts.push(`PM ${dPM >= 0 ? '+' : ''}${dPM.toFixed(0)}/${dPMd >= 0 ? '+' : ''}${dPMd.toFixed(0)} → ${Math.round(curr.pm.meanSBP)}/${Math.round(curr.pm.meanDBP)} (n=${curr.pm.n})${pmChar}`);
           }
           if (amPmParts.length) {
             html += amPmParts.join('; ');
@@ -1964,8 +1970,14 @@
 
           const dGreen = (curr.all.green || 0) - (prev.all.green || 0);
           const dSev = (curr.all.severe || 0) - (prev.all.severe || 0);
-          if (Math.abs(dGreen) >= 5) html += `; green ${dGreen >= 0 ? '+' : ''}${dGreen.toFixed(0)}pp`;
-          if (Math.abs(dSev) >= 5) html += `; severe ${dSev >= 0 ? '+' : ''}${dSev.toFixed(0)}pp`;
+          if (Math.abs(dGreen) >= 5) {
+            const gChar = dGreen <= -10 ? '<span class="danger">significant decline</span>' : dGreen <= -5 ? '<span class="warn">modest decline</span>' : dGreen >= 10 ? '<span class="ok">significant gain</span>' : '<span class="ok">modest gain</span>';
+            html += `; green ${dGreen >= 0 ? '+' : ''}${dGreen.toFixed(0)}pp (${gChar})`;
+          }
+          if (Math.abs(dSev) >= 5) {
+            const sChar = dSev >= 10 ? '<span class="danger">significant increase</span>' : dSev >= 5 ? '<span class="warn">modest increase</span>' : dSev <= -10 ? '<span class="ok">significant reduction</span>' : '<span class="ok">modest reduction</span>';
+            html += `; severe ${dSev >= 0 ? '+' : ''}${dSev.toFixed(0)}pp (${sChar})`;
+          }
           html += '. ';
         }
       }
@@ -1983,32 +1995,35 @@
       const netSev = lastSev - firstSev;
 
       html += `<br><b>Net effect across ${validPhases.length} treatment phases:</b> `;
-      html += `Comparing <b>${first.label}</b> (mean ${Math.round(first.all.meanSBP)}/${Math.round(first.all.meanDBP)}, n=${first.all.n}) `;
-      html += `→ <b>${last.label}</b> (mean ${Math.round(last.all.meanSBP)}/${Math.round(last.all.meanDBP)}, n=${last.all.n}): `;
-      html += `SBP/DBP ${netSBP >= 0 ? '+' : ''}${netSBP.toFixed(0)}/${netDBPtot >= 0 ? '+' : ''}${netDBPtot.toFixed(0)} mmHg`;
-      html += `; goal attainment (SBP≤135 & DBP≤85, all windows) ${firstGreen.toFixed(0)}% → ${lastGreen.toFixed(0)}% (${netGreen >= 0 ? '+' : ''}${netGreen.toFixed(0)} pp)`;
-      html += `; severe burden ${firstSev.toFixed(0)}% → ${lastSev.toFixed(0)}% (${netSev >= 0 ? '+' : ''}${netSev.toFixed(0)} pp)`;
-      html += '. ';
+      html += `Comparing <b>${first.label}</b> → <b>${last.label}</b>: `;
 
-      // Interpretation
-      if (netSBP <= -8 && netGreen >= 5) {
-        html += `<span class="ok">The cumulative treatment effect is clearly positive — both mean BP and goal attainment have improved substantially.</span>`;
-      } else if (netSBP <= -3) {
-        html += `<span class="ok">Mean BP has improved modestly overall.</span>`;
-        if (netGreen < -5) html += ` However, goal attainment has declined, suggesting increased variability despite a lower mean.`;
-      } else if (Math.abs(netSBP) < 3 && Math.abs(netGreen) < 5) {
-        html += `Despite ${validPhases.length - 1} medication changes, the net BP and goal attainment are essentially unchanged, raising the question of whether these drug classes and doses are adequate.`;
-      } else if (netSBP >= 3) {
-        html += `<span class="warn">Mean BP has risen despite treatment changes.</span>`;
-        if (netGreen < -5) html += ` Goal attainment has also declined, suggesting the current approach may need reassessment.`;
-      } else {
-        // netSBP is near zero but green shifted meaningfully
-        if (netGreen >= 10) {
-          html += `While mean SBP is similar, goal attainment has improved meaningfully, suggesting better consistency.`;
-        } else if (netGreen <= -10) {
-          html += `While mean SBP is similar, goal attainment has worsened, suggesting more variable control.`;
-        }
+      // AM/PM net breakdown
+      const netParts = [];
+      if (first.am.n >= 2 && last.am.n >= 2) {
+        const nAM = last.am.meanSBP - first.am.meanSBP;
+        const nAMd = last.am.meanDBP - first.am.meanDBP;
+        const amLbl = nAM <= -10 ? '<span class="ok">significant improvement</span>' : nAM <= -5 ? '<span class="ok">modest improvement</span>' : nAM >= 10 ? '<span class="danger">significant worsening</span>' : nAM >= 5 ? '<span class="warn">modest worsening</span>' : 'minimal change';
+        netParts.push(`AM SBP/DBP ${nAM >= 0 ? '+' : ''}${nAM.toFixed(0)}/${nAMd >= 0 ? '+' : ''}${nAMd.toFixed(0)} (${Math.round(first.am.meanSBP)}→${Math.round(last.am.meanSBP)}, ${amLbl})`);
       }
+      if (first.pm.n >= 2 && last.pm.n >= 2) {
+        const nPM = last.pm.meanSBP - first.pm.meanSBP;
+        const nPMd = last.pm.meanDBP - first.pm.meanDBP;
+        const pmLbl = nPM <= -10 ? '<span class="ok">significant improvement</span>' : nPM <= -5 ? '<span class="ok">modest improvement</span>' : nPM >= 10 ? '<span class="danger">significant worsening</span>' : nPM >= 5 ? '<span class="warn">modest worsening</span>' : 'minimal change';
+        netParts.push(`PM SBP/DBP ${nPM >= 0 ? '+' : ''}${nPM.toFixed(0)}/${nPMd >= 0 ? '+' : ''}${nPMd.toFixed(0)} (${Math.round(first.pm.meanSBP)}→${Math.round(last.pm.meanSBP)}, ${pmLbl})`);
+      }
+      if (netParts.length) {
+        html += netParts.join('; ') + '. ';
+      } else {
+        html += `SBP/DBP ${netSBP >= 0 ? '+' : ''}${netSBP.toFixed(0)}/${netDBPtot >= 0 ? '+' : ''}${netDBPtot.toFixed(0)} mmHg. `;
+      }
+
+      // Goal attainment and severe burden with threshold labels
+      const greenLbl = netGreen <= -10 ? '<span class="danger">significant decline</span>' : netGreen <= -5 ? '<span class="warn">modest decline</span>' : netGreen >= 10 ? '<span class="ok">significant gain</span>' : netGreen >= 5 ? '<span class="ok">modest gain</span>' : 'minimal change';
+      html += `Goal attainment ${firstGreen.toFixed(0)}% → ${lastGreen.toFixed(0)}% (${netGreen >= 0 ? '+' : ''}${netGreen.toFixed(0)} pp, ${greenLbl})`;
+
+      const sevLbl = netSev >= 10 ? '<span class="danger">significant increase</span>' : netSev >= 5 ? '<span class="warn">modest increase</span>' : netSev <= -10 ? '<span class="ok">significant reduction</span>' : netSev <= -5 ? '<span class="ok">modest reduction</span>' : 'minimal change';
+      html += `; severe burden ${firstSev.toFixed(0)}% → ${lastSev.toFixed(0)}% (${netSev >= 0 ? '+' : ''}${netSev.toFixed(0)} pp, ${sevLbl})`;
+      html += '. ';
 
       html += '</p></div>';
     }
@@ -2050,6 +2065,113 @@
           html += `Despite ${validPhases.length - 1} medication changes, the net SBP response has been limited (${netSBPoa >= 0 ? '+' : ''}${netSBPoa.toFixed(0)} mmHg). `;
           if (netGreenOA <= -10) html += `Goal attainment has also declined (${netGreenOA.toFixed(0)} pp). `;
           if (!recentAtGoal) html += `This suggests the current approach may not be sufficient — consider switching to a different drug class or evaluating for secondary causes. `;
+        }
+      }
+
+      // --- Hold-event burden as treatment detractor ---
+      const totalHolds = holdEvents.length;
+      if (totalHolds >= 2) {
+        // Identify which phases had holds and quantify the burden
+        const phasesWithHolds = validPhases.filter(p => p.holdCount > 0);
+        if (phasesWithHolds.length > 0) {
+          const holdRate = totalHolds / Math.max(1, totalDays) * 30; // holds per 30 days
+          html += `<br><b>Medication-hold burden:</b> ${totalHolds} hold events over ${Math.round(totalDays)} days (${holdRate.toFixed(1)} per month). `;
+          if (holdRate >= 2) {
+            html += `<span class="danger"><b>Frequent holds are a significant detractor</b></span> for the treatment plans where they occurred`;
+          } else {
+            html += `Medication holds are a detractor for the treatment plans where they occurred`;
+          }
+          // List which regimens had holds
+          const holdPhaseSummaries = phasesWithHolds.map(p => {
+            const rate = p.holdCount / Math.max(1, p.days) * 30;
+            return `${p.label} (${p.holdCount} hold${p.holdCount > 1 ? 's' : ''} over ${Math.round(p.days)} days, ${rate.toFixed(1)}/mo)`;
+          });
+          html += `: ${holdPhaseSummaries.join('; ')}. `;
+          if (holdRate >= 2) {
+            html += `Frequent holds — especially if associated with lightheadedness or hypotension — suggest the regimen may be pushing the lower tolerability boundary and could warrant dose reduction or class substitution rather than further uptitration. `;
+          } else {
+            html += `While infrequent, holds indicate the patient is approaching the tolerability boundary of this regimen. `;
+          }
+        }
+      }
+
+      // --- Treatment plan comparison: identify best-performing regimen ---
+      if (validPhases.length >= 2) {
+        html += `<br><b>Treatment plan comparison:</b> `;
+
+        // Score each phase: composite of AM SBP, PM SBP, green%, severe%, hold burden
+        // Lower score = better. Weight: SBP directly, green% inverted, severe% added, holds penalized
+        const scored = validPhases.map(p => {
+          const amSBP = p.am.n >= 2 ? p.am.meanSBP : (p.all.meanSBP || 999);
+          const pmSBP = p.pm.n >= 2 ? p.pm.meanSBP : (p.all.meanSBP || 999);
+          const green = p.all.green || 0;
+          const severe = p.all.severe || 0;
+          const holdPenalty = (p.holdCount || 0) / Math.max(1, p.days) * 30 * 5; // 5 pts per hold/month
+          // Composite: average of AM+PM SBP, penalize low green, penalize severe, penalize holds
+          const score = (amSBP + pmSBP) / 2 - green * 0.5 + severe * 1.0 + holdPenalty;
+          return { ...p, amSBP, pmSBP, green, severe, holdPenalty, score };
+        });
+
+        scored.sort((a, b) => a.score - b.score);
+        const best = scored[0];
+        const worst = scored[scored.length - 1];
+
+        // Build comparison table
+        html += '<table style="width:100%; margin:8px 0; border-collapse:collapse; font-size:12px;">';
+        html += '<tr style="border-bottom:1px solid rgba(122,162,255,.3);">';
+        html += '<th style="text-align:left; padding:4px 6px;">Regimen</th>';
+        html += '<th style="padding:4px 6px;">AM SBP</th>';
+        html += '<th style="padding:4px 6px;">PM SBP</th>';
+        html += '<th style="padding:4px 6px;">At Goal</th>';
+        html += '<th style="padding:4px 6px;">Severe</th>';
+        html += '<th style="padding:4px 6px;">Holds</th>';
+        html += '<th style="padding:4px 6px;">Rank</th>';
+        html += '</tr>';
+
+        scored.forEach((p, idx) => {
+          const isBest = idx === 0;
+          const isWorst = idx === scored.length - 1 && scored.length > 1;
+          const rowStyle = isBest ? 'background:rgba(0,200,100,.08);' : isWorst ? 'background:rgba(255,80,80,.06);' : '';
+          const rankIcon = isBest ? '🏆' : isWorst ? '' : '';
+          html += `<tr style="${rowStyle} border-bottom:1px solid rgba(255,255,255,.05);">`;
+          html += `<td style="padding:4px 6px; max-width:180px; word-break:break-word;">${p.label}</td>`;
+          html += `<td style="padding:4px 6px; text-align:center;">${p.am.n >= 2 ? Math.round(p.amSBP) : '—'}</td>`;
+          html += `<td style="padding:4px 6px; text-align:center;">${p.pm.n >= 2 ? Math.round(p.pmSBP) : '—'}</td>`;
+          html += `<td style="padding:4px 6px; text-align:center;">${p.green.toFixed(0)}%</td>`;
+          html += `<td style="padding:4px 6px; text-align:center;">${p.severe.toFixed(0)}%</td>`;
+          html += `<td style="padding:4px 6px; text-align:center;">${p.holdCount || 0}</td>`;
+          html += `<td style="padding:4px 6px; text-align:center; font-weight:600;">${rankIcon} #${idx + 1}</td>`;
+          html += '</tr>';
+        });
+        html += '</table>';
+
+        // Narrative about best vs worst
+        html += `<b>${best.label}</b> achieved the best overall profile`;
+        const bestParts = [];
+        if (best.am.n >= 2) bestParts.push(`AM ${Math.round(best.amSBP)}`);
+        if (best.pm.n >= 2) bestParts.push(`PM ${Math.round(best.pmSBP)}`);
+        if (bestParts.length) html += ` (${bestParts.join('/')})`;
+        html += ` with ${best.green.toFixed(0)}% at goal and ${best.severe.toFixed(0)}% severe`;
+        if (best.holdCount === 0) html += ' and no medication holds';
+        html += '. ';
+
+        if (worst.score > best.score + 10) {
+          html += `In contrast, <b>${worst.label}</b> performed least favorably`;
+          const worstParts = [];
+          if (worst.am.n >= 2) worstParts.push(`AM ${Math.round(worst.amSBP)}`);
+          if (worst.pm.n >= 2) worstParts.push(`PM ${Math.round(worst.pmSBP)}`);
+          if (worstParts.length) html += ` (${worstParts.join('/')})`;
+          html += ` with ${worst.green.toFixed(0)}% at goal, ${worst.severe.toFixed(0)}% severe`;
+          if (worst.holdCount > 0) html += `, and ${worst.holdCount} medication hold${worst.holdCount > 1 ? 's' : ''}`;
+          html += '. ';
+        }
+
+        // Check if best is NOT the current/most recent phase — suggest reconsidering
+        const bestIdx = validPhases.indexOf(validPhases.find(p => p.label === best.label));
+        const lastIdx = validPhases.length - 1;
+        if (bestIdx >= 0 && bestIdx !== lastIdx) {
+          html += `<span class="warn">Notably, the best-performing regimen (<b>${best.label}</b>) is not the current one.</span> `;
+          html += `This may warrant re-evaluating whether returning to or building on that regimen would be beneficial, considering tolerability and the clinical context of why it was changed. `;
         }
       }
 
@@ -2149,10 +2271,12 @@
           `<b>Lookback:</b> ${lookbackMonths} months before the next boundary date`,
           `<b>Last phase:</b> all readings in the most recent ${recentWeeks} week(s)`,
           `<b>Reasoning order:</b> 1. Circadian Pattern → 2. Key Clinical Observations → 3. Treatment Trajectory → 4. Overall Assessment`,
-          `<b>Treatment Trajectory:</b> Each phase shows AM and PM mean SBP/DBP separately (not just combined). Response characterization: SBP Δ ≤ -8 = "strong improvement", ≤ -3 = "modest improvement", ≥ +3 = "slight worsening", ≥ +8 = "worsened significantly"`,
+          `<b>Treatment Trajectory:</b> Each phase shows AM and PM mean SBP/DBP separately (not just combined). Response characterization: SBP Δ ≤ -10 = "significant improvement", ≤ -5 = "modest improvement", ≥ +5 = "modest worsening", ≥ +10 = "significant worsening". Green/severe pp changes also use 5/10 thresholds`,
           `<b>Within-window time analysis:</b> Each window (AM/PM) is split at midpoint. Early vs late half compared; if SBP differs by ≥ 5 mmHg, reported. Also checks each clock hour for outlier means (≥ 8 mmHg above overall mean, n ≥ 5)`,
-          `<b>Net effect:</b> Compares first validated phase vs last validated phase (both need n ≥ 3)`,
+          `<b>Net effect:</b> Compares first validated phase vs last validated phase (both need n ≥ 3). AM and PM shown separately with threshold labels`,
           `<b>Overall Assessment focus:</b> Most recent phase's readings (not grand mean over entire date range)`,
+          `<b>Hold-event burden:</b> Medication holds counted per phase. Frequent holds (≥ 2/month) are flagged as a "significant detractor." Hold-free regimens are preferred in ranking`,
+          `<b>Treatment plan comparison:</b> All validated phases ranked by composite score: avg(AM SBP, PM SBP) − 0.5×green% + 1.0×severe% + 5×(holds/month). Lower score = better. If best regimen is not the current one, a suggestion is made to re-evaluate`,
         ]
       },
       {
