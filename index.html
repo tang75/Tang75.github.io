@@ -209,7 +209,7 @@
     <button class="tab-btn active" data-tab="timeline">TimeLine</button>
     <button class="tab-btn" data-tab="phases">Medication Response</button>
     <button class="tab-btn" data-tab="insights">Clinical Insights</button>
-    <button class="tab-btn" data-tab="debug">Debug Rules</button>
+    <button class="tab-btn" data-tab="debug">Embedded Rules</button>
   </div>
 
   <!-- Tab 1: Timeline -->
@@ -352,6 +352,7 @@
   const DOSE_RATIO_MAX = 4; // starting dose → 4× starting dose = full shade range
 
   const STARTING_DOSES = { valsartan:80, candesartan:8, irbesartan:150, metoprolol:12.5 };
+  const MIN_PHASE_DAYS = 10; // minimum days per statistics window (N readings or MIN_PHASE_DAYS, whichever is longer)
 
   const FREQ_CANON = {
     'qd':'qd','daily':'qd','once daily':'qd',
@@ -1415,14 +1416,26 @@
     };
   }
 
-  // Get last N readings before a boundary date within a lookback window, for a given time-of-day window
+  // Get last N readings OR all readings within MIN_PHASE_DAYS days, whichever window is longer.
+  // This ensures each statistics window has at least N readings AND covers at least MIN_PHASE_DAYS days.
   function getLastNReadings(rs, beforeDate, N, lookbackMonths, windowLabel) {
     const lookbackMs = lookbackMonths * 30.44 * 86400000;
     const earliest = new Date(beforeDate.getTime() - lookbackMs);
     const candidates = rs.filter(r => r.t < beforeDate && r.t >= earliest && (windowLabel === 'All' || r.window === windowLabel));
-    // Sort descending by time, take last N
-    candidates.sort((a, b) => b.t - a.t);
-    const taken = candidates.slice(0, N);
+    candidates.sort((a, b) => b.t - a.t); // descending by time
+
+    // Option A: last N readings by count
+    const byCount = candidates.slice(0, N);
+
+    // Option B: all readings within last MIN_PHASE_DAYS days
+    const minDaysCutoff = new Date(beforeDate.getTime() - MIN_PHASE_DAYS * 86400000);
+    const byDays = candidates.filter(r => r.t >= minDaysCutoff);
+
+    // Use whichever gives the longer time window
+    const countSpan = byCount.length >= 2 ? (byCount[0].t.getTime() - byCount[byCount.length - 1].t.getTime()) : 0;
+    const daySpan = MIN_PHASE_DAYS * 86400000;
+    const taken = countSpan >= daySpan ? byCount : byDays;
+
     taken.sort((a, b) => a.t - b.t); // restore chronological order
     return taken;
   }
@@ -1447,7 +1460,10 @@
     const xMin = rs[0].t, xMax = rs[rs.length-1].t;
     const boundaries = buildMedChangeBoundaries();
     const phases = [];
-    if (boundaries.length > 0 && boundaries[0].date > xMin) {
+    // Only create a pre-treatment phase if there's a meaningful gap (> 2 days)
+    // between the first reading and the first medication boundary.
+    // If meds are present from day 1, this gap is ≤ 0 and no baseline is created.
+    if (boundaries.length > 0 && boundaries[0].date.getTime() > xMin.getTime() + 2 * 86400000) {
       phases.push({ label: 'Baseline (pre-treatment)', start: xMin, end: boundaries[0].date });
     }
     for (let i = 0; i < boundaries.length; i++) {
@@ -1958,13 +1974,14 @@
       {
         title: 'Medication Response Table (Statistics)',
         rules: [
-          `<b>Readings per phase (N):</b> ${N} per time-of-day window (Morning / Afternoon-Evening each get up to ${N})`,
-          `<b>Method for non-last phases:</b> Take the last ${N} readings that fall BEFORE the NEXT medication change date, within a ${lookbackMonths}-month lookback window`,
+          `<b>Readings per phase:</b> ${N} readings OR ${MIN_PHASE_DAYS} days, whichever window is longer, per time-of-day window`,
+          `<b>Method for non-last phases:</b> Take the last ${N} readings (or all within ${MIN_PHASE_DAYS} days, whichever is longer) BEFORE the NEXT medication change date, within a ${lookbackMonths}-month lookback window`,
           `<b>Method for the last (current) phase:</b> Take ALL readings within the most recent ${recentWeeks} week(s) from the data end date`,
           `<b>Unified date span:</b> For each phase, the Morning and Afternoon/Evening rows share the same date window — the later of the two start dates is used for both`,
           `<b>Phase detection:</b> Change dates = all segment START dates + (segment END date + 1 day) for drugs that stop before data end. At each change date, the label shows the FULL active regimen (all drugs where start ≤ date ≤ end)`,
           `<b>Drug stop detection:</b> When a segment ends before the data end, a boundary is created at end+1 day where the drug is no longer active. Ongoing drugs (segment ends at data end) do not create stop boundaries`,
           `<b>Deduplication:</b> Consecutive identical regimen labels are suppressed. Boundaries within 2 days are merged (later regimen kept)`,
+          `<b>Pre-treatment phase:</b> Only created if the first reading is > 2 days before the first medication boundary (i.e., there are readings with no detected meds). If meds are present from day 1, no pre-treatment phase is shown`,
         ]
       },
       {
@@ -1999,7 +2016,7 @@
       {
         title: 'Clinical Insights Methodology',
         rules: [
-          `<b>Readings per phase:</b> ${N} per AM/PM window (up to ${N*4} for "All" window)`,
+          `<b>Readings per phase:</b> ${N} readings or ${MIN_PHASE_DAYS} days (whichever is longer) per AM/PM window`,
           `<b>Lookback:</b> ${lookbackMonths} months before the next boundary date`,
           `<b>Last phase:</b> all readings in the most recent ${recentWeeks} week(s)`,
           `<b>Reasoning order:</b> 1. Circadian Pattern → 2. Key Clinical Observations → 3. Treatment Trajectory → 4. Overall Assessment`,
