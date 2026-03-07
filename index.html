@@ -139,7 +139,7 @@
   <div class="card no-print">
     <div class="row">
       <div class="pill">
-        <label>File</label>
+        <label style="font-weight:700; color:var(--accent);">Input BP data file</label>
         <input id="file" type="file" accept=".csv,.xlsx,.xls" />
       </div>
       <div class="pill">
@@ -207,8 +207,9 @@
   <!-- Tabs -->
   <div class="tabs no-print">
     <button class="tab-btn active" data-tab="timeline">TimeLine</button>
-    <button class="tab-btn" data-tab="phases">Phase Comparison</button>
+    <button class="tab-btn" data-tab="phases">Medication Response</button>
     <button class="tab-btn" data-tab="insights">Clinical Insights</button>
+    <button class="tab-btn" data-tab="debug">Debug Rules</button>
   </div>
 
   <!-- Tab 1: Timeline -->
@@ -267,7 +268,7 @@
     </div>
   </div>
 
-  <!-- Tab 2: Phase Comparison -->
+  <!-- Tab 2: Medication Response -->
   <div id="tab-phases" class="tab-content">
     <div class="card">
       <div style="font-weight:650; font-size:15px; margin-bottom:4px;">Medication-Phase Metrics (Morning vs Afternoon/Evening)</div>
@@ -285,7 +286,7 @@
         <div class="row no-print" style="gap:8px; flex-wrap:wrap; margin-top:4px;">
           <div class="pill" style="padding:5px 8px;">
             <label style="font-size:11px;">Readings per phase (N)</label>
-            <input id="phaseN" type="number" min="2" max="30" value="5" style="width:54px; font-size:12px; padding:4px 6px;" />
+            <input id="phaseN" type="number" min="2" max="30" value="10" style="width:54px; font-size:12px; padding:4px 6px;" />
           </div>
           <div class="pill" style="padding:5px 8px;">
             <label style="font-size:11px;">Lookback window (months)</label>
@@ -309,6 +310,14 @@
       <div id="insightsContainer">
         <div class="muted">Upload data to see clinical insights.</div>
       </div>
+    </div>
+  </div>
+
+  <div id="tab-debug" class="tab-content no-print">
+    <div class="card">
+      <div style="font-weight:650; font-size:15px; margin-bottom:8px;">Embedded Rules &amp; Parameters</div>
+      <div class="muted small" style="margin-bottom:12px;">Reference for debugging the output logic. Values shown reflect current UI settings.</div>
+      <div id="debugRulesContainer"></div>
     </div>
   </div>
 </main>
@@ -917,39 +926,22 @@
       ctx.stroke();
     }
 
-    // Severe SBP labels (48h centered clustering)
+    // Severe SBP labels — label ALL severe readings, use bounding-box stacking to prevent overlap
     const sevReadings = rs.filter(r=>r.sys>=SEVERE_LABEL_SBP_MIN).sort((a,b)=>a.t-b.t);
     if(sevReadings.length>0){
-      const times = sevReadings.map(r=>r.t.getTime());
-      const sbps = sevReadings.map(r=>r.sys);
-      const half = 24*3600000; // 24h
-      const winners = new Set();
-      for(let i=0;i<times.length;i++){
-        let left=0, right=times.length;
-        // Binary search for left bound
-        let lo=0,hi=times.length;
-        while(lo<hi){const mid=lo+((hi-lo)>>1);if(times[mid]<times[i]-half)lo=mid+1;else hi=mid;}
-        left=lo;
-        lo=0;hi=times.length;
-        while(lo<hi){const mid=lo+((hi-lo)>>1);if(times[mid]<=times[i]+half)lo=mid+1;else hi=mid;}
-        right=lo;
-        let maxSBP=-Infinity,maxIdx=-1;
-        for(let j=left;j<right;j++){if(sbps[j]>maxSBP){maxSBP=sbps[j];maxIdx=j;}}
-        if(maxIdx>=0)winners.add(maxIdx);
-      }
       const placedBoxes = [];
-      const sorted = [...winners].sort((a,b)=>times[a]-times[b]);
-      for(const wi of sorted){
-        const x=xOf(times[wi]);
-        const y=yOf(sbps[wi]);
-        const lab=String(Math.round(sbps[wi]));
-        ctx.font='10px system-ui';
+      ctx.font='10px system-ui';
+      for(const sr of sevReadings){
+        const x=xOf(sr.t.getTime());
+        const y=yOf(sr.sys);
+        const lab=String(Math.round(sr.sys));
         const tw=ctx.measureText(lab).width;
         const th=12;
-        // Try placing above the bar
+        const lw=tw+4, lh=th+2;
+        // Try stacking upward from the data point
         let placed=false;
-        for(let dy=-16;dy>=-60;dy-=8){
-          const lx=x-tw/2, ly=y+dy, lw=tw+4, lh=th+2;
+        for(let dy=-16;dy>=-80;dy-=7){
+          const lx=x-tw/2, ly=y+dy;
           if(ly<PAD.t)continue;
           let overlap=false;
           for(const b of placedBoxes){
@@ -962,10 +954,24 @@
             placed=true;break;
           }
         }
+        // If all positions above overlap, try below the point
         if(!placed){
-          ctx.fillStyle='rgba(160,0,0,.90)';
-          ctx.fillText(lab, x-tw/2+2, PAD.t+12);
+          for(let dy=4;dy<=40;dy+=7){
+            const lx=x-tw/2, ly=y+dy;
+            if(ly+lh>H-PAD.b)continue;
+            let overlap=false;
+            for(const b of placedBoxes){
+              if(lx<b.x+b.w&&lx+lw>b.x&&ly<b.y+b.h&&ly+lh>b.y){overlap=true;break;}
+            }
+            if(!overlap){
+              ctx.fillStyle='rgba(160,0,0,.90)';
+              ctx.fillText(lab, lx+2, ly+th);
+              placedBoxes.push({x:lx,y:ly,w:lw,h:lh});
+              placed=true;break;
+            }
+          }
         }
+        // Last resort: skip label if no position found (dense cluster)
       }
     }
 
@@ -1029,6 +1035,8 @@
     const ctx = setupCanvas(canvas, displayW, displayH);
     const W=displayW, H=displayH;
 
+    medBarRegions = []; // reset hit regions
+
     ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
 
     if(!meds.length){
@@ -1071,10 +1079,12 @@
         ctx.fillStyle=`rgba(${Math.round(cr*255)},${Math.round(cg*255)},${Math.round(cb*255)},${alpha})`;
         ctx.fillRect(x0, y0, x1-x0, bandH);
 
-        // Label
+        // Store hit region for hover
         let label=sig||((daily!=null)?medSigLabel(med,daily):'');
         if(!label)label=lastLabel[med]||'';
         lastLabel[med]=label;
+        medBarRegions.push({ x0, x1, y0, y1: y0 + bandH, med, label, start: s, end: e, daily });
+
         if(!label)continue;
 
         const midX=(x0+x1)/2;
@@ -1092,6 +1102,9 @@
       }
     }
   }
+
+  // Store med bar hit regions for hover tooltips
+  let medBarRegions = [];
 
   function getMedOrder(intervals) {
     const meta=[];
@@ -1134,6 +1147,28 @@
       tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY+14)+'px';tip.style.display='block';
     };
     canvas.onmouseleave=()=>{tip.style.display='none';};
+  }
+
+  function attachMedHover(canvas) {
+    ensureTip();
+    canvas.onmousemove = e => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      let hit = null;
+      for (const r of medBarRegions) {
+        if (mx >= r.x0 && mx <= r.x1 && my >= r.y0 && my <= r.y1) { hit = r; break; }
+      }
+      if (!hit) { tip.style.display = 'none'; return; }
+      const days = Math.round(daysBetween(hit.start, hit.end));
+      tip.innerHTML = `<div style="font-weight:650;margin-bottom:2px">${hit.med}</div>` +
+        `<div>${hit.label || '(no dose info)'}</div>` +
+        `<div style="margin-top:3px">Start: <b>${fmtDateShort(hit.start)}, ${hit.start.getFullYear()}</b></div>` +
+        `<div>Stop: <b>${fmtDateShort(hit.end)}, ${hit.end.getFullYear()}</b></div>` +
+        `<div class="muted" style="margin-top:2px">${days} day${days !== 1 ? 's' : ''}</div>`;
+      tip.style.left = (e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; tip.style.display = 'block';
+    };
+    canvas.onmouseleave = () => { tip.style.display = 'none'; };
   }
 
   // =============================================
@@ -1256,32 +1291,56 @@
 
   // Collect medication change boundaries from medIntervals.
   // Each boundary = a date when the treatment regimen changed.
+  // At each boundary, the label reflects the FULL active regimen, not just what started that day.
   // Returns [{date, changeLabel}] sorted chronologically.
   function buildMedChangeBoundaries() {
-    const boundaryMap = new Map(); // timestamp -> [description strings]
+    // Step 1: collect all unique boundary dates (segment starts and ends that are within data range)
+    const dateSet = new Set();
     for (const [drug, segs] of Object.entries(medIntervals)) {
       for (const seg of segs) {
-        const key = seg[0].getTime();
-        if (!boundaryMap.has(key)) boundaryMap.set(key, []);
-        const sigLabel = seg[2] != null ? `${drug} ${medSigLabel(drug, seg[2])}` : drug;
-        boundaryMap.get(key).push(sigLabel);
+        if (seg[0]) dateSet.add(seg[0].getTime());
       }
     }
-    const boundaries = [...boundaryMap.entries()]
-      .map(([ts, labels]) => ({ date: new Date(ts), changeLabel: labels.join(' + ') }))
-      .sort((a, b) => a.date - b.date);
+    const sortedDates = [...dateSet].sort((a, b) => a - b);
 
-    // Merge boundaries within 2 days of each other
-    const merged = [];
-    for (const b of boundaries) {
-      if (merged.length && daysBetween(merged[merged.length-1].date, b.date) < 2) {
-        merged[merged.length-1].changeLabel += ' + ' + b.changeLabel;
-        merged[merged.length-1].date = b.date;
+    // Merge dates within 2 days of each other
+    const mergedDates = [];
+    for (const ts of sortedDates) {
+      if (mergedDates.length && (ts - mergedDates[mergedDates.length - 1]) < 2 * 86400000) {
+        mergedDates[mergedDates.length - 1] = ts; // keep the later date
       } else {
-        merged.push({ ...b });
+        mergedDates.push(ts);
       }
     }
-    return merged;
+
+    // Step 2: at each boundary date, determine the full active regimen
+    const boundaries = [];
+    for (const ts of mergedDates) {
+      const dt = new Date(ts);
+      const activeMeds = [];
+      for (const [drug, segs] of Object.entries(medIntervals)) {
+        // Find the segment active at this date (starts <= dt and ends >= dt)
+        for (const seg of segs) {
+          const [s, e, daily] = seg;
+          if (s && e && s.getTime() <= ts + 86400000 && e.getTime() >= ts - 86400000) {
+            const sigLabel = daily != null ? `${drug} ${medSigLabel(drug, daily)}` : drug;
+            activeMeds.push(sigLabel);
+            break; // only one segment per drug at a time
+          }
+        }
+      }
+      if (activeMeds.length > 0) {
+        boundaries.push({ date: dt, changeLabel: activeMeds.join(' + ') });
+      }
+    }
+
+    // Step 3: deduplicate — remove consecutive boundaries with the same label
+    const deduped = [];
+    for (const b of boundaries) {
+      if (deduped.length && deduped[deduped.length - 1].changeLabel === b.changeLabel) continue;
+      deduped.push(b);
+    }
+    return deduped;
   }
 
   // Determine which meds are currently active at the end of the data
@@ -1363,7 +1422,7 @@
     const legend = $('phaseLegend');
     if (!rs.length) { container.innerHTML = '<div class="muted">Upload data to see phase comparison.</div>'; legend.style.display='none'; return; }
 
-    const N = Math.max(2, +$('phaseN').value || 5);
+    const N = Math.max(2, +$('phaseN').value || 10);
     const lookbackMonths = Math.max(1, +$('phaseLookback').value || 3);
     const recentWeeks = Math.max(1, +$('phaseRecentWeeks').value || 2);
 
@@ -1452,7 +1511,7 @@
     }
 
     let html = '<table class="phase-table"><thead><tr>';
-    html += '<th>Phase</th><th>Readings Span</th><th>Time of Day</th>';
+    html += '<th>Phase</th><th>Statistics Window</th><th>Time of Day</th>';
     html += '<th>Mean SBP</th><th>Mean DBP</th><th>&Delta; SBP</th><th>&Delta; DBP</th>';
     html += '<th>% Green</th><th>&Delta; %Grn</th><th>% Red</th><th>&Delta; %Red</th><th>% Severe</th><th>&Delta; %Sev</th><th>N</th>';
     html += '</tr></thead><tbody>';
@@ -1462,12 +1521,16 @@
       const pairIdx = Math.floor(i / 2);
       const isOddPair = pairIdx % 2 === 1;
 
-      // Highlight changed drugs in the phase label compared to previous phases
+      // Highlight changed drugs in the phase label compared to previous phase
       let phaseCell = r.phase;
       if (pairIdx > 0) {
         const currSegs = parseSegments(r.phase);
 
-        // Build a map of each drug's most recent detail from ALL prior phases
+        // Immediately previous phase's drugs — determines if a drug is new/returning
+        const immPrevSegs = parseSegments(tableRows[(pairIdx - 1) * 2].phase);
+        const immPrevDrugSet = new Set(immPrevSegs.map(s => s.drug));
+
+        // Build a map of each drug's most recent detail from ALL prior phases (for dose diff)
         const priorDetailMap = {}; // drug -> most recent detail
         for (let pp = 0; pp < pairIdx; pp++) {
           const priorSegs = parseSegments(tableRows[pp * 2].phase);
@@ -1475,11 +1538,12 @@
         }
 
         phaseCell = currSegs.map(cs => {
+          const inPrevPhase = immPrevDrugSet.has(cs.drug);
           const prevDetail = priorDetailMap[cs.drug];
-          if (prevDetail === undefined) {
-            // Entirely new drug — show whole segment in blue bold
+          if (!inPrevPhase) {
+            // Drug not in immediately previous phase (new or restarted) — blue bold
             return `<b style="color:var(--accent)">${cs.full}</b>`;
-          } else if (prevDetail !== cs.detail) {
+          } else if (prevDetail !== undefined && prevDetail !== cs.detail) {
             // Same drug, different detail — word-level diff
             // Drug name in blue; unchanged detail words in blue; changed words in red
             const prevWords = prevDetail.split(/\s+/);
@@ -1492,7 +1556,7 @@
             }).join(' ');
             return `<b style="color:var(--accent)">${cs.drugDisplay}</b> ${detailHtml}`;
           }
-          return cs.full; // unchanged
+          return cs.full; // unchanged — in previous phase with same detail
         }).join(' + ');
       }
 
@@ -1546,7 +1610,7 @@
     const medNames = Object.keys(medIntervals);
 
     // Compute per-phase stats using last-N-readings methodology (consistent with Phase table)
-    const insightN = 5;
+    const insightN = 10;
     const insightLookback = 3;
     const phaseData = phases.map((p, idx) => {
       const nextStart = (idx + 1 < phases.length) ? phases[idx + 1].start : null;
@@ -1821,6 +1885,131 @@
   }
 
   // =============================================
+  // DEBUG RULES
+  // =============================================
+  function renderDebugRules() {
+    const container = $('debugRulesContainer');
+    const goal = getGoal();
+    const N = Math.max(2, +$('phaseN').value || 10);
+    const lookbackMonths = Math.max(1, +$('phaseLookback').value || 3);
+    const recentWeeks = Math.max(1, +$('phaseRecentWeeks').value || 2);
+    const amStart = +$('amStart').value;
+    const amEnd = +$('amEnd').value;
+
+    const sections = [
+      {
+        title: 'BP Classification Rules',
+        rules: [
+          `<b>Green (at goal):</b> SBP ≤ ${goal.sys} AND DBP ≤ ${goal.dia}`,
+          `<b>Red (above goal):</b> SBP ${goal.sys+1}–${SEVERE_SBP_MIN-1} OR DBP > ${goal.dia} (and not severe)`,
+          `<b>Severe:</b> SBP ≥ ${SEVERE_SBP_MIN} OR DBP ≥ ${SEVERE_DBP_MIN}`,
+          `<b>Hypotensive:</b> SBP < ${HYPO_SBP_MAX} OR DBP < ${HYPO_DBP_MAX}`,
+          `<b>Goal target:</b> ${goal.sys}/${goal.dia} (current profile: ${$('profile').value})`,
+        ]
+      },
+      {
+        title: 'Time-of-Day Windows',
+        rules: [
+          `<b>Morning:</b> ${amStart}:00 – ${amEnd}:00 (${amStart}AM – ${amEnd > 12 ? (amEnd-12)+'PM' : amEnd+'AM'})`,
+          `<b>Afternoon/Evening:</b> ${amEnd}:00 – 24:00 (${amEnd > 12 ? (amEnd-12)+'PM' : amEnd+'AM'} – midnight)`,
+          `<b>Other (excluded):</b> 0:00 – ${amStart}:00 (midnight – ${amStart}AM)`,
+        ]
+      },
+      {
+        title: 'Medication Response Table (Statistics)',
+        rules: [
+          `<b>Readings per phase (N):</b> ${N} per time-of-day window (Morning / Afternoon-Evening each get up to ${N})`,
+          `<b>Method for non-last phases:</b> Take the last ${N} readings that fall BEFORE the NEXT medication change date, within a ${lookbackMonths}-month lookback window`,
+          `<b>Method for the last (current) phase:</b> Take ALL readings within the most recent ${recentWeeks} week(s) from the data end date`,
+          `<b>Unified date span:</b> For each phase, the Morning and Afternoon/Evening rows share the same date window — the later of the two start dates is used for both`,
+          `<b>Phase detection:</b> A new phase is created when ANY medication segment starts or ends. The phase label shows the FULL active regimen at that date, not just the changed drug`,
+          `<b>Deduplication:</b> Consecutive phases with identical regimen labels are merged. Boundaries within 2 days are merged`,
+        ]
+      },
+      {
+        title: 'Phase Change Highlighting (Medication Response Table)',
+        rules: [
+          `<b>New or restarted drug (not in immediately previous phase):</b> entire entry in bold blue`,
+          `<b>Same drug, different dose/sig:</b> drug name in bold blue, changed words in bold red, unchanged detail words in bold blue`,
+          `<b>Unchanged drug and dose:</b> plain text (no highlighting)`,
+          `<b>Dose/sig comparison:</b> word-level diff against the most recent prior occurrence of that drug across ALL earlier phases`,
+          `<b>New vs restarted:</b> checked against the immediately previous phase only — if a drug was stopped then restarted, it shows as blue (new to this phase)`,
+        ]
+      },
+      {
+        title: 'Severe SBP Label Display (Timeline Chart)',
+        rules: [
+          `<b>Threshold:</b> Labels shown for all readings with SBP ≥ ${SEVERE_LABEL_SBP_MIN}`,
+          `<b>Anti-overlap:</b> Bounding-box collision detection — each label tries positions above the data point (dy from -16 to -80 in steps of 7px), then below (dy +4 to +40). If no position is free, the label is skipped`,
+          `<b>No 48-hour dedup:</b> Every severe reading gets a label attempt (not just the peak per 48h window)`,
+        ]
+      },
+      {
+        title: 'Dose Shading (Medication Bar Panel)',
+        rules: [
+          `<b>Algorithm:</b> Linear interpolation between ALPHA_MIN (${ALPHA_MIN}) and ALPHA_MAX (${ALPHA_MAX})`,
+          `<b>Formula:</b> alpha = ${ALPHA_MIN} + (${ALPHA_MAX} - ${ALPHA_MIN}) × min(1, (doseRatio - 1) / (${DOSE_RATIO_MAX} - 1))`,
+          `<b>Starting dose (lightest shade):</b> ratio = 1.0 → alpha = ${ALPHA_MIN}`,
+          `<b>Maximum shade:</b> ratio = ${DOSE_RATIO_MAX}× starting dose → alpha = ${ALPHA_MAX}`,
+          `<b>Known starting doses:</b> ${Object.entries(STARTING_DOSES).map(([d,v]) => `${d}: ${v} mg`).join(', ')}`,
+          `<b>Unknown drugs:</b> starting dose = lowest observed dose for that drug`,
+        ]
+      },
+      {
+        title: 'Clinical Insights Methodology',
+        rules: [
+          `<b>Readings per phase:</b> ${N} per AM/PM window (up to ${N*4} for "All" window)`,
+          `<b>Lookback:</b> ${lookbackMonths} months before the next boundary date`,
+          `<b>Last phase:</b> all readings in the most recent ${recentWeeks} week(s)`,
+          `<b>Reasoning order:</b> 1. Circadian Pattern → 2. Key Clinical Observations → 3. Treatment Trajectory → 4. Overall Assessment`,
+          `<b>Treatment response characterization:</b> SBP Δ ≤ -8 = "strong improvement", ≤ -3 = "modest improvement", ≥ +3 = "slight worsening", ≥ +8 = "worsened significantly"`,
+          `<b>Net effect:</b> Compares first validated phase vs last validated phase (both need n ≥ 3)`,
+          `<b>Overall Assessment focus:</b> Most recent phase's readings (not grand mean over entire date range)`,
+        ]
+      },
+      {
+        title: 'Canvas Rendering',
+        rules: [
+          `<b>Screen DPR:</b> max(3, window.devicePixelRatio) — minimum 3× for crispness`,
+          `<b>Print DPR:</b> 6× (set via beforeprint/afterprint handlers)`,
+          `<b>Bar widths:</b> normal = ${BASE_BAR_W} days, severe = ${SEVERE_BAR_W} days`,
+          `<b>Chart padding:</b> left=${PAD.l}px, right=${PAD.r}px, top=${PAD.t}px, bottom=${PAD.b}px`,
+        ]
+      },
+      {
+        title: 'KPI Dashboard',
+        rules: [
+          `<b>Recent window:</b> last 14 days from the end of the selected date range`,
+          `<b>Color coding:</b> SBP/DBP values color-coded by classification (green/red/severe/hypo)`,
+        ]
+      },
+      {
+        title: 'Medication Parsing',
+        rules: [
+          `<b>Source:</b> "Notes" column of the Excel file — multi-line entries parsed per line`,
+          `<b>Pattern:</b> Regex matches drug name + dose (mg) + optional frequency (qd, bid, etc.)`,
+          `<b>Hold events:</b> Lines containing "hold" or "held" — marked with ★ on timeline`,
+          `<b>Segment merging:</b> Boundaries within 2 days merged into one phase`,
+          `<b>Sig format:</b> standardized to "dose mg freq" (e.g., "80 mg qd", "80 mg bid")`,
+        ]
+      },
+    ];
+
+    let html = '<div style="line-height:1.8;">';
+    for (const sec of sections) {
+      html += `<div style="margin-bottom:16px;">`;
+      html += `<div style="font-weight:700; font-size:13px; color:var(--accent); margin-bottom:4px; border-bottom:1px solid rgba(0,0,0,.08); padding-bottom:3px;">${sec.title}</div>`;
+      html += '<ul style="margin:0 0 0 16px; padding:0; font-size:12px;">';
+      for (const rule of sec.rules) {
+        html += `<li style="margin-bottom:2px;">${rule}</li>`;
+      }
+      html += '</ul></div>';
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  // =============================================
   // RENDER ALL
   // =============================================
   function renderAll() {
@@ -1845,12 +2034,14 @@
 
     attachBPHover($('chartMorning'), morning, xMinMs, xMaxMs);
     attachBPHover($('chartEvening'), ae, xMinMs, xMaxMs);
+    attachMedHover($('chartMeds'));
 
     renderKPIs(m, rs);
     $('reportText').innerHTML=buildReport(rs,m);
     renderSevereTable(m.severe);
     renderPhaseTable(rs);
     renderInsights(rs);
+    renderDebugRules();
   }
 
   // =============================================
