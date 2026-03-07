@@ -926,20 +926,24 @@
       ctx.stroke();
     }
 
-    // Severe SBP labels — label ALL severe readings, use bounding-box stacking to prevent overlap
+    // Severe SBP labels — label ALL severe readings with anti-overlap stacking.
+    // Fallback: if a label can't be placed, apply 48hr peak-picking on unplaced readings.
     const sevReadings = rs.filter(r=>r.sys>=SEVERE_LABEL_SBP_MIN).sort((a,b)=>a.t-b.t);
     if(sevReadings.length>0){
       const placedBoxes = [];
+      const unplacedIdx = [];
       ctx.font='10px system-ui';
-      for(const sr of sevReadings){
+
+      for(let ri=0;ri<sevReadings.length;ri++){
+        const sr=sevReadings[ri];
         const x=xOf(sr.t.getTime());
         const y=yOf(sr.sys);
         const lab=String(Math.round(sr.sys));
         const tw=ctx.measureText(lab).width;
         const th=12;
         const lw=tw+4, lh=th+2;
-        // Try stacking upward from the data point
         let placed=false;
+        // Try stacking upward from the data point
         for(let dy=-16;dy>=-80;dy-=7){
           const lx=x-tw/2, ly=y+dy;
           if(ly<PAD.t)continue;
@@ -954,7 +958,7 @@
             placed=true;break;
           }
         }
-        // If all positions above overlap, try below the point
+        // Try below the point
         if(!placed){
           for(let dy=4;dy<=40;dy+=7){
             const lx=x-tw/2, ly=y+dy;
@@ -971,7 +975,33 @@
             }
           }
         }
-        // Last resort: skip label if no position found (dense cluster)
+        if(!placed) unplacedIdx.push(ri);
+      }
+
+      // Fallback for dense clusters: pick highest SBP in each 48hr window among unplaced
+      if(unplacedIdx.length>0){
+        const half=24*3600000;
+        const winners48=new Set();
+        for(const i of unplacedIdx){
+          const ti=sevReadings[i].t.getTime();
+          let maxSBP=-Infinity, maxIdx=-1;
+          for(const j of unplacedIdx){
+            const tj=sevReadings[j].t.getTime();
+            if(Math.abs(tj-ti)<=half && sevReadings[j].sys>maxSBP){
+              maxSBP=sevReadings[j].sys; maxIdx=j;
+            }
+          }
+          if(maxIdx>=0) winners48.add(maxIdx);
+        }
+        // Force-place the 48hr winners at default position
+        for(const wi of winners48){
+          const sr=sevReadings[wi];
+          const x=xOf(sr.t.getTime());
+          const lab=String(Math.round(sr.sys));
+          const tw=ctx.measureText(lab).width;
+          ctx.fillStyle='rgba(160,0,0,.90)';
+          ctx.fillText(lab, x-tw/2+2, PAD.t+12);
+        }
       }
     }
 
@@ -1291,56 +1321,66 @@
 
   // Collect medication change boundaries from medIntervals.
   // Each boundary = a date when the treatment regimen changed.
-  // At each boundary, the label reflects the FULL active regimen, not just what started that day.
+  // At each boundary, the label reflects the FULL active regimen.
   // Returns [{date, changeLabel}] sorted chronologically.
+  //
+  // Algorithm:
+  //   1. Collect ALL dates where any segment starts or ends (+1 day for stops)
+  //   2. At each date, compute which drugs are active (start <= date && end >= date)
+  //   3. When the active regimen changes, create a boundary
+  //   4. Merge boundaries within 2 days (keep the later regimen)
   function buildMedChangeBoundaries() {
-    // Step 1: collect all unique boundary dates (segment starts and ends that are within data range)
+    if (!readings.length) return [];
+    const dataEndTs = readings[readings.length - 1].t.getTime();
+
+    // Step 1: collect all dates where the regimen could change
     const dateSet = new Set();
     for (const [drug, segs] of Object.entries(medIntervals)) {
       for (const seg of segs) {
-        if (seg[0]) dateSet.add(seg[0].getTime());
+        if (seg[0]) dateSet.add(seg[0].getTime()); // drug start
+        // Day after segment ends = drug becomes inactive
+        // Only add if before data end (ongoing drugs shouldn't create a stop boundary)
+        if (seg[1] && seg[1].getTime() < dataEndTs) {
+          dateSet.add(seg[1].getTime() + 86400000);
+        }
       }
     }
     const sortedDates = [...dateSet].sort((a, b) => a - b);
 
-    // Merge dates within 2 days of each other
-    const mergedDates = [];
-    for (const ts of sortedDates) {
-      if (mergedDates.length && (ts - mergedDates[mergedDates.length - 1]) < 2 * 86400000) {
-        mergedDates[mergedDates.length - 1] = ts; // keep the later date
-      } else {
-        mergedDates.push(ts);
-      }
-    }
-
-    // Step 2: at each boundary date, determine the full active regimen
+    // Step 2: at each date, determine the active regimen
+    // Active = segment where start <= date AND end >= date (strict, no fuzzy tolerance)
     const boundaries = [];
-    for (const ts of mergedDates) {
-      const dt = new Date(ts);
+    let prevLabel = '';
+    for (const ts of sortedDates) {
       const activeMeds = [];
       for (const [drug, segs] of Object.entries(medIntervals)) {
-        // Find the segment active at this date (starts <= dt and ends >= dt)
         for (const seg of segs) {
           const [s, e, daily] = seg;
-          if (s && e && s.getTime() <= ts + 86400000 && e.getTime() >= ts - 86400000) {
+          if (!s || !e) continue;
+          if (s.getTime() <= ts && e.getTime() >= ts) {
             const sigLabel = daily != null ? `${drug} ${medSigLabel(drug, daily)}` : drug;
             activeMeds.push(sigLabel);
-            break; // only one segment per drug at a time
+            break; // one segment per drug at a time
           }
         }
       }
-      if (activeMeds.length > 0) {
-        boundaries.push({ date: dt, changeLabel: activeMeds.join(' + ') });
+      const label = activeMeds.join(' + ');
+      if (label && label !== prevLabel) {
+        boundaries.push({ date: new Date(ts), changeLabel: label });
+        prevLabel = label;
       }
     }
 
-    // Step 3: deduplicate — remove consecutive boundaries with the same label
-    const deduped = [];
+    // Step 3: merge boundaries within 2 days (keep the later one's regimen)
+    const merged = [];
     for (const b of boundaries) {
-      if (deduped.length && deduped[deduped.length - 1].changeLabel === b.changeLabel) continue;
-      deduped.push(b);
+      if (merged.length && (b.date.getTime() - merged[merged.length - 1].date.getTime()) < 2 * 86400000) {
+        merged[merged.length - 1] = { ...b };
+      } else {
+        merged.push({ ...b });
+      }
     }
-    return deduped;
+    return merged;
   }
 
   // Determine which meds are currently active at the end of the data
@@ -1922,8 +1962,9 @@
           `<b>Method for non-last phases:</b> Take the last ${N} readings that fall BEFORE the NEXT medication change date, within a ${lookbackMonths}-month lookback window`,
           `<b>Method for the last (current) phase:</b> Take ALL readings within the most recent ${recentWeeks} week(s) from the data end date`,
           `<b>Unified date span:</b> For each phase, the Morning and Afternoon/Evening rows share the same date window — the later of the two start dates is used for both`,
-          `<b>Phase detection:</b> A new phase is created when ANY medication segment starts or ends. The phase label shows the FULL active regimen at that date, not just the changed drug`,
-          `<b>Deduplication:</b> Consecutive phases with identical regimen labels are merged. Boundaries within 2 days are merged`,
+          `<b>Phase detection:</b> Change dates = all segment START dates + (segment END date + 1 day) for drugs that stop before data end. At each change date, the label shows the FULL active regimen (all drugs where start ≤ date ≤ end)`,
+          `<b>Drug stop detection:</b> When a segment ends before the data end, a boundary is created at end+1 day where the drug is no longer active. Ongoing drugs (segment ends at data end) do not create stop boundaries`,
+          `<b>Deduplication:</b> Consecutive identical regimen labels are suppressed. Boundaries within 2 days are merged (later regimen kept)`,
         ]
       },
       {
@@ -1940,8 +1981,8 @@
         title: 'Severe SBP Label Display (Timeline Chart)',
         rules: [
           `<b>Threshold:</b> Labels shown for all readings with SBP ≥ ${SEVERE_LABEL_SBP_MIN}`,
-          `<b>Anti-overlap:</b> Bounding-box collision detection — each label tries positions above the data point (dy from -16 to -80 in steps of 7px), then below (dy +4 to +40). If no position is free, the label is skipped`,
-          `<b>No 48-hour dedup:</b> Every severe reading gets a label attempt (not just the peak per 48h window)`,
+          `<b>Anti-overlap:</b> Bounding-box collision detection — each label tries positions above the data point (dy from -16 to -80 in steps of 7px), then below (dy +4 to +40)`,
+          `<b>Fallback for dense clusters:</b> If a label can't be placed (all positions overlap), apply 48hr peak-picking: among unplaced readings, only force-label the highest SBP within each 48hr window`,
         ]
       },
       {
