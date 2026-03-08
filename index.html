@@ -88,16 +88,8 @@
     .kci-badge.badge-red{ background:#c62828; }
 
     /* Proportion bars (for circadian) */
-    .kci-bar-row{ display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px; }
-    .kci-bar-label{ width:28px; font-weight:650; flex-shrink:0; }
     .kci-bar-track{ flex:1; height:18px; border-radius:4px; background:rgba(0,0,0,.06); display:flex; overflow:hidden; }
     .kci-bar-seg{ height:100%; }
-    .kci-bar-value{ width:70px; text-align:right; font-weight:600; flex-shrink:0; }
-
-    /* Gauge (for variability) */
-    .kci-gauge{ position:relative; height:14px; border-radius:7px; background:linear-gradient(to right, #1b7a3d 0%, #1b7a3d 43%, #b87800 43%, #b87800 57%, #c62828 57%, #c62828 100%); margin:8px 0; }
-    .kci-gauge-marker{ position:absolute; top:-3px; width:4px; height:20px; background:var(--text); border-radius:2px; transform:translateX(-50%); }
-    .kci-gauge-labels{ display:flex; justify-content:space-between; font-size:10px; color:var(--muted); }
 
     /* Alert pills */
     .kci-pill{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; margin:2px 4px 2px 0; }
@@ -157,7 +149,6 @@
       .kci-status.status-amber{ background:#fff8e1; border-color:#b87800; }
       .kci-status.status-red{ background:#ffebee; border-color:#c62828; }
       .kci-badge{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
-      .kci-gauge{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
       .kci-bar-seg{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
       .kci-pill{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
       #tab-phases{ page-break-before:always; }
@@ -264,7 +255,7 @@
         <div class="legend-item"><span class="legend-swatch" style="background:#7B1FA2"></span> Hypotensive: SBP &lt;100 or DBP &lt;60</div>
         <div class="legend-item"><span class="legend-swatch" style="background:#00C853"></span> Green: SBP &le;135 AND DBP &le;85</div>
         <div class="legend-item"><span class="legend-swatch" style="background:#FF4444"></span> Red: SBP 136-159 or DBP &gt;85</div>
-        <div class="legend-item"><span style="display:inline-block;width:16px;height:12px;border-radius:3px;vertical-align:middle;"><svg width="16" height="12" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="12" rx="2" fill="#FF0000"/><line x1="0" y1="12" x2="12" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="4" y1="12" x2="16" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="8" y1="12" x2="20" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="-4" y1="12" x2="8" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/></svg></span> Severe: SBP &ge;160 or DBP &ge;95</div>
+        <div class="legend-item"><span style="display:inline-block;width:16px;height:12px;border-radius:3px;vertical-align:middle;"><svg width="16" height="12" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="12" rx="2" fill="#FF0000"/><line x1="0" y1="12" x2="12" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="4" y1="12" x2="16" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="8" y1="12" x2="20" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="-4" y1="12" x2="8" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/></svg></span> Severe: SBP &ge;160 or DBP &ge;100</div>
         <div class="legend-item"><span style="display:inline-block;width:18px;height:2px;background:#8a8a8a;vertical-align:middle;"></span> Heart Rate</div>
         <div class="legend-item"><span style="display:inline-block;width:18px;height:0;border-top:2px dashed #888;vertical-align:middle;"></span> Targets (SBP 135, DBP 85)</div>
         <div class="legend-item"><span style="font-size:16px;">&#9733;</span> Hold HTN meds</div>
@@ -272,20 +263,20 @@
     </div>
 
     <div class="card" style="margin-top:14px;">
-      <div class="kpi">
+      <div class="box" style="margin-bottom:10px;">
+        <div style="font-size:14px; font-weight:650; color:var(--text);" id="avgAllLabel">Recent 2-week avg (all)</div>
+        <div class="big" id="avgAll">&mdash;</div>
+        <div class="muted small" id="avgAllDetail">&mdash;</div>
+      </div>
+      <div class="kpi" style="grid-template-columns:1fr 1fr;">
         <div class="box">
-          <div style="font-size:14px; font-weight:650; color:var(--text);" id="avgAllLabel">Recent 2-week avg (all)</div>
-          <div class="big" id="avgAll">&mdash;</div>
-          <div class="muted small" id="avgAllDetail">&mdash;</div>
-        </div>
-        <div class="box">
-          <div style="font-size:14px; font-weight:650; color:var(--text);" id="avgAmLabel">Recent 2-week Morning avg</div>
-          <div class="big" id="avgAm">&mdash;</div>
+          <div style="font-size:13px; font-weight:650; color:var(--muted);" id="avgAmLabel">Morning</div>
+          <div class="big" style="font-size:19px;" id="avgAm">&mdash;</div>
           <div class="muted small" id="avgAmDetail">&mdash;</div>
         </div>
         <div class="box">
-          <div style="font-size:14px; font-weight:650; color:var(--text);" id="avgPmLabel">Recent 2-week Afternoon/Evening avg</div>
-          <div class="big" id="avgPm">&mdash;</div>
+          <div style="font-size:13px; font-weight:650; color:var(--muted);" id="avgPmLabel">Afternoon/Evening</div>
+          <div class="big" style="font-size:19px;" id="avgPm">&mdash;</div>
           <div class="muted small" id="avgPmDetail">&mdash;</div>
         </div>
       </div>
@@ -295,7 +286,7 @@
   <!-- Tab 2: Medication Response -->
   <div id="tab-phases" class="tab-content">
     <div class="card">
-      <div style="font-weight:650; font-size:15px; margin-bottom:4px;">Medication-Phase Metrics (Morning vs Afternoon/Evening)</div>
+      <div style="font-weight:650; font-size:15px; margin-bottom:4px;">Responses to Medication Plans (Morning vs Afternoon/Evening)</div>
       <div class="muted small" id="phaseRange">&mdash;</div>
       <div class="hr"></div>
       <div id="phaseTableContainer">
@@ -307,7 +298,7 @@
         <div class="legend-bar" style="margin-bottom:10px;">
           <div class="legend-item"><span class="legend-swatch" style="background:#27ae60;"></span> At goal (SBP ≤ 135 &amp; DBP ≤ 85)</div>
           <div class="legend-item"><span class="legend-swatch" style="background:#e74c3c;"></span> Above goal</div>
-          <div class="legend-item"><span class="legend-swatch" style="background:#900; border:1px solid #700;"></span> Severe (SBP ≥ 160 or DBP ≥ 95)</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:#900; border:1px solid #700;"></span> Severe (SBP ≥ 160 or DBP ≥ 100)</div>
           <div class="legend-item"><span style="font-weight:700; color:#1a73e8; font-size:13px;">Blue bold</span> New/restarted drug</div>
           <div class="legend-item"><span style="font-weight:700; color:#c0392b; font-size:13px;">Red bold</span> Changed dose/frequency</div>
         </div>
@@ -374,7 +365,7 @@
 
   const TARGET_SBP = 135, TARGET_DBP = 85;
   const GREEN_SBP_MAX = 135, GREEN_DBP_MAX = 85;
-  const SEVERE_SBP_MIN = 160, SEVERE_DBP_MIN = 95;
+  const SEVERE_SBP_MIN = 160, SEVERE_DBP_MIN = 100;
   const SEVERE_LABEL_SBP_MIN = 160;
   const HYPO_SBP_MAX = 100, HYPO_DBP_MAX = 60;
 
@@ -804,23 +795,24 @@
       }
     }
 
-    // Close remaining active intervals at endDt
+    // Close remaining active intervals at endDt — mark as ongoing
     for (const drug of Object.keys(active)) {
       const {start,daily,sig} = active[drug];
       if (start < endDt) {
         if (!intervals[drug]) intervals[drug]=[];
-        intervals[drug].push([start, endDt, daily, sig]);
+        intervals[drug].push([start, endDt, daily, sig, true]); // 5th element = ongoing flag
       }
     }
 
-    // Clip to display range
+    // Clip to display range (preserve ongoing flag)
     const clipped = {};
     for (const [drug, segs] of Object.entries(intervals)) {
       const out = [];
-      for (const [s,e,daily,sig] of segs) {
+      for (const seg of segs) {
+        const [s,e,daily,sig,ongoing] = seg;
         const ss = startDt && s<startDt ? startDt : s;
         const ee = endDt && e>endDt ? endDt : e;
-        if (ee>ss) out.push([ss,ee,daily,sig]);
+        if (ee>ss) out.push([ss,ee,daily,sig,!!ongoing]);
       }
       if (out.length) clipped[drug]=out;
     }
@@ -1173,7 +1165,7 @@
       ctx.fillText(med, 6, yCenter+4);
 
       for(const seg of (intervals[med]||[])){
-        const [s,e,daily,sig]=seg;
+        const [s,e,daily,sig,ongoing]=seg;
         if(!s||!e)continue;
         const sd=startDose[med]||1;
         const alpha=alphaForDailyDose(daily!=null?daily:sd, sd);
@@ -1185,11 +1177,19 @@
         ctx.fillStyle=`rgba(${Math.round(cr*255)},${Math.round(cg*255)},${Math.round(cb*255)},${alpha})`;
         ctx.fillRect(x0, y0, x1-x0, bandH);
 
+        // For ongoing meds, draw a right-pointing arrow at the edge
+        if (ongoing) {
+          const arrowX = x1 - 2;
+          ctx.fillStyle='rgba(0,0,0,.5)';
+          ctx.font='bold 10px system-ui';ctx.textAlign='left';
+          ctx.fillText('→', arrowX, yCenter+4);
+        }
+
         // Store hit region for hover
         let label=sig||((daily!=null)?medSigLabel(med,daily):'');
         if(!label)label=lastLabel[med]||'';
         lastLabel[med]=label;
-        medBarRegions.push({ x0, x1, y0, y1: y0 + bandH, med, label, start: s, end: e, daily });
+        medBarRegions.push({ x0, x1, y0, y1: y0 + bandH, med, label, start: s, end: e, daily, ongoing: !!ongoing });
 
         if(!label)continue;
 
@@ -1267,10 +1267,29 @@
       }
       if (!hit) { tip.style.display = 'none'; return; }
       const days = Math.round(daysBetween(hit.start, hit.end));
+
+      // Determine end status: ongoing, changed to new dose, or stopped
+      let endLine;
+      if (hit.ongoing) {
+        endLine = `<div style="color:var(--ok);">Current (ongoing)</div>`;
+      } else {
+        // Check if the same drug has a next segment starting near this one's end (= dose change, not stop)
+        const nextSeg = medBarRegions.find(r =>
+          r.med === hit.med &&
+          r.start.getTime() > hit.start.getTime() &&
+          Math.abs(r.start.getTime() - hit.end.getTime()) < 3 * 86400000
+        );
+        if (nextSeg) {
+          endLine = `<div>Changed to <b>${nextSeg.label || 'new dose'}</b> on ${fmtDateShort(hit.end)}, ${hit.end.getFullYear()}</div>`;
+        } else {
+          endLine = `<div>Stopped: <b>${fmtDateShort(hit.end)}, ${hit.end.getFullYear()}</b></div>`;
+        }
+      }
+
       tip.innerHTML = `<div style="font-weight:650;margin-bottom:2px">${hit.med}</div>` +
         `<div>${hit.label || '(no dose info)'}</div>` +
         `<div style="margin-top:3px">Start: <b>${fmtDateShort(hit.start)}, ${hit.start.getFullYear()}</b></div>` +
-        `<div>Stop: <b>${fmtDateShort(hit.end)}, ${hit.end.getFullYear()}</b></div>` +
+        endLine +
         `<div class="muted" style="margin-top:2px">${days} day${days !== 1 ? 's' : ''}</div>`;
       tip.style.left = (e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; tip.style.display = 'block';
     };
@@ -1319,8 +1338,8 @@
     const rm = computeMetrics(rec);
 
     $('avgAllLabel').textContent = `Recent 2-week avg (all)${labelSuffix}`;
-    $('avgAmLabel').textContent = `Recent 2-week Morning avg`;
-    $('avgPmLabel').textContent = `Recent 2-week Afternoon/Evening avg`;
+    $('avgAmLabel').textContent = `Morning`;
+    $('avgPmLabel').textContent = `Afternoon/Evening`;
 
     $('avgAll').textContent=fmtBP(rm.avgSys,rm.avgDia);
     $('avgAllDetail').innerHTML=`n=${rm.count} &bull; <span class="ok"><b>Green</b> ${fmtPct(rm.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Red</b> ${fmtPct(rm.pctRed)}</span> &bull; <span style="color:#c62828"><b>Severe ${fmtPct(rm.pctSevere)}</b></span>${rm.pctHypo>0?' &bull; <span style="color:#7B1FA2"><b>Hypo</b> '+fmtPct(rm.pctHypo)+'</span>':''}`;
@@ -1899,8 +1918,6 @@
     const aeMean = mean(ae.map(x => x.sys));
     const mornMeanDBP = mean(morning.map(x => x.dia));
     const aeMeanDBP = mean(ae.map(x => x.dia));
-    const sd = stddev(rs.map(x => x.sys));
-
     const currentMeds = getCurrentMeds();
     const currentMedStr = currentMeds.length ? currentMeds.join(' + ') : 'current regimen';
     const validPhases = phaseData.filter(p => p.all.n >= 3);
@@ -1954,8 +1971,8 @@
       const arrow = bpArrow(netSBP, netDBP);
       const trajLabel = bpResponseLabel(netSBP, netDBP);
       html += `<div class="kci-detail" style="margin-top:8px;">`;
-      html += `Trajectory across ${validPhases.length} phases: ${trajLabel} `;
-      html += `(SBP/DBP ${netSBP >= 0 ? '+' : ''}${netSBP.toFixed(0)}/${netDBP >= 0 ? '+' : ''}${netDBP.toFixed(0)})${arrow}`;
+      html += `Net change from <b>${firstP.label}</b> → <b>${recentPhase.label}</b>: ${trajLabel} `;
+      html += `(SBP/DBP ${netSBP >= 0 ? '+' : ''}${netSBP.toFixed(0)}/${netDBP >= 0 ? '+' : ''}${netDBP.toFixed(0)} mmHg)${arrow}`;
 
       // Severe burden note
       if (recentSev >= 5) {
@@ -1974,41 +1991,64 @@
     }
     html += `</div>`;
 
-    // ── Card 2: Circadian Pattern ──
+    // ── Card 2: Circadian Pattern (full width — merges BP split, HR, and time hotspots) ──
     if (mornMean != null && aeMean != null && morning.length >= 5 && ae.length >= 5) {
       const mGreen = mornGreenPct || 0, mRed = mornRedPct || 0, mSev = mornSevPct || 0;
       const aGreen = aeGreenPct || 0, aRed = aeRedPct || 0, aSev = aeSevPct || 0;
 
-      html += `<div class="kci-card">`;
-      html += `<div class="kci-title">Circadian Split</div>`;
+      // AM/PM Heart Rate
+      const amHR = hrReadings.filter(r => r.window === 'Morning');
+      const pmHR = hrReadings.filter(r => r.window === 'Afternoon/Evening');
+      const amHRMean = amHR.length >= 3 ? mean(amHR.map(x => x.hr)) : null;
+      const pmHRMean = pmHR.length >= 3 ? mean(pmHR.map(x => x.hr)) : null;
+      const hasHR = amHRMean != null || pmHRMean != null;
+      const gridCols = hasHR ? '80px 1fr 90px 70px' : '80px 1fr 90px';
 
-      // AM bar
-      html += `<div class="kci-bar-row">`;
-      html += `<span class="kci-bar-label">AM</span>`;
+      html += `<div class="kci-card kci-full">`;
+      html += `<div class="kci-title">Circadian Pattern</div>`;
+
+      // Mini legend for bar colors
+      html += `<div style="display:flex; gap:14px; margin-bottom:8px; font-size:11px; color:var(--muted);">`;
+      html += `<span><span style="display:inline-block;width:10px;height:10px;background:#00C853;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>At goal</span>`;
+      html += `<span><span style="display:inline-block;width:10px;height:10px;background:#FF4444;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Above goal</span>`;
+      html += `<span><span style="display:inline-block;width:10px;height:10px;background:#FF0000;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Severe</span>`;
+      html += `</div>`;
+
+      // Header row
+      html += `<div style="display:grid; grid-template-columns:${gridCols}; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:var(--muted); font-weight:600;">`;
+      html += `<div></div><div>Reading distribution</div><div style="text-align:right;">Mean BP</div>`;
+      if (hasHR) html += `<div style="text-align:right;">HR</div>`;
+      html += `</div>`;
+
+      // Morning row
+      html += `<div style="display:grid; grid-template-columns:${gridCols}; align-items:center; gap:6px; margin-bottom:5px;">`;
+      html += `<span style="font-weight:600; font-size:13px;">Morning</span>`;
       html += `<div class="kci-bar-track">`;
       html += `<div class="kci-bar-seg" style="width:${mGreen}%;background:#00C853;"></div>`;
       html += `<div class="kci-bar-seg" style="width:${mRed}%;background:#FF4444;"></div>`;
       html += `<div class="kci-bar-seg" style="width:${mSev}%;background:#FF0000;"></div>`;
       html += `</div>`;
-      html += `<span class="kci-bar-value">${Math.round(mornMean)}/${Math.round(mornMeanDBP)}</span>`;
+      html += `<span style="text-align:right; font-weight:700; font-size:14px;">${Math.round(mornMean)}/${Math.round(mornMeanDBP)}</span>`;
+      if (hasHR) html += `<span style="text-align:right; font-size:13px; color:var(--muted);">${amHRMean != null ? Math.round(amHRMean) + ' bpm' : '—'}</span>`;
       html += `</div>`;
 
-      // PM bar
-      html += `<div class="kci-bar-row">`;
-      html += `<span class="kci-bar-label">PM</span>`;
+      // Afternoon/Evening row
+      html += `<div style="display:grid; grid-template-columns:${gridCols}; align-items:center; gap:6px; margin-bottom:5px;">`;
+      html += `<span style="font-weight:600; font-size:13px;">Aft/Eve</span>`;
       html += `<div class="kci-bar-track">`;
       html += `<div class="kci-bar-seg" style="width:${aGreen}%;background:#00C853;"></div>`;
       html += `<div class="kci-bar-seg" style="width:${aRed}%;background:#FF4444;"></div>`;
       html += `<div class="kci-bar-seg" style="width:${aSev}%;background:#FF0000;"></div>`;
       html += `</div>`;
-      html += `<span class="kci-bar-value">${Math.round(aeMean)}/${Math.round(aeMeanDBP)}</span>`;
+      html += `<span style="text-align:right; font-weight:700; font-size:14px;">${Math.round(aeMean)}/${Math.round(aeMeanDBP)}</span>`;
+      if (hasHR) html += `<span style="text-align:right; font-size:13px; color:var(--muted);">${pmHRMean != null ? Math.round(pmHRMean) + ' bpm' : '—'}</span>`;
       html += `</div>`;
 
       // Delta annotation
       const absDiff = Math.abs(circDiff);
       const absDiffDBP = Math.abs(circDiffDBP);
-      html += `<div class="kci-detail" style="margin-top:4px;">`;
-      html += `${higherWindow === 'afternoon/evening' ? 'PM' : 'AM'} runs +${absDiff.toFixed(0)}/${absDiffDBP.toFixed(0)} higher`;
+      html += `<div class="kci-detail" style="margin-top:6px;">`;
+      html += `${higherWindow === 'afternoon/evening' ? 'Afternoon/Evening' : 'Morning'} runs <b>+${absDiff.toFixed(0)}/${absDiffDBP.toFixed(0)}</b> mmHg higher`;
       if (absDiff >= 8) {
         html += ` <span class="kci-pill pill-warn">Clinically meaningful — consider dose timing</span>`;
       }
@@ -2016,56 +2056,110 @@
 
       // Severe burden by window if notable
       if (mornSevPct != null && aeSevPct != null && Math.abs(mornSevPct - aeSevPct) > 5) {
-        const burdenWin = aeSevPct > mornSevPct ? 'PM' : 'AM';
+        const burdenWin = aeSevPct > mornSevPct ? 'Afternoon/Evening' : 'Morning';
         const burdenVal = Math.max(aeSevPct, mornSevPct);
         html += `<div style="margin-top:4px;"><span class="kci-pill pill-danger">${burdenWin} severe burden: ${burdenVal.toFixed(0)}%</span></div>`;
       }
-      html += `</div>`;
-    }
 
-    // ── Card 3: BP Variability ──
-    if (sd != null && rs.length >= 10) {
-      const p10 = quantile(rs.map(x => x.sys), 0.1);
-      const p90 = quantile(rs.map(x => x.sys), 0.9);
-      const varLabel = sd >= 18 ? 'HIGH' : sd >= 13 ? 'MODERATE' : 'TYPICAL';
-      const varColor = sd >= 18 ? 'var(--danger)' : sd >= 13 ? 'var(--warn)' : 'var(--ok)';
-      // Map SD to gauge position: 0=SD 5, 100=SD 25
-      const gaugePos = Math.min(100, Math.max(0, (sd - 5) / 20 * 100));
-
-      html += `<div class="kci-card">`;
-      html += `<div class="kci-title">SBP Variability</div>`;
-      html += `<div style="display:flex; align-items:baseline; gap:8px;">`;
-      html += `<span class="kci-big" style="color:${varColor};">SD ${sd.toFixed(1)}</span>`;
-      html += `<span style="font-weight:700; font-size:13px; color:${varColor};">${varLabel}</span>`;
-      html += `</div>`;
-      html += `<div class="kci-gauge"><div class="kci-gauge-marker" style="left:${gaugePos}%;"></div></div>`;
-      html += `<div class="kci-gauge-labels"><span>Typical</span><span>Moderate</span><span>High</span></div>`;
-      html += `<div class="kci-detail" style="margin-top:6px;">Range p10–p90: ${Math.round(p10)}–${Math.round(p90)} mmHg</div>`;
-      if (sd >= 15) {
-        html += `<div style="margin-top:4px;"><span class="kci-pill pill-warn">Explore triggers: white-coat, salt, med timing</span></div>`;
+      // HR alerts (bradycardia / tachycardia)
+      if (meanHRVal != null && hrReadings.length >= 10) {
+        const hrLow = hrReadings.filter(x => x.hr <= 55);
+        const hrHigh = hrReadings.filter(x => x.hr >= 90);
+        const onBeta = medNames.some(n => /metoprolol|atenolol|propranolol/i.test(n));
+        if (hrLow.length >= 3 && onBeta) {
+          html += `<div style="margin-top:4px;"><span class="kci-pill pill-warn">${hrLow.length} readings HR ≤55 on beta-blocker</span></div>`;
+        }
+        if (hrHigh.length >= 3) {
+          html += `<div style="margin-top:4px;"><span class="kci-pill pill-danger">${hrHigh.length} readings HR ≥90</span></div>`;
+        }
       }
+
+      // Time-of-day hotspot pills
+      if (rs.length >= 20) {
+        const amStart = +$('amStart').value, amEnd = +$('amEnd').value;
+        const amMid = (amStart + amEnd) / 2;
+        const pmMid = 18;
+        const earlyAM = morning.filter(r => r.t.getHours() < amMid);
+        const lateAM = morning.filter(r => r.t.getHours() >= amMid);
+        const earlyPM = ae.filter(r => r.t.getHours() < pmMid);
+        const latePM = ae.filter(r => r.t.getHours() >= pmMid);
+        const hotPills = [];
+
+        if (earlyAM.length >= 5 && lateAM.length >= 5) {
+          const diff = mean(lateAM.map(x => x.sys)) - mean(earlyAM.map(x => x.sys));
+          if (Math.abs(diff) >= 5) {
+            const higher = diff > 0 ? 'Late' : 'Early';
+            hotPills.push(`${higher} AM runs +${Math.abs(diff).toFixed(0)} higher`);
+          }
+        }
+        if (earlyPM.length >= 5 && latePM.length >= 5) {
+          const diff = mean(latePM.map(x => x.sys)) - mean(earlyPM.map(x => x.sys));
+          if (Math.abs(diff) >= 5) {
+            const higher = diff > 0 ? 'Evening' : 'Afternoon';
+            hotPills.push(`${higher} runs +${Math.abs(diff).toFixed(0)} higher`);
+          }
+        }
+
+        // Hot hours
+        const hourBuckets = {};
+        for (const r of rs) { const h = r.t.getHours(); if (!hourBuckets[h]) hourBuckets[h] = []; hourBuckets[h].push(r.sys); }
+        const overallMeanSBP = mean(rs.map(x => x.sys));
+        const hotHours = [];
+        for (const [h, vals] of Object.entries(hourBuckets)) {
+          if (vals.length >= 5) {
+            const hMean = mean(vals);
+            if (hMean - overallMeanSBP >= 8) hotHours.push({ hour: +h, mean: hMean, n: vals.length, diff: hMean - overallMeanSBP });
+          }
+        }
+        if (hotHours.length) {
+          hotHours.sort((a, b) => b.diff - a.diff);
+          const top = hotHours[0];
+          const hLabel = top.hour > 12 ? `${top.hour - 12}PM` : top.hour === 12 ? '12PM' : `${top.hour}AM`;
+          hotPills.push(`Peak hour: ${hLabel} (SBP ${Math.round(top.mean)}, +${Math.round(top.diff)} vs mean)`);
+        }
+
+        if (hotPills.length) {
+          html += `<div style="margin-top:6px;">`;
+          html += hotPills.map(p => `<span class="kci-pill pill-warn">${p}</span>`).join(' ');
+          html += `</div>`;
+        }
+      }
+
       html += `</div>`;
     }
 
-    // ── Card 4: Medication Hold Signal (conditional) ──
+    // ── Card 3: Medication Hold Signal (conditional) ──
     if (holdReadings.length >= 3 && nonHoldReadings.length >= 5) {
       const holdMean = mean(holdReadings.map(x => x.sys));
       const nonHoldMean = mean(nonHoldReadings.map(x => x.sys));
       const d = holdMean - nonHoldMean;
       const totalHolds = holdEvents.length;
       const holdRate = totalHolds / Math.max(1, totalDays) * 30;
+      const dSign = d >= 0 ? '+' : '';
+      const dColor = d >= 5 ? 'var(--ok)' : d >= 2 ? 'var(--warn)' : 'var(--danger)';
 
       html += `<div class="kci-card">`;
       html += `<div class="kci-title">Medication Hold Signal</div>`;
 
-      // Delta visual: holdMean - nonHoldMean; positive = BP rises when meds held = meds working
-      const dSign = d >= 0 ? '+' : '';
-      const dColor = d >= 5 ? 'var(--ok)' : d >= 2 ? 'var(--warn)' : 'var(--danger)';
-      html += `<div style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">`;
-      html += `<div style="text-align:center;"><div class="muted" style="font-size:11px;">On meds</div><div style="font-weight:700; font-size:18px;">${Math.round(nonHoldMean)}</div></div>`;
-      html += `<div style="font-size:18px; color:var(--muted);">→</div>`;
-      html += `<div style="text-align:center;"><div class="muted" style="font-size:11px;">Hold days</div><div style="font-weight:700; font-size:18px;">${Math.round(holdMean)}</div></div>`;
-      html += `<div style="font-weight:700; font-size:15px; color:${dColor};">${dSign}${Math.round(d)}</div>`;
+      // Labeled comparison: two boxes with delta between
+      html += `<div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; margin-bottom:8px;">`;
+      // On meds box
+      html += `<div style="text-align:center; padding:8px 6px; background:rgba(0,0,0,.03); border-radius:8px;">`;
+      html += `<div style="font-size:11px; color:var(--muted); font-weight:600;">Mean SBP</div>`;
+      html += `<div style="font-size:10px; color:var(--muted);">on meds</div>`;
+      html += `<div style="font-weight:700; font-size:22px; margin-top:4px;">${Math.round(nonHoldMean)}</div>`;
+      html += `</div>`;
+      // Arrow + delta
+      html += `<div style="text-align:center;">`;
+      html += `<div style="font-size:16px; color:var(--muted);">→</div>`;
+      html += `<div style="font-weight:700; font-size:14px; color:${dColor}; margin-top:2px;">${dSign}${Math.round(d)}</div>`;
+      html += `</div>`;
+      // Hold days box
+      html += `<div style="text-align:center; padding:8px 6px; background:rgba(0,0,0,.03); border-radius:8px;">`;
+      html += `<div style="font-size:11px; color:var(--muted); font-weight:600;">Mean SBP</div>`;
+      html += `<div style="font-size:10px; color:var(--muted);">hold days</div>`;
+      html += `<div style="font-weight:700; font-size:22px; margin-top:4px;">${Math.round(holdMean)}</div>`;
+      html += `</div>`;
       html += `</div>`;
 
       // Conclusion
@@ -2084,81 +2178,6 @@
       }
       html += `</div>`;
       html += `</div>`;
-    }
-
-    // ── Card 5: Heart Rate (conditional) ──
-    if (meanHRVal != null && hrReadings.length >= 10) {
-      const hrLow = hrReadings.filter(x => x.hr <= 55);
-      const hrHigh = hrReadings.filter(x => x.hr >= 90);
-      const onBeta = medNames.some(n => /metoprolol|atenolol|propranolol/i.test(n));
-
-      html += `<div class="kci-card">`;
-      html += `<div class="kci-title">Heart Rate</div>`;
-      html += `<div class="kci-big">${Math.round(meanHRVal)} <span style="font-size:14px; font-weight:400; color:var(--muted);">bpm</span></div>`;
-
-      // Alert pills — only if triggered
-      if (hrLow.length >= 3 && onBeta) {
-        html += `<div style="margin-top:6px;"><span class="kci-pill pill-warn">${hrLow.length} readings HR ≤55 on beta-blocker</span></div>`;
-      }
-      if (hrHigh.length >= 3) {
-        const hrHighSev = 100 * hrHigh.filter(x => x.severe).length / hrHigh.length;
-        html += `<div style="margin-top:4px;"><span class="kci-pill pill-danger">${hrHigh.length} readings HR ≥90 (${hrHighSev.toFixed(0)}% also severe)</span></div>`;
-      }
-      html += `</div>`;
-    }
-
-    // ── Card 6: Time-of-Day Hotspots (conditional, full width) ──
-    if (rs.length >= 20) {
-      const amStart = +$('amStart').value, amEnd = +$('amEnd').value;
-      const amMid = (amStart + amEnd) / 2;
-      const pmMid = 18;
-
-      const earlyAM = morning.filter(r => r.t.getHours() < amMid);
-      const lateAM = morning.filter(r => r.t.getHours() >= amMid);
-      const earlyPM = ae.filter(r => r.t.getHours() < pmMid);
-      const latePM = ae.filter(r => r.t.getHours() >= pmMid);
-
-      const pills = [];
-
-      if (earlyAM.length >= 5 && lateAM.length >= 5) {
-        const diff = mean(lateAM.map(x => x.sys)) - mean(earlyAM.map(x => x.sys));
-        if (Math.abs(diff) >= 5) {
-          const higher = diff > 0 ? 'Late' : 'Early';
-          pills.push(`${higher} AM runs +${Math.abs(diff).toFixed(0)} higher`);
-        }
-      }
-      if (earlyPM.length >= 5 && latePM.length >= 5) {
-        const diff = mean(latePM.map(x => x.sys)) - mean(earlyPM.map(x => x.sys));
-        if (Math.abs(diff) >= 5) {
-          const higher = diff > 0 ? 'Evening' : 'Afternoon';
-          pills.push(`${higher} runs +${Math.abs(diff).toFixed(0)} higher`);
-        }
-      }
-
-      // Hot hours
-      const hourBuckets = {};
-      for (const r of rs) { const h = r.t.getHours(); if (!hourBuckets[h]) hourBuckets[h] = []; hourBuckets[h].push(r.sys); }
-      const overallMeanSBP = mean(rs.map(x => x.sys));
-      const hotHours = [];
-      for (const [h, vals] of Object.entries(hourBuckets)) {
-        if (vals.length >= 5) {
-          const hMean = mean(vals);
-          if (hMean - overallMeanSBP >= 8) hotHours.push({ hour: +h, mean: hMean, n: vals.length, diff: hMean - overallMeanSBP });
-        }
-      }
-      if (hotHours.length) {
-        hotHours.sort((a, b) => b.diff - a.diff);
-        const top = hotHours[0];
-        const hLabel = top.hour > 12 ? `${top.hour - 12}PM` : top.hour === 12 ? '12PM' : `${top.hour}AM`;
-        pills.push(`Peak: ${hLabel} SBP ${Math.round(top.mean)} (+${Math.round(top.diff)} vs mean)`);
-      }
-
-      if (pills.length) {
-        html += `<div class="kci-card kci-full">`;
-        html += `<div class="kci-title">Time-of-Day Hotspots</div>`;
-        html += pills.map(p => `<span class="kci-pill pill-warn">${p}</span>`).join(' ');
-        html += `</div>`;
-      }
     }
 
     html += '</div>'; // close kci-grid
@@ -2268,8 +2287,7 @@
       {
         title: 'Key Clinical Observations Thresholds',
         rules: [
-          `<b>SBP variability:</b> SD ≥ 18 = high, ≥ 13 = moderate, < 13 = typical (requires ≥ 10 readings)`,
-          `<b>Late-day/morning burden:</b> Flagged when one window's severe % exceeds the other by > 5 pp AND the higher window has > 8% severe`,
+          `<b>Late-day/morning burden:</b> Flagged when one window's severe % exceeds the other by > 5 pp`,
           `<b>Hold-day signal:</b> Requires ≥ 3 hold-day readings AND ≥ 5 non-hold readings. SBP difference ≥ 5 mmHg = "confirms meds working"; < 2 mmHg = "questions efficacy"`,
           `<b>Heart rate:</b> HR ≤ 55 = bradycardic (flagged if on beta-blocker, ≥ 3 readings); HR ≥ 90 = tachycardic (≥ 3 readings). Requires ≥ 10 HR readings total`,
           `<b>Within-window time patterns:</b> Each AM/PM window split at midpoint; early vs late compared at ≥ 5 mmHg threshold. Per-hour outliers: ≥ 8 mmHg above mean with n ≥ 5`,
@@ -2278,13 +2296,10 @@
       {
         title: 'Clinical Insights Dashboard',
         rules: [
-          `<b>Layout:</b> Visual card dashboard — 6 possible cards in a 2-column grid`,
-          `<b>Card 1 (Status + Trajectory):</b> Always shown. Color-coded badge (green = at target, amber = near target, red = above). Net trajectory across all validated phases via bpTier()`,
-          `<b>Card 2 (Circadian Split):</b> Shown if AM ≥ 5 AND PM ≥ 5 readings. Horizontal proportion bars (green/red/severe) for AM vs PM. Delta annotation. Alert if |diff| ≥ 8 mmHg`,
-          `<b>Card 3 (Variability):</b> Shown if ≥ 10 readings. CSS gauge with 3 zones: SD &lt; 13 = typical (green), 13-17 = moderate (amber), ≥ 18 = high (red). p10-p90 range`,
-          `<b>Card 4 (Hold Signal):</b> Shown if ≥ 3 hold readings AND ≥ 5 non-hold. Delta SBP on-med vs hold-day. Green if Δ ≥ 5, amber if 2-5, red if &lt; 2`,
-          `<b>Card 5 (Heart Rate):</b> Shown if ≥ 10 HR readings. Mean HR. Alert pills for bradycardia (HR ≤ 55 on beta-blocker) or tachycardia (HR ≥ 90)`,
-          `<b>Card 6 (Time Hotspots):</b> Shown only if within-window pattern ≥ 5 mmHg OR hot hour ≥ 8 mmHg above mean. No "no pattern" filler`,
+          `<b>Layout:</b> Visual card dashboard — up to 3 cards in a 2-column grid`,
+          `<b>Card 1 (Status + Trajectory):</b> Always shown (full width). Color-coded badge (green = at target, amber = near target, red = above). Net trajectory across all validated phases via bpTier()`,
+          `<b>Card 2 (Circadian Pattern):</b> Full width. Shown if AM ≥ 5 AND PM ≥ 5 readings. Combines: proportion bars (green/red/severe) with labeled mini-legend, Mean BP column, HR by window, circadian delta, severe burden, HR alerts (bradycardia/tachycardia), and time-of-day hotspot pills`,
+          `<b>Card 3 (Hold Signal):</b> Shown if ≥ 3 hold readings AND ≥ 5 non-hold. Labeled "Mean SBP on meds" vs "Mean SBP hold days" boxes with delta. Green if Δ ≥ 5, amber if 2-5, red if &lt; 2`,
           `<b>Phase data:</b> ${N} readings per phase, ${lookbackMonths}-month lookback, most recent ${recentWeeks} week(s). Minimum n ≥ 3 for a phase to be validated`,
         ]
       },
