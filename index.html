@@ -2220,19 +2220,22 @@
         html += `the most recent readings on ${currentMedStr} show <span class="danger"><b>BP still above the 135/85 target</b></span> (${Math.round(recentPhase.all.meanSBP)}/${Math.round(recentPhase.all.meanDBP)}). `;
       }
 
-      // Characterize trajectory direction — reference the net effect from Treatment Trajectory above
+      // Characterize trajectory direction using centralized bpTier thresholds
       if (validPhases.length >= 2) {
         const firstP = validPhases[0];
         const netSBPoa = recentPhase.all.meanSBP - firstP.all.meanSBP;
+        const netDBPoa = recentPhase.all.meanDBP - firstP.all.meanDBP;
         const netGreenOA = (recentPhase.all.green || 0) - (firstP.all.green || 0);
-        if (netSBPoa <= -8) {
-          html += `As detailed above, ${validPhases.length - 1} medication changes have produced a <span class="ok">meaningful cumulative SBP drop of ${Math.abs(netSBPoa).toFixed(0)} mmHg</span>, suggesting the current drug classes are effective. `;
+        const { tier: netTier, improving: netImproving } = bpTier(netSBPoa, netDBPoa);
+        const netLabel = bpResponseLabel(netSBPoa, netDBPoa);
+        if (netTier >= 2 && netImproving) {
+          html += `As detailed above, ${validPhases.length - 1} medication changes have produced a ${netLabel} (cumulative SBP ${netSBPoa >= 0 ? '+' : ''}${netSBPoa.toFixed(0)} mmHg), suggesting the current drug classes are effective. `;
           if (!recentAtGoal) html += `Further titration within the same classes may be warranted. `;
-        } else if (netSBPoa <= -3) {
-          html += `Across ${validPhases.length - 1} medication changes, the cumulative SBP improvement is modest (${Math.abs(netSBPoa).toFixed(0)} mmHg). `;
+        } else if (netTier >= 1 && netImproving) {
+          html += `Across ${validPhases.length - 1} medication changes, the cumulative response is ${netLabel} (SBP ${netSBPoa >= 0 ? '+' : ''}${netSBPoa.toFixed(0)} mmHg). `;
           if (!recentAtGoal) html += `Consider whether this response justifies continued uptitration vs. switching or adding a different drug class. `;
         } else {
-          html += `Despite ${validPhases.length - 1} medication changes, the net SBP response has been limited (${netSBPoa >= 0 ? '+' : ''}${netSBPoa.toFixed(0)} mmHg). `;
+          html += `Despite ${validPhases.length - 1} medication changes, the net response has been ${netLabel} (SBP ${netSBPoa >= 0 ? '+' : ''}${netSBPoa.toFixed(0)} mmHg). `;
           if (netGreenOA <= -10) html += `Goal attainment has also declined (${netGreenOA.toFixed(0)} pp). `;
           if (!recentAtGoal) html += `This suggests the current approach may not be sufficient — consider switching to a different drug class or evaluating for secondary causes. `;
         }
@@ -2409,7 +2412,7 @@
           `<b>At goal:</b> Mean SBP < 135 AND mean DBP < 85`,
           `<b>Near goal:</b> Mean SBP < 140 AND mean DBP < 90`,
           `<b>Low severe burden:</b> < 5% severe readings in most recent phase`,
-          `<b>Trajectory direction:</b> Net SBP ≤ -8 = "meaningful cumulative drop"; ≤ -3 = "modest improvement"; > -3 = "limited response"`,
+          `<b>Trajectory direction:</b> Uses centralized bpTier() thresholds (same SBP/DBP tiers as Treatment Trajectory). Tier ≥ meaningful + improving = "effective"; tier = modest + improving = "consider alternatives"; minimal/worsening = "insufficient approach"`,
           `<b>Hold-event burden:</b> Holds counted per phase. Rate ≥ 2/month = "significant detractor." Frequent holds suggest tolerability boundary`,
           `<b>Treatment plan comparison:</b> Composite score = avg(AM SBP, PM SBP) − 0.5 × green% + 1.0 × severe% + 5 × (holds/month). Lower = better. If best regimen ≠ current, suggests re-evaluation`,
         ]
