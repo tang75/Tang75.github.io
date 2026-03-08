@@ -308,6 +308,7 @@
           </div>
         </div>
       </div>
+      <div id="regimenComparisonContainer"></div>
     </div>
   </div>
 
@@ -1696,6 +1697,102 @@
 
     // Show legend
     legend.style.display = 'block';
+
+    // --- Regimen Comparison Table ---
+    const compContainer = $('regimenComparisonContainer');
+    if (!compContainer) return;
+    // Build per-phase aggregate stats (combine AM+PM rows)
+    const phaseGroups = [];
+    for (let bi = 0; bi < boundaries.length; bi++) {
+      const amRow = tableRows[bi * 2];
+      const pmRow = tableRows[bi * 2 + 1];
+      if (!amRow || !pmRow) continue;
+      const totalN = amRow.n + pmRow.n;
+      if (totalN < 3) continue;
+      // Compute hold events within this phase's date range
+      const pStart = boundaries[bi].date;
+      const pEnd = (bi + 1 < boundaries.length) ? boundaries[bi + 1].date : rs[rs.length - 1].t;
+      const phaseDays = Math.max(1, daysBetween(pStart, pEnd));
+      const phaseHolds = holdEvents.filter(h => h.getTime() >= pStart.getTime() && h.getTime() < pEnd.getTime());
+      // All readings for combined green/severe
+      const allReadingsPhase = [...(function() {
+        if (bi === boundaries.length - 1) return getRecentReadings(rs, recentWeeks, 'All');
+        return getLastNReadings(rs, boundaries[bi + 1].date, N * 4, lookbackMonths, 'All');
+      })()];
+      const allStats = phaseStatsFromReadings(allReadingsPhase);
+      phaseGroups.push({
+        label: amRow.phase,
+        amSBP: amRow.meanSBP,
+        pmSBP: pmRow.meanSBP,
+        amN: amRow.n,
+        pmN: pmRow.n,
+        green: allStats.green || 0,
+        severe: allStats.severe || 0,
+        holdCount: phaseHolds.length,
+        days: phaseDays,
+        holdPenalty: phaseHolds.length / phaseDays * 30 * 5,
+      });
+    }
+    if (phaseGroups.length < 2) { compContainer.innerHTML = ''; return; }
+    // Score and rank
+    const scored = phaseGroups.map(p => {
+      const amS = p.amN >= 2 ? p.amSBP : (p.pmN >= 2 ? p.pmSBP : 999);
+      const pmS = p.pmN >= 2 ? p.pmSBP : (p.amN >= 2 ? p.amSBP : 999);
+      const score = (amS + pmS) / 2 - p.green * 0.5 + p.severe * 1.0 + p.holdPenalty;
+      return { ...p, amS, pmS, score };
+    });
+    scored.sort((a, b) => a.score - b.score);
+    const best = scored[0], worst = scored[scored.length - 1];
+
+    let compHtml = '<div class="hr"></div>';
+    compHtml += '<div style="font-weight:650; font-size:14px; margin-bottom:8px; color:var(--accent);">Treatment Plan Comparison</div>';
+    compHtml += '<table class="phase-table" style="font-size:12px;"><thead><tr>';
+    compHtml += '<th>Regimen</th><th>AM SBP</th><th>PM SBP</th><th>At Goal</th><th>Severe</th><th>Holds</th><th>Rank</th>';
+    compHtml += '</tr></thead><tbody>';
+    scored.forEach((p, idx) => {
+      const isBest = idx === 0;
+      const isWorst = idx === scored.length - 1 && scored.length > 1;
+      const rowBg = isBest ? 'background:rgba(0,200,100,.08);' : isWorst ? 'background:rgba(255,80,80,.06);' : '';
+      const rankIcon = isBest ? ' \u{1F3C6}' : '';
+      compHtml += `<tr style="${rowBg}">`;
+      compHtml += `<td style="text-align:left; max-width:200px; word-break:break-word;">${p.label}</td>`;
+      compHtml += `<td>${p.amN >= 2 ? Math.round(p.amS) : '\u2014'}</td>`;
+      compHtml += `<td>${p.pmN >= 2 ? Math.round(p.pmS) : '\u2014'}</td>`;
+      compHtml += `<td>${p.green.toFixed(0)}%</td>`;
+      compHtml += `<td>${p.severe.toFixed(0)}%</td>`;
+      compHtml += `<td>${p.holdCount}</td>`;
+      compHtml += `<td style="font-weight:600;">#${idx + 1}${rankIcon}</td>`;
+      compHtml += '</tr>';
+    });
+    compHtml += '</tbody></table>';
+    // Narrative
+    compHtml += '<div style="font-size:12px; line-height:1.6; margin-top:8px;">';
+    const bestParts = [];
+    if (best.amN >= 2) bestParts.push(`AM ${Math.round(best.amS)}`);
+    if (best.pmN >= 2) bestParts.push(`PM ${Math.round(best.pmS)}`);
+    compHtml += `<b>${best.label}</b> achieved the best overall profile`;
+    if (bestParts.length) compHtml += ` (${bestParts.join('/')})`;
+    compHtml += ` with ${best.green.toFixed(0)}% at goal and ${best.severe.toFixed(0)}% severe`;
+    if (best.holdCount === 0) compHtml += ' and no medication holds';
+    compHtml += '. ';
+    if (worst.score > best.score + 10) {
+      compHtml += `In contrast, <b>${worst.label}</b> performed least favorably`;
+      const worstParts = [];
+      if (worst.amN >= 2) worstParts.push(`AM ${Math.round(worst.amS)}`);
+      if (worst.pmN >= 2) worstParts.push(`PM ${Math.round(worst.pmS)}`);
+      if (worstParts.length) compHtml += ` (${worstParts.join('/')})`;
+      compHtml += ` with ${worst.green.toFixed(0)}% at goal, ${worst.severe.toFixed(0)}% severe`;
+      if (worst.holdCount > 0) compHtml += `, and ${worst.holdCount} hold${worst.holdCount > 1 ? 's' : ''}`;
+      compHtml += '. ';
+    }
+    // Flag if best is not the current (last) regimen
+    const bestIsLast = best.label === phaseGroups[phaseGroups.length - 1].label;
+    if (!bestIsLast) {
+      compHtml += `<span class="warn">The best-performing regimen (<b>${best.label}</b>) is not the current one.</span> `;
+      compHtml += `Consider whether returning to or building on that regimen may be beneficial, accounting for the clinical context of why it was changed. `;
+    }
+    compHtml += '</div>';
+    compContainer.innerHTML = compHtml;
   }
 
   // =============================================
@@ -2170,84 +2267,9 @@
         }
       }
 
-      // --- Treatment plan comparison: identify best-performing regimen ---
+      // Reference the Treatment Plan Comparison table on the Medication Response tab
       if (validPhases.length >= 2) {
-        html += `<br><b>Treatment plan comparison:</b> `;
-
-        // Score each phase: composite of AM SBP, PM SBP, green%, severe%, hold burden
-        // Lower score = better. Weight: SBP directly, green% inverted, severe% added, holds penalized
-        const scored = validPhases.map(p => {
-          const amSBP = p.am.n >= 2 ? p.am.meanSBP : (p.all.meanSBP || 999);
-          const pmSBP = p.pm.n >= 2 ? p.pm.meanSBP : (p.all.meanSBP || 999);
-          const green = p.all.green || 0;
-          const severe = p.all.severe || 0;
-          const holdPenalty = (p.holdCount || 0) / Math.max(1, p.days) * 30 * 5; // 5 pts per hold/month
-          // Composite: average of AM+PM SBP, penalize low green, penalize severe, penalize holds
-          const score = (amSBP + pmSBP) / 2 - green * 0.5 + severe * 1.0 + holdPenalty;
-          return { ...p, amSBP, pmSBP, green, severe, holdPenalty, score };
-        });
-
-        scored.sort((a, b) => a.score - b.score);
-        const best = scored[0];
-        const worst = scored[scored.length - 1];
-
-        // Build comparison table
-        html += '<table style="width:100%; margin:8px 0; border-collapse:collapse; font-size:12px;">';
-        html += '<tr style="border-bottom:1px solid rgba(122,162,255,.3);">';
-        html += '<th style="text-align:left; padding:4px 6px;">Regimen</th>';
-        html += '<th style="padding:4px 6px;">AM SBP</th>';
-        html += '<th style="padding:4px 6px;">PM SBP</th>';
-        html += '<th style="padding:4px 6px;">At Goal</th>';
-        html += '<th style="padding:4px 6px;">Severe</th>';
-        html += '<th style="padding:4px 6px;">Holds</th>';
-        html += '<th style="padding:4px 6px;">Rank</th>';
-        html += '</tr>';
-
-        scored.forEach((p, idx) => {
-          const isBest = idx === 0;
-          const isWorst = idx === scored.length - 1 && scored.length > 1;
-          const rowStyle = isBest ? 'background:rgba(0,200,100,.08);' : isWorst ? 'background:rgba(255,80,80,.06);' : '';
-          const rankIcon = isBest ? '🏆' : isWorst ? '' : '';
-          html += `<tr style="${rowStyle} border-bottom:1px solid rgba(255,255,255,.05);">`;
-          html += `<td style="padding:4px 6px; max-width:180px; word-break:break-word;">${p.label}</td>`;
-          html += `<td style="padding:4px 6px; text-align:center;">${p.am.n >= 2 ? Math.round(p.amSBP) : '—'}</td>`;
-          html += `<td style="padding:4px 6px; text-align:center;">${p.pm.n >= 2 ? Math.round(p.pmSBP) : '—'}</td>`;
-          html += `<td style="padding:4px 6px; text-align:center;">${p.green.toFixed(0)}%</td>`;
-          html += `<td style="padding:4px 6px; text-align:center;">${p.severe.toFixed(0)}%</td>`;
-          html += `<td style="padding:4px 6px; text-align:center;">${p.holdCount || 0}</td>`;
-          html += `<td style="padding:4px 6px; text-align:center; font-weight:600;">${rankIcon} #${idx + 1}</td>`;
-          html += '</tr>';
-        });
-        html += '</table>';
-
-        // Narrative about best vs worst
-        html += `<b>${best.label}</b> achieved the best overall profile`;
-        const bestParts = [];
-        if (best.am.n >= 2) bestParts.push(`AM ${Math.round(best.amSBP)}`);
-        if (best.pm.n >= 2) bestParts.push(`PM ${Math.round(best.pmSBP)}`);
-        if (bestParts.length) html += ` (${bestParts.join('/')})`;
-        html += ` with ${best.green.toFixed(0)}% at goal and ${best.severe.toFixed(0)}% severe`;
-        if (best.holdCount === 0) html += ' and no medication holds';
-        html += '. ';
-
-        if (worst.score > best.score + 10) {
-          html += `In contrast, <b>${worst.label}</b> performed least favorably`;
-          const worstParts = [];
-          if (worst.am.n >= 2) worstParts.push(`AM ${Math.round(worst.amSBP)}`);
-          if (worst.pm.n >= 2) worstParts.push(`PM ${Math.round(worst.pmSBP)}`);
-          if (worstParts.length) html += ` (${worstParts.join('/')})`;
-          html += ` with ${worst.green.toFixed(0)}% at goal, ${worst.severe.toFixed(0)}% severe`;
-          if (worst.holdCount > 0) html += `, and ${worst.holdCount} medication hold${worst.holdCount > 1 ? 's' : ''}`;
-          html += '. ';
-        }
-
-        // Check if best is NOT the current/most recent phase — suggest reconsidering
-        const bestIdx = validPhases.indexOf(validPhases.find(p => p.label === best.label));
-        const lastIdx = validPhases.length - 1;
-        if (bestIdx >= 0 && bestIdx !== lastIdx) {
-          html += `<span class="warn">Notably, the best-performing regimen (<b>${best.label}</b>) is not the current one.</span> `;
-          html += `This may warrant re-evaluating whether returning to or building on that regimen would be beneficial, considering tolerability and the clinical context of why it was changed. `;
-        }
+        html += `See the <b>Treatment Plan Comparison</b> table on the Medication Response tab for a ranked comparison of all regimens. `;
       }
 
       // Circadian-informed suggestion
