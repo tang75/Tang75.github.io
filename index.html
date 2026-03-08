@@ -2228,14 +2228,15 @@
         const netGreenOA = (recentPhase.all.green || 0) - (firstP.all.green || 0);
         const { tier: netTier, improving: netImproving } = bpTier(netSBPoa, netDBPoa);
         const netLabel = bpResponseLabel(netSBPoa, netDBPoa);
+        const netBPstr = `SBP/DBP ${netSBPoa >= 0 ? '+' : ''}${netSBPoa.toFixed(0)}/${netDBPoa >= 0 ? '+' : ''}${netDBPoa.toFixed(0)} mmHg`;
         if (netTier >= 2 && netImproving) {
-          html += `As detailed above, ${validPhases.length - 1} medication changes have produced a ${netLabel} (cumulative SBP ${netSBPoa >= 0 ? '+' : ''}${netSBPoa.toFixed(0)} mmHg), suggesting the current drug classes are effective. `;
+          html += `As detailed above, ${validPhases.length - 1} medication changes have produced a ${netLabel} (cumulative ${netBPstr}), suggesting the current drug classes are effective. `;
           if (!recentAtGoal) html += `Further titration within the same classes may be warranted. `;
         } else if (netTier >= 1 && netImproving) {
-          html += `Across ${validPhases.length - 1} medication changes, the cumulative response is ${netLabel} (SBP ${netSBPoa >= 0 ? '+' : ''}${netSBPoa.toFixed(0)} mmHg). `;
+          html += `Across ${validPhases.length - 1} medication changes, the cumulative response is ${netLabel} (${netBPstr}). `;
           if (!recentAtGoal) html += `Consider whether this response justifies continued uptitration vs. switching or adding a different drug class. `;
         } else {
-          html += `Despite ${validPhases.length - 1} medication changes, the net response has been ${netLabel} (SBP ${netSBPoa >= 0 ? '+' : ''}${netSBPoa.toFixed(0)} mmHg). `;
+          html += `Despite ${validPhases.length - 1} medication changes, the net response has been ${netLabel} (${netBPstr}). `;
           if (netGreenOA <= -10) html += `Goal attainment has also declined (${netGreenOA.toFixed(0)} pp). `;
           if (!recentAtGoal) html += `This suggests the current approach may not be sufficient — consider switching to a different drug class or evaluating for secondary causes. `;
         }
