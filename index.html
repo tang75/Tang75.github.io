@@ -1684,6 +1684,63 @@
   }
 
   // =============================================
+  // RESPONSE CHARACTERIZATION HELPERS
+  // Thresholds: 1–5 = modest, >5 = notable, >10 = significant
+  // Rule: if either SBP or DBP qualifies for a higher tier, use it
+  // =============================================
+  function bpResponseLabel(dSBP, dDBP) {
+    const absSBP = Math.abs(dSBP);
+    const absDBP = dDBP != null ? Math.abs(dDBP) : 0;
+    const maxAbs = Math.max(absSBP, absDBP);
+    // Direction from SBP if meaningful, else from DBP
+    const improving = absSBP >= 1 ? dSBP < 0 : (dDBP != null && absDBP >= 1 ? dDBP < 0 : false);
+    if (maxAbs < 1) return 'minimal change';
+    let tier;
+    if (maxAbs > 10) tier = 'significant';
+    else if (maxAbs > 5) tier = 'notable';
+    else tier = 'modest';
+    const dir = improving ? 'improvement' : 'worsening';
+    if (improving) {
+      if (tier === 'significant') return '<span class="ok"><b>significant improvement</b></span>';
+      if (tier === 'notable') return '<span class="ok"><b>notable improvement</b></span>';
+      return '<span class="ok">modest improvement</span>';
+    } else {
+      if (tier === 'significant') return '<span class="danger"><b>significant worsening</b></span>';
+      if (tier === 'notable') return '<span class="warn"><b>notable worsening</b></span>';
+      return '<span class="warn">modest worsening</span>';
+    }
+  }
+  function bpArrow(dSBP, dDBP) {
+    const absSBP = Math.abs(dSBP);
+    const absDBP = dDBP != null ? Math.abs(dDBP) : 0;
+    const maxAbs = Math.max(absSBP, absDBP);
+    const improving = absSBP >= 1 ? dSBP < 0 : (dDBP != null ? dDBP < 0 : false);
+    if (maxAbs > 10) return improving ? ' <span class="ok">↓↓</span>' : ' <span class="danger">↑↑</span>';
+    if (maxAbs > 5) return improving ? ' <span class="ok">↓</span>' : ' <span class="warn">↑</span>';
+    return '';
+  }
+  function ppLabel(dPP, type) {
+    // type: 'green' (positive=good) or 'severe' (negative=good)
+    const abs = Math.abs(dPP);
+    if (abs < 1) return null;
+    let tier;
+    if (abs > 10) tier = 'significant';
+    else if (abs > 5) tier = 'notable';
+    else tier = 'modest';
+    const bold = tier !== 'modest';
+    const b = bold ? '<b>' : '', be = bold ? '</b>' : '';
+    if (type === 'green') {
+      const word = dPP > 0 ? 'gain' : 'decline';
+      const cls = dPP > 0 ? 'ok' : (tier === 'significant' ? 'danger' : 'warn');
+      return `<span class="${cls}">${b}${tier} ${word}${be}</span>`;
+    } else {
+      const word = dPP > 0 ? 'increase' : 'reduction';
+      const cls = dPP < 0 ? 'ok' : (tier === 'significant' ? 'danger' : 'warn');
+      return `<span class="${cls}">${b}${tier} ${word}${be}</span>`;
+    }
+  }
+
+  // =============================================
   // CLINICAL INSIGHTS — Global Pattern Narrative
   // =============================================
   function renderInsights(rs) {
@@ -1936,14 +1993,10 @@
         } else {
           const prev = validPhases[i - 1];
           const dSBP = curr.all.meanSBP - prev.all.meanSBP;
+          const dDBPall = curr.all.meanDBP - prev.all.meanDBP;
 
-          // Characterize the overall response (modest ≥5, significant ≥10)
-          let response;
-          if (dSBP <= -10) response = '<span class="ok"><b>significant improvement</b></span>';
-          else if (dSBP <= -5) response = '<span class="ok">modest improvement</span>';
-          else if (dSBP >= 10) response = '<span class="danger"><b>significant worsening</b></span>';
-          else if (dSBP >= 5) response = '<span class="warn">modest worsening</span>';
-          else response = 'minimal change';
+          // Characterize: use higher tier from either SBP or DBP (1–5 modest, >5 notable, >10 significant)
+          const response = bpResponseLabel(dSBP, dDBPall);
 
           html += `Transition to <b>${curr.label}</b> showed ${response}: `;
 
@@ -1952,13 +2005,13 @@
           if (curr.am.n >= 2 && prev.am.n >= 2) {
             const dAM = curr.am.meanSBP - prev.am.meanSBP;
             const dAMd = curr.am.meanDBP - prev.am.meanDBP;
-            const amChar = dAM <= -10 ? ' <span class="ok">↓↓</span>' : dAM <= -5 ? ' <span class="ok">↓</span>' : dAM >= 10 ? ' <span class="danger">↑↑</span>' : dAM >= 5 ? ' <span class="warn">↑</span>' : '';
+            const amChar = bpArrow(dAM, dAMd);
             amPmParts.push(`AM ${dAM >= 0 ? '+' : ''}${dAM.toFixed(0)}/${dAMd >= 0 ? '+' : ''}${dAMd.toFixed(0)} → ${Math.round(curr.am.meanSBP)}/${Math.round(curr.am.meanDBP)} (n=${curr.am.n})${amChar}`);
           }
           if (curr.pm.n >= 2 && prev.pm.n >= 2) {
             const dPM = curr.pm.meanSBP - prev.pm.meanSBP;
             const dPMd = curr.pm.meanDBP - prev.pm.meanDBP;
-            const pmChar = dPM <= -10 ? ' <span class="ok">↓↓</span>' : dPM <= -5 ? ' <span class="ok">↓</span>' : dPM >= 10 ? ' <span class="danger">↑↑</span>' : dPM >= 5 ? ' <span class="warn">↑</span>' : '';
+            const pmChar = bpArrow(dPM, dPMd);
             amPmParts.push(`PM ${dPM >= 0 ? '+' : ''}${dPM.toFixed(0)}/${dPMd >= 0 ? '+' : ''}${dPMd.toFixed(0)} → ${Math.round(curr.pm.meanSBP)}/${Math.round(curr.pm.meanDBP)} (n=${curr.pm.n})${pmChar}`);
           }
           if (amPmParts.length) {
@@ -1970,14 +2023,10 @@
 
           const dGreen = (curr.all.green || 0) - (prev.all.green || 0);
           const dSev = (curr.all.severe || 0) - (prev.all.severe || 0);
-          if (Math.abs(dGreen) >= 5) {
-            const gChar = dGreen <= -10 ? '<span class="danger">significant decline</span>' : dGreen <= -5 ? '<span class="warn">modest decline</span>' : dGreen >= 10 ? '<span class="ok">significant gain</span>' : '<span class="ok">modest gain</span>';
-            html += `; green ${dGreen >= 0 ? '+' : ''}${dGreen.toFixed(0)}pp (${gChar})`;
-          }
-          if (Math.abs(dSev) >= 5) {
-            const sChar = dSev >= 10 ? '<span class="danger">significant increase</span>' : dSev >= 5 ? '<span class="warn">modest increase</span>' : dSev <= -10 ? '<span class="ok">significant reduction</span>' : '<span class="ok">modest reduction</span>';
-            html += `; severe ${dSev >= 0 ? '+' : ''}${dSev.toFixed(0)}pp (${sChar})`;
-          }
+          const gLbl = ppLabel(dGreen, 'green');
+          if (gLbl) html += `; green ${dGreen >= 0 ? '+' : ''}${dGreen.toFixed(0)}pp (${gLbl})`;
+          const sLbl = ppLabel(dSev, 'severe');
+          if (sLbl) html += `; severe ${dSev >= 0 ? '+' : ''}${dSev.toFixed(0)}pp (${sLbl})`;
           html += '. ';
         }
       }
@@ -1997,18 +2046,18 @@
       html += `<br><b>Net effect across ${validPhases.length} treatment phases:</b> `;
       html += `Comparing <b>${first.label}</b> → <b>${last.label}</b>: `;
 
-      // AM/PM net breakdown
+      // AM/PM net breakdown — uses both SBP and DBP for tier (higher of the two)
       const netParts = [];
       if (first.am.n >= 2 && last.am.n >= 2) {
         const nAM = last.am.meanSBP - first.am.meanSBP;
         const nAMd = last.am.meanDBP - first.am.meanDBP;
-        const amLbl = nAM <= -10 ? '<span class="ok">significant improvement</span>' : nAM <= -5 ? '<span class="ok">modest improvement</span>' : nAM >= 10 ? '<span class="danger">significant worsening</span>' : nAM >= 5 ? '<span class="warn">modest worsening</span>' : 'minimal change';
+        const amLbl = bpResponseLabel(nAM, nAMd);
         netParts.push(`AM SBP/DBP ${nAM >= 0 ? '+' : ''}${nAM.toFixed(0)}/${nAMd >= 0 ? '+' : ''}${nAMd.toFixed(0)} (${Math.round(first.am.meanSBP)}→${Math.round(last.am.meanSBP)}, ${amLbl})`);
       }
       if (first.pm.n >= 2 && last.pm.n >= 2) {
         const nPM = last.pm.meanSBP - first.pm.meanSBP;
         const nPMd = last.pm.meanDBP - first.pm.meanDBP;
-        const pmLbl = nPM <= -10 ? '<span class="ok">significant improvement</span>' : nPM <= -5 ? '<span class="ok">modest improvement</span>' : nPM >= 10 ? '<span class="danger">significant worsening</span>' : nPM >= 5 ? '<span class="warn">modest worsening</span>' : 'minimal change';
+        const pmLbl = bpResponseLabel(nPM, nPMd);
         netParts.push(`PM SBP/DBP ${nPM >= 0 ? '+' : ''}${nPM.toFixed(0)}/${nPMd >= 0 ? '+' : ''}${nPMd.toFixed(0)} (${Math.round(first.pm.meanSBP)}→${Math.round(last.pm.meanSBP)}, ${pmLbl})`);
       }
       if (netParts.length) {
@@ -2017,12 +2066,12 @@
         html += `SBP/DBP ${netSBP >= 0 ? '+' : ''}${netSBP.toFixed(0)}/${netDBPtot >= 0 ? '+' : ''}${netDBPtot.toFixed(0)} mmHg. `;
       }
 
-      // Goal attainment and severe burden with threshold labels
-      const greenLbl = netGreen <= -10 ? '<span class="danger">significant decline</span>' : netGreen <= -5 ? '<span class="warn">modest decline</span>' : netGreen >= 10 ? '<span class="ok">significant gain</span>' : netGreen >= 5 ? '<span class="ok">modest gain</span>' : 'minimal change';
+      // Goal attainment and severe burden with three-tier labels
+      const greenLbl = ppLabel(netGreen, 'green') || 'minimal change';
       html += `Goal attainment ${firstGreen.toFixed(0)}% → ${lastGreen.toFixed(0)}% (${netGreen >= 0 ? '+' : ''}${netGreen.toFixed(0)} pp, ${greenLbl})`;
 
-      const sevLbl = netSev >= 10 ? '<span class="danger">significant increase</span>' : netSev >= 5 ? '<span class="warn">modest increase</span>' : netSev <= -10 ? '<span class="ok">significant reduction</span>' : netSev <= -5 ? '<span class="ok">modest reduction</span>' : 'minimal change';
-      html += `; severe burden ${firstSev.toFixed(0)}% → ${lastSev.toFixed(0)}% (${netSev >= 0 ? '+' : ''}${netSev.toFixed(0)} pp, ${sevLbl})`;
+      const sevLbl2 = ppLabel(netSev, 'severe') || 'minimal change';
+      html += `; severe burden ${firstSev.toFixed(0)}% → ${lastSev.toFixed(0)}% (${netSev >= 0 ? '+' : ''}${netSev.toFixed(0)} pp, ${sevLbl2})`;
       html += '. ';
 
       html += '</p></div>';
@@ -2271,7 +2320,7 @@
           `<b>Lookback:</b> ${lookbackMonths} months before the next boundary date`,
           `<b>Last phase:</b> all readings in the most recent ${recentWeeks} week(s)`,
           `<b>Reasoning order:</b> 1. Circadian Pattern → 2. Key Clinical Observations → 3. Treatment Trajectory → 4. Overall Assessment`,
-          `<b>Treatment Trajectory:</b> Each phase shows AM and PM mean SBP/DBP separately (not just combined). Response characterization: SBP Δ ≤ -10 = "significant improvement", ≤ -5 = "modest improvement", ≥ +5 = "modest worsening", ≥ +10 = "significant worsening". Green/severe pp changes also use 5/10 thresholds`,
+          `<b>Treatment Trajectory:</b> Each phase shows AM and PM mean SBP/DBP separately (not just combined). Response characterization uses MAX(|ΔSBP|, |ΔDBP|) for tier: 1–5 mmHg = "modest", >5 = "notable", >10 = "significant". If either SBP or DBP qualifies for a higher tier, the higher adjective is applied. Same three-tier labels for green/severe pp changes`,
           `<b>Within-window time analysis:</b> Each window (AM/PM) is split at midpoint. Early vs late half compared; if SBP differs by ≥ 5 mmHg, reported. Also checks each clock hour for outlier means (≥ 8 mmHg above overall mean, n ≥ 5)`,
           `<b>Net effect:</b> Compares first validated phase vs last validated phase (both need n ≥ 3). AM and PM shown separately with threshold labels`,
           `<b>Overall Assessment focus:</b> Most recent phase's readings (not grand mean over entire date range)`,
