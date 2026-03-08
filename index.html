@@ -2116,7 +2116,7 @@
           const dSBP = curr.all.meanSBP - prev.all.meanSBP;
           const dDBPall = curr.all.meanDBP - prev.all.meanDBP;
 
-          // Characterize: use higher tier from either SBP or DBP (1–5 modest, >5 notable, >10 significant)
+          // Characterize: use higher tier from either SBP or DBP via bpTier()
           const response = bpResponseLabel(dSBP, dDBPall);
 
           html += `Transition to <b>${curr.label}</b> showed ${response}: `;
