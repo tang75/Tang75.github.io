@@ -184,7 +184,7 @@
       </div>
       <div class="pill">
         <label>AM window</label>
-        <input id="amStart" type="number" min="0" max="23" value="4" style="width:60px" />
+        <input id="amStart" type="number" min="0" max="23" value="0" style="width:60px" />
         <span class="muted small">to</span>
         <input id="amEnd" type="number" min="0" max="23" value="12" style="width:60px" />
       </div>
@@ -263,30 +263,19 @@
     </div>
 
     <div class="card" style="margin-top:14px;">
-      <div class="box" style="margin-bottom:10px;">
-        <div style="font-size:14px; font-weight:650; color:var(--text);" id="avgAllLabel">Recent 2-week avg (all)</div>
+      <div style="text-align:center;">
+        <div style="font-size:13px; font-weight:650; color:var(--muted);" id="avgAllLabel">Recent 2-week avg</div>
         <div class="big" id="avgAll">&mdash;</div>
         <div class="muted small" id="avgAllDetail">&mdash;</div>
       </div>
-      <div class="kpi" style="grid-template-columns:1fr 1fr;">
-        <div class="box">
-          <div style="font-size:13px; font-weight:650; color:var(--muted);" id="avgAmLabel">Morning</div>
-          <div class="big" style="font-size:19px;" id="avgAm">&mdash;</div>
-          <div class="muted small" id="avgAmDetail">&mdash;</div>
-        </div>
-        <div class="box">
-          <div style="font-size:13px; font-weight:650; color:var(--muted);" id="avgPmLabel">Afternoon/Evening</div>
-          <div class="big" style="font-size:19px;" id="avgPm">&mdash;</div>
-          <div class="muted small" id="avgPmDetail">&mdash;</div>
-        </div>
-      </div>
+      <div id="kpiSplitBar" style="margin-top:10px;"></div>
     </div>
   </div>
 
   <!-- Tab 2: Medication Response -->
   <div id="tab-phases" class="tab-content">
     <div class="card">
-      <div style="font-weight:650; font-size:15px; margin-bottom:4px;">Responses to Medication Plans (Morning vs Afternoon/Evening)</div>
+      <div style="font-weight:650; font-size:15px; margin-bottom:4px;">Responses to Medication Regimens (Morning vs Afternoon/Evening)</div>
       <div class="muted small" id="phaseRange">&mdash;</div>
       <div class="hr"></div>
       <div id="phaseTableContainer">
@@ -323,7 +312,6 @@
           </div>
         </details>
       </div>
-      <div id="regimenComparisonContainer"></div>
     </div>
   </div>
 
@@ -1336,33 +1324,52 @@
       labelSuffix = ` (${fmtDateShort(cutDate)} – ${fmtDateShort(new Date(latest))})`;
     }
     const rm = computeMetrics(rec);
+    const goal = getGoal();
 
-    $('avgAllLabel').textContent = `Recent 2-week avg (all)${labelSuffix}`;
-    $('avgAmLabel').textContent = `Morning`;
-    $('avgPmLabel').textContent = `Afternoon/Evening`;
+    $('avgAllLabel').textContent = `Recent 2-week avg${labelSuffix}`;
+    $('avgAll').textContent = fmtBP(rm.avgSys, rm.avgDia);
+    $('avgAllDetail').innerHTML = `n=${rm.count} &bull; <span class="ok"><b>Green</b> ${fmtPct(rm.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Red</b> ${fmtPct(rm.pctRed)}</span> &bull; <span style="color:#c62828"><b>Severe ${fmtPct(rm.pctSevere)}</b></span>${rm.pctHypo > 0 ? ' &bull; <span style="color:#7B1FA2"><b>Hypo</b> ' + fmtPct(rm.pctHypo) + '</span>' : ''}`;
 
-    $('avgAll').textContent=fmtBP(rm.avgSys,rm.avgDia);
-    $('avgAllDetail').innerHTML=`n=${rm.count} &bull; <span class="ok"><b>Green</b> ${fmtPct(rm.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Red</b> ${fmtPct(rm.pctRed)}</span> &bull; <span style="color:#c62828"><b>Severe ${fmtPct(rm.pctSevere)}</b></span>${rm.pctHypo>0?' &bull; <span style="color:#7B1FA2"><b>Hypo</b> '+fmtPct(rm.pctHypo)+'</span>':''}`;
-
-    // Morning card with color-coded details
-    $('avgAm').textContent=fmtBP(rm.avgAmSys,rm.avgAmDia);
+    // Split-status bar: AM (left) | PM (right), colored by status
     const amReadings = rec.filter(x => x.window === 'Morning');
-    const amM = amReadings.length ? computeMetrics(amReadings) : null;
-    if (amM && amM.count > 0) {
-      $('avgAmDetail').innerHTML=`n=${amM.count} &bull; <span class="ok"><b>Green</b> ${fmtPct(amM.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Red</b> ${fmtPct(amM.pctRed)}</span> &bull; <span style="color:#c62828"><b>Severe ${fmtPct(amM.pctSevere)}</b></span>${amM.pctHypo>0?' &bull; <span style="color:#7B1FA2"><b>Hypo</b> '+fmtPct(amM.pctHypo)+'</span>':''}`;
-    } else {
-      $('avgAmDetail').textContent = `n=0`;
-    }
-
-    // Afternoon/Evening card with color-coded details
-    $('avgPm').textContent=fmtBP(rm.avgPmSys,rm.avgPmDia);
     const pmReadings = rec.filter(x => x.window === 'Afternoon/Evening');
+    const amM = amReadings.length ? computeMetrics(amReadings) : null;
     const pmM = pmReadings.length ? computeMetrics(pmReadings) : null;
-    if (pmM && pmM.count > 0) {
-      $('avgPmDetail').innerHTML=`n=${pmM.count} &bull; <span class="ok"><b>Green</b> ${fmtPct(pmM.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Red</b> ${fmtPct(pmM.pctRed)}</span> &bull; <span style="color:#c62828"><b>Severe ${fmtPct(pmM.pctSevere)}</b></span>${pmM.pctHypo>0?' &bull; <span style="color:#7B1FA2"><b>Hypo</b> '+fmtPct(pmM.pctHypo)+'</span>':''}`;
-    } else {
-      $('avgPmDetail').textContent = `n=0`;
+
+    // Color by window status: green=at goal, amber=near goal, red=above
+    function statusColor(avgSys, avgDia) {
+      if (avgSys == null || avgDia == null) return { bg: '#e0e0e0', text: '#888', label: '—' };
+      if (avgSys <= goal.sys && avgDia <= goal.dia) return { bg: '#00C853', text: '#fff', label: 'At goal' };
+      if (avgSys < goal.sys + 5 && avgDia < goal.dia + 5) return { bg: '#FFB300', text: '#fff', label: 'Near goal' };
+      return { bg: '#e53935', text: '#fff', label: 'Above goal' };
     }
+    const amStatus = statusColor(rm.avgAmSys, rm.avgAmDia);
+    const pmStatus = statusColor(rm.avgPmSys, rm.avgPmDia);
+
+    // Bar width proportional to reading count
+    const totalN = (amM ? amM.count : 0) + (pmM ? pmM.count : 0);
+    const amPct = totalN > 0 ? ((amM ? amM.count : 0) / totalN * 100) : 50;
+    const pmPct = totalN > 0 ? ((pmM ? pmM.count : 0) / totalN * 100) : 50;
+
+    const barEl = $('kpiSplitBar');
+    let barHtml = `<div style="display:flex; border-radius:10px; overflow:hidden; height:54px; font-size:12px; font-weight:600;">`;
+    // AM half
+    barHtml += `<div style="flex:${amPct}; background:${amStatus.bg}; color:${amStatus.text}; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px 6px; min-width:80px;">`;
+    barHtml += `<div style="font-size:10px; opacity:.85; letter-spacing:.5px;">MORNING</div>`;
+    barHtml += `<div style="font-size:16px; font-weight:700;">${amM && amM.count > 0 ? fmtBP(rm.avgAmSys, rm.avgAmDia) : '—'}</div>`;
+    barHtml += `<div style="font-size:9px; opacity:.75;">n=${amM ? amM.count : 0}</div>`;
+    barHtml += `</div>`;
+    // Divider
+    barHtml += `<div style="width:2px; background:rgba(255,255,255,.4);"></div>`;
+    // PM half
+    barHtml += `<div style="flex:${pmPct}; background:${pmStatus.bg}; color:${pmStatus.text}; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px 6px; min-width:80px;">`;
+    barHtml += `<div style="font-size:10px; opacity:.85; letter-spacing:.5px;">AFT / EVE</div>`;
+    barHtml += `<div style="font-size:16px; font-weight:700;">${pmM && pmM.count > 0 ? fmtBP(rm.avgPmSys, rm.avgPmDia) : '—'}</div>`;
+    barHtml += `<div style="font-size:9px; opacity:.75;">n=${pmM ? pmM.count : 0}</div>`;
+    barHtml += `</div>`;
+    barHtml += `</div>`;
+
+    barEl.innerHTML = barHtml;
   }
 
   // =============================================
@@ -1696,101 +1703,6 @@
     // Show legend
     legend.style.display = 'block';
 
-    // --- Regimen Comparison Table ---
-    const compContainer = $('regimenComparisonContainer');
-    if (!compContainer) return;
-    // Build per-phase aggregate stats (combine AM+PM rows)
-    const phaseGroups = [];
-    for (let bi = 0; bi < boundaries.length; bi++) {
-      const amRow = tableRows[bi * 2];
-      const pmRow = tableRows[bi * 2 + 1];
-      if (!amRow || !pmRow) continue;
-      const totalN = amRow.n + pmRow.n;
-      if (totalN < 3) continue;
-      // Compute hold events within this phase's date range
-      const pStart = boundaries[bi].date;
-      const pEnd = (bi + 1 < boundaries.length) ? boundaries[bi + 1].date : rs[rs.length - 1].t;
-      const phaseDays = Math.max(1, daysBetween(pStart, pEnd));
-      const phaseHolds = holdEvents.filter(h => h.getTime() >= pStart.getTime() && h.getTime() < pEnd.getTime());
-      // All readings for combined green/severe
-      const allReadingsPhase = [...(function() {
-        if (bi === boundaries.length - 1) return getRecentReadings(rs, recentWeeks, 'All');
-        return getLastNReadings(rs, boundaries[bi + 1].date, N * 4, lookbackMonths, 'All');
-      })()];
-      const allStats = phaseStatsFromReadings(allReadingsPhase);
-      phaseGroups.push({
-        label: amRow.phase,
-        amSBP: amRow.meanSBP,
-        pmSBP: pmRow.meanSBP,
-        amN: amRow.n,
-        pmN: pmRow.n,
-        green: allStats.green || 0,
-        severe: allStats.severe || 0,
-        holdCount: phaseHolds.length,
-        days: phaseDays,
-        holdPenalty: phaseHolds.length / phaseDays * 30 * 5,
-      });
-    }
-    if (phaseGroups.length < 2) { compContainer.innerHTML = ''; return; }
-    // Score and rank
-    const scored = phaseGroups.map(p => {
-      const amS = p.amN >= 2 ? p.amSBP : (p.pmN >= 2 ? p.pmSBP : 999);
-      const pmS = p.pmN >= 2 ? p.pmSBP : (p.amN >= 2 ? p.amSBP : 999);
-      const score = (amS + pmS) / 2 - p.green * 0.5 + p.severe * 1.0 + p.holdPenalty;
-      return { ...p, amS, pmS, score };
-    });
-    scored.sort((a, b) => a.score - b.score);
-    const best = scored[0], worst = scored[scored.length - 1];
-
-    let compHtml = '<div class="hr"></div>';
-    compHtml += '<div style="font-weight:650; font-size:14px; margin-bottom:8px; color:var(--accent);">Treatment Plan Comparison</div>';
-    compHtml += '<table class="phase-table" style="font-size:12px;"><thead><tr>';
-    compHtml += '<th>Regimen</th><th>AM SBP</th><th>PM SBP</th><th>At Goal</th><th>Severe</th><th>Holds</th><th>Rank</th>';
-    compHtml += '</tr></thead><tbody>';
-    scored.forEach((p, idx) => {
-      const isBest = idx === 0;
-      const isWorst = idx === scored.length - 1 && scored.length > 1;
-      const rowBg = isBest ? 'background:rgba(0,200,100,.08);' : isWorst ? 'background:rgba(255,80,80,.06);' : '';
-      const rankIcon = isBest ? ' \u{1F3C6}' : '';
-      compHtml += `<tr style="${rowBg}">`;
-      compHtml += `<td style="text-align:left; max-width:200px; word-break:break-word;">${p.label}</td>`;
-      compHtml += `<td>${p.amN >= 2 ? Math.round(p.amS) : '\u2014'}</td>`;
-      compHtml += `<td>${p.pmN >= 2 ? Math.round(p.pmS) : '\u2014'}</td>`;
-      compHtml += `<td>${p.green.toFixed(0)}%</td>`;
-      compHtml += `<td>${p.severe.toFixed(0)}%</td>`;
-      compHtml += `<td>${p.holdCount}</td>`;
-      compHtml += `<td style="font-weight:600;">#${idx + 1}${rankIcon}</td>`;
-      compHtml += '</tr>';
-    });
-    compHtml += '</tbody></table>';
-    // Narrative
-    compHtml += '<div style="font-size:12px; line-height:1.6; margin-top:8px;">';
-    const bestParts = [];
-    if (best.amN >= 2) bestParts.push(`AM ${Math.round(best.amS)}`);
-    if (best.pmN >= 2) bestParts.push(`PM ${Math.round(best.pmS)}`);
-    compHtml += `<b>${best.label}</b> achieved the best overall profile`;
-    if (bestParts.length) compHtml += ` (${bestParts.join('/')})`;
-    compHtml += ` with ${best.green.toFixed(0)}% at goal and ${best.severe.toFixed(0)}% severe`;
-    if (best.holdCount === 0) compHtml += ' and no medication holds';
-    compHtml += '. ';
-    if (worst.score > best.score + 10) {
-      compHtml += `In contrast, <b>${worst.label}</b> performed least favorably`;
-      const worstParts = [];
-      if (worst.amN >= 2) worstParts.push(`AM ${Math.round(worst.amS)}`);
-      if (worst.pmN >= 2) worstParts.push(`PM ${Math.round(worst.pmS)}`);
-      if (worstParts.length) compHtml += ` (${worstParts.join('/')})`;
-      compHtml += ` with ${worst.green.toFixed(0)}% at goal, ${worst.severe.toFixed(0)}% severe`;
-      if (worst.holdCount > 0) compHtml += `, and ${worst.holdCount} hold${worst.holdCount > 1 ? 's' : ''}`;
-      compHtml += '. ';
-    }
-    // Flag if best is not the current (last) regimen
-    const bestIsLast = best.label === phaseGroups[phaseGroups.length - 1].label;
-    if (!bestIsLast) {
-      compHtml += `<span class="warn">The best-performing regimen (<b>${best.label}</b>) is not the current one.</span> `;
-      compHtml += `Consider whether returning to or building on that regimen may be beneficial, accounting for the clinical context of why it was changed. `;
-    }
-    compHtml += '</div>';
-    compContainer.innerHTML = compHtml;
   }
 
   // =============================================
@@ -1907,8 +1819,6 @@
 
     // Hold-day data
     const holdDaySet = new Set(holdEvents.map(d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`));
-    const holdReadings = rs.filter(r => holdDaySet.has(`${r.t.getFullYear()}-${r.t.getMonth()}-${r.t.getDate()}`));
-    const nonHoldReadings = rs.filter(r => !holdDaySet.has(`${r.t.getFullYear()}-${r.t.getMonth()}-${r.t.getDate()}`));
 
     // HR data
     const hrReadings = rs.filter(r => r.hr != null);
@@ -1936,7 +1846,7 @@
     // ===== BUILD VISUAL CARD DASHBOARD =====
     let html = '<div class="kci-grid">';
 
-    // ── Card 1: Current Status + Trajectory (full width) ──
+    // ── Card 1: Current Status + Treatment Plan Comparison (full width) ──
     const recentPhase = validPhases.length ? validPhases[validPhases.length - 1] : null;
     const recentAtGoal = recentPhase && recentPhase.all.meanSBP < 135 && recentPhase.all.meanDBP < 85;
     const recentNearGoal = recentPhase && recentPhase.all.meanSBP < 140 && recentPhase.all.meanDBP < 90;
@@ -1962,31 +1872,49 @@
     }
     html += `</div>`;
 
-    // Trajectory line
-    if (validPhases.length >= 2 && recentPhase) {
-      const firstP = validPhases[0];
-      const netSBP = recentPhase.all.meanSBP - firstP.all.meanSBP;
-      const netDBP = recentPhase.all.meanDBP - firstP.all.meanDBP;
-      const { tier: netTier, improving: netImproving } = bpTier(netSBP, netDBP);
-      const arrow = bpArrow(netSBP, netDBP);
-      const trajLabel = bpResponseLabel(netSBP, netDBP);
-      html += `<div class="kci-detail" style="margin-top:8px;">`;
-      html += `Net change from <b>${firstP.label}</b> → <b>${recentPhase.label}</b>: ${trajLabel} `;
-      html += `(SBP/DBP ${netSBP >= 0 ? '+' : ''}${netSBP.toFixed(0)}/${netDBP >= 0 ? '+' : ''}${netDBP.toFixed(0)} mmHg)${arrow}`;
+    // Treatment Plan Comparison table (ranked by composite score)
+    if (validPhases.length >= 2) {
+      const scored = validPhases.map(p => {
+        const amS = p.am.n >= 2 ? p.am.meanSBP : (p.pm.n >= 2 ? p.pm.meanSBP : 999);
+        const pmS = p.pm.n >= 2 ? p.pm.meanSBP : (p.am.n >= 2 ? p.am.meanSBP : 999);
+        const holdPenalty = p.holdCount / Math.max(1, p.days) * 30 * 5;
+        const green = p.all.green || 0;
+        const severe = p.all.severe || 0;
+        const score = (amS + pmS) / 2 - green * 0.5 + severe * 1.0 + holdPenalty;
+        return { ...p, amS, pmS, green, severe, holdPenalty, score };
+      });
+      scored.sort((a, b) => a.score - b.score);
+      const best = scored[0];
 
-      // Severe burden note
-      if (recentSev >= 5) {
-        html += ` &middot; <span class="warn">${recentSev.toFixed(0)}% still severe</span>`;
-      }
+      html += `<table class="phase-table" style="font-size:12px; margin-top:10px;"><thead><tr>`;
+      html += `<th>Regimen</th><th>AM SBP</th><th>PM SBP</th><th>At Goal</th><th>Severe</th><th>Holds</th><th>Rank</th>`;
+      html += `</tr></thead><tbody>`;
+      scored.forEach((p, idx) => {
+        const isBest = idx === 0;
+        const isWorst = idx === scored.length - 1 && scored.length > 1;
+        const rowBg = isBest ? 'background:rgba(0,200,100,.08);' : (isWorst && scored.length > 2) ? 'background:rgba(255,80,80,.06);' : '';
+        const rankIcon = isBest ? ' \u{1F3C6}' : '';
+        html += `<tr style="${rowBg}">`;
+        html += `<td style="text-align:left; max-width:200px; word-break:break-word;">${p.label}</td>`;
+        html += `<td>${p.am.n >= 2 ? Math.round(p.amS) : '\u2014'}</td>`;
+        html += `<td>${p.pm.n >= 2 ? Math.round(p.pmS) : '\u2014'}</td>`;
+        html += `<td>${p.green.toFixed(0)}%</td>`;
+        html += `<td>${p.severe.toFixed(0)}%</td>`;
+        html += `<td>${p.holdCount}</td>`;
+        html += `<td style="font-weight:600;">#${idx + 1}${rankIcon}</td>`;
+        html += `</tr>`;
+      });
+      html += `</tbody></table>`;
+
+      // Methodology note
+      html += `<div class="muted" style="font-size:10px; margin-top:6px; line-height:1.4;">`;
+      html += `Ranking: composite = avg(AM, PM SBP) &minus; 0.5&times;(%at goal) + 1.0&times;(%severe) + 5&times;(holds/mo). Lower = better.`;
       html += `</div>`;
 
-      // Actionable recommendation (1 line)
-      if (netTier >= 2 && netImproving && !recentAtGoal) {
-        html += `<div class="kci-detail" style="margin-top:4px;"><span class="kci-pill pill-info">Drug classes effective — consider further titration</span></div>`;
-      } else if (netTier >= 1 && netImproving && !recentAtGoal) {
-        html += `<div class="kci-detail" style="margin-top:4px;"><span class="kci-pill pill-warn">Modest response — consider switching or adding different class</span></div>`;
-      } else if (!netImproving && !recentAtGoal) {
-        html += `<div class="kci-detail" style="margin-top:4px;"><span class="kci-pill pill-danger">Insufficient response — consider different class or secondary causes</span></div>`;
+      // Best-is-not-current warning
+      const bestIsLast = best.label === validPhases[validPhases.length - 1].label;
+      if (!bestIsLast) {
+        html += `<div style="margin-top:6px;"><span class="kci-pill pill-warn">Best regimen (${best.label}) is not the current one — consider revisiting</span></div>`;
       }
     }
     html += `</div>`;
@@ -2011,12 +1939,12 @@
       html += `<div style="display:flex; gap:14px; margin-bottom:8px; font-size:11px; color:var(--muted);">`;
       html += `<span><span style="display:inline-block;width:10px;height:10px;background:#00C853;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>At goal</span>`;
       html += `<span><span style="display:inline-block;width:10px;height:10px;background:#FF4444;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Above goal</span>`;
-      html += `<span><span style="display:inline-block;width:10px;height:10px;background:#FF0000;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Severe</span>`;
+      html += `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:3px;"><svg width="10" height="10" xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" rx="2" fill="#FF0000"/><line x1="0" y1="10" x2="10" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="3" y1="10" x2="13" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="-3" y1="10" x2="7" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/></svg></span>Severe</span>`;
       html += `</div>`;
 
       // Header row
       html += `<div style="display:grid; grid-template-columns:${gridCols}; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:var(--muted); font-weight:600;">`;
-      html += `<div></div><div>Reading distribution</div><div style="text-align:right;">Mean BP</div>`;
+      html += `<div></div><div>Distribution of BP Readings</div><div style="text-align:right;">Mean BP</div>`;
       if (hasHR) html += `<div style="text-align:right;">HR</div>`;
       html += `</div>`;
 
@@ -2074,33 +2002,8 @@
         }
       }
 
-      // Time-of-day hotspot pills
+      // Peak-hour hotspot pill (specific actionable data point)
       if (rs.length >= 20) {
-        const amStart = +$('amStart').value, amEnd = +$('amEnd').value;
-        const amMid = (amStart + amEnd) / 2;
-        const pmMid = 18;
-        const earlyAM = morning.filter(r => r.t.getHours() < amMid);
-        const lateAM = morning.filter(r => r.t.getHours() >= amMid);
-        const earlyPM = ae.filter(r => r.t.getHours() < pmMid);
-        const latePM = ae.filter(r => r.t.getHours() >= pmMid);
-        const hotPills = [];
-
-        if (earlyAM.length >= 5 && lateAM.length >= 5) {
-          const diff = mean(lateAM.map(x => x.sys)) - mean(earlyAM.map(x => x.sys));
-          if (Math.abs(diff) >= 5) {
-            const higher = diff > 0 ? 'Late' : 'Early';
-            hotPills.push(`${higher} AM runs +${Math.abs(diff).toFixed(0)} higher`);
-          }
-        }
-        if (earlyPM.length >= 5 && latePM.length >= 5) {
-          const diff = mean(latePM.map(x => x.sys)) - mean(earlyPM.map(x => x.sys));
-          if (Math.abs(diff) >= 5) {
-            const higher = diff > 0 ? 'Evening' : 'Afternoon';
-            hotPills.push(`${higher} runs +${Math.abs(diff).toFixed(0)} higher`);
-          }
-        }
-
-        // Hot hours
         const hourBuckets = {};
         for (const r of rs) { const h = r.t.getHours(); if (!hourBuckets[h]) hourBuckets[h] = []; hourBuckets[h].push(r.sys); }
         const overallMeanSBP = mean(rs.map(x => x.sys));
@@ -2111,6 +2014,7 @@
             if (hMean - overallMeanSBP >= 8) hotHours.push({ hour: +h, mean: hMean, n: vals.length, diff: hMean - overallMeanSBP });
           }
         }
+        const hotPills = [];
         if (hotHours.length) {
           hotHours.sort((a, b) => b.diff - a.diff);
           const top = hotHours[0];
@@ -2128,55 +2032,47 @@
       html += `</div>`;
     }
 
-    // ── Card 3: Medication Hold Signal (conditional) ──
-    if (holdReadings.length >= 3 && nonHoldReadings.length >= 5) {
-      const holdMean = mean(holdReadings.map(x => x.sys));
-      const nonHoldMean = mean(nonHoldReadings.map(x => x.sys));
-      const d = holdMean - nonHoldMean;
+    // ── Card 3: Medication Hold Pattern (conditional) ──
+    if (holdEvents.length >= 2) {
       const totalHolds = holdEvents.length;
       const holdRate = totalHolds / Math.max(1, totalDays) * 30;
-      const dSign = d >= 0 ? '+' : '';
-      const dColor = d >= 5 ? 'var(--ok)' : d >= 2 ? 'var(--warn)' : 'var(--danger)';
+
+      // Find which regimen had the most holds
+      const phaseHoldData = validPhases.map(p => {
+        const pHolds = holdEvents.filter(h =>
+          h.getTime() >= p.start.getTime() && h.getTime() < p.end.getTime()
+        );
+        const pDays = Math.max(1, daysBetween(p.start, p.end));
+        return { label: p.label, holds: pHolds.length, days: pDays, rate: pHolds.length / pDays * 30 };
+      }).filter(p => p.holds > 0);
+      phaseHoldData.sort((a, b) => b.holds - a.holds);
 
       html += `<div class="kci-card">`;
-      html += `<div class="kci-title">Medication Hold Signal</div>`;
+      html += `<div class="kci-title">Medication Hold Pattern</div>`;
 
-      // Labeled comparison: two boxes with delta between
-      html += `<div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; margin-bottom:8px;">`;
-      // On meds box
-      html += `<div style="text-align:center; padding:8px 6px; background:rgba(0,0,0,.03); border-radius:8px;">`;
-      html += `<div style="font-size:11px; color:var(--muted); font-weight:600;">Mean SBP</div>`;
-      html += `<div style="font-size:10px; color:var(--muted);">on meds</div>`;
-      html += `<div style="font-weight:700; font-size:22px; margin-top:4px;">${Math.round(nonHoldMean)}</div>`;
-      html += `</div>`;
-      // Arrow + delta
-      html += `<div style="text-align:center;">`;
-      html += `<div style="font-size:16px; color:var(--muted);">→</div>`;
-      html += `<div style="font-weight:700; font-size:14px; color:${dColor}; margin-top:2px;">${dSign}${Math.round(d)}</div>`;
-      html += `</div>`;
-      // Hold days box
-      html += `<div style="text-align:center; padding:8px 6px; background:rgba(0,0,0,.03); border-radius:8px;">`;
-      html += `<div style="font-size:11px; color:var(--muted); font-weight:600;">Mean SBP</div>`;
-      html += `<div style="font-size:10px; color:var(--muted);">hold days</div>`;
-      html += `<div style="font-weight:700; font-size:22px; margin-top:4px;">${Math.round(holdMean)}</div>`;
-      html += `</div>`;
+      // Total holds summary
+      html += `<div style="display:flex; align-items:baseline; gap:8px; margin-bottom:8px;">`;
+      html += `<span class="kci-big">${totalHolds}</span>`;
+      html += `<span style="font-size:14px; color:var(--muted);">holds total (${holdRate.toFixed(1)}/mo)</span>`;
       html += `</div>`;
 
-      // Conclusion
-      if (d >= 5) {
-        html += `<span class="kci-pill pill-ok">Meds providing measurable BP lowering</span>`;
-      } else if (d < 2) {
-        html += `<span class="kci-pill pill-danger">Minimal drug effect — reconsider regimen</span>`;
-      } else {
-        html += `<span class="kci-pill pill-warn">Modest drug effect</span>`;
+      // Per-regimen breakdown
+      if (phaseHoldData.length > 0) {
+        html += `<div style="font-size:12px; line-height:1.7;">`;
+        for (const ph of phaseHoldData) {
+          const pctOfTotal = (ph.holds / totalHolds * 100).toFixed(0);
+          html += `<div><b>${ph.label}</b>: ${ph.holds} hold${ph.holds > 1 ? 's' : ''} (${ph.rate.toFixed(1)}/mo, ${pctOfTotal}% of all holds)</div>`;
+        }
+        html += `</div>`;
       }
 
-      // Hold burden rate
-      html += `<div class="kci-detail" style="margin-top:6px;">${totalHolds} holds (${holdRate.toFixed(1)}/mo)`;
+      // Tolerability alert
       if (holdRate >= 2) {
-        html += ` <span class="kci-pill pill-danger">Frequent — tolerability concern</span>`;
+        html += `<div style="margin-top:6px;"><span class="kci-pill pill-danger">Frequent holds — tolerability concern</span></div>`;
       }
-      html += `</div>`;
+      if (phaseHoldData.length > 0 && phaseHoldData[0].holds > totalHolds * 0.6 && phaseHoldData.length > 1) {
+        html += `<div style="margin-top:4px;"><span class="kci-pill pill-warn">${phaseHoldData[0].label} accounts for most holds</span></div>`;
+      }
       html += `</div>`;
     }
 
@@ -2227,9 +2123,9 @@
       {
         title: 'Time-of-Day Windows',
         rules: [
-          `<b>Morning:</b> ${amStart}:00 – ${amEnd}:00 (${amStart}AM – ${amEnd > 12 ? (amEnd-12)+'PM' : amEnd+'AM'})`,
-          `<b>Afternoon/Evening:</b> ${amEnd}:00 – 24:00 (${amEnd > 12 ? (amEnd-12)+'PM' : amEnd+'AM'} – midnight)`,
-          `<b>Other (excluded):</b> 0:00 – ${amStart}:00 (midnight – ${amStart}AM)`,
+          `<b>Morning:</b> ${amStart}:00 – ${amEnd}:00 (${amStart === 0 ? 'midnight' : amStart+'AM'} – ${amEnd > 12 ? (amEnd-12)+'PM' : amEnd === 12 ? '12PM' : amEnd+'AM'})`,
+          `<b>Afternoon/Evening:</b> ${amEnd}:00 – 24:00 (${amEnd > 12 ? (amEnd-12)+'PM' : amEnd === 12 ? '12PM' : amEnd+'AM'} – midnight)`,
+          ...(amStart > 0 ? [`<b>Other (excluded):</b> 0:00 – ${amStart}:00 (midnight – ${amStart}AM)`] : []),
         ]
       },
       {
@@ -2290,16 +2186,16 @@
           `<b>Late-day/morning burden:</b> Flagged when one window's severe % exceeds the other by > 5 pp`,
           `<b>Hold-day signal:</b> Requires ≥ 3 hold-day readings AND ≥ 5 non-hold readings. SBP difference ≥ 5 mmHg = "confirms meds working"; < 2 mmHg = "questions efficacy"`,
           `<b>Heart rate:</b> HR ≤ 55 = bradycardic (flagged if on beta-blocker, ≥ 3 readings); HR ≥ 90 = tachycardic (≥ 3 readings). Requires ≥ 10 HR readings total`,
-          `<b>Within-window time patterns:</b> Each AM/PM window split at midpoint; early vs late compared at ≥ 5 mmHg threshold. Per-hour outliers: ≥ 8 mmHg above mean with n ≥ 5`,
+          `<b>Peak-hour hotspots:</b> Per-hour outliers: ≥ 8 mmHg above mean with n ≥ 5`,
         ]
       },
       {
         title: 'Clinical Insights Dashboard',
         rules: [
-          `<b>Layout:</b> Visual card dashboard — up to 3 cards in a 2-column grid`,
-          `<b>Card 1 (Status + Trajectory):</b> Always shown (full width). Color-coded badge (green = at target, amber = near target, red = above). Net trajectory across all validated phases via bpTier()`,
-          `<b>Card 2 (Circadian Pattern):</b> Full width. Shown if AM ≥ 5 AND PM ≥ 5 readings. Combines: proportion bars (green/red/severe) with labeled mini-legend, Mean BP column, HR by window, circadian delta, severe burden, HR alerts (bradycardia/tachycardia), and time-of-day hotspot pills`,
-          `<b>Card 3 (Hold Signal):</b> Shown if ≥ 3 hold readings AND ≥ 5 non-hold. Labeled "Mean SBP on meds" vs "Mean SBP hold days" boxes with delta. Green if Δ ≥ 5, amber if 2-5, red if &lt; 2`,
+          `<b>Layout:</b> Visual card dashboard — up to 3 cards`,
+          `<b>Card 1 (Status + Treatment Plan Comparison):</b> Always shown (full width). Color-coded badge (green = at target, amber = near target, red = above). Treatment Plan Comparison table with composite scoring and ranking methodology. Warns if best regimen ≠ current`,
+          `<b>Card 2 (Circadian Pattern):</b> Full width. Shown if AM ≥ 5 AND PM ≥ 5 readings. Combines: proportion bars (green/red/severe) with labeled mini-legend and hatched severe icon, Mean BP column, HR by window, circadian delta, severe burden, HR alerts, peak-hour hotspot pills`,
+          `<b>Card 3 (Hold Pattern):</b> Shown if ≥ 2 hold events. Total holds + rate, per-regimen breakdown with hold count and rate, tolerability alerts`,
           `<b>Phase data:</b> ${N} readings per phase, ${lookbackMonths}-month lookback, most recent ${recentWeeks} week(s). Minimum n ≥ 3 for a phase to be validated`,
         ]
       },
@@ -2309,8 +2205,7 @@
           `<b>At goal:</b> Mean SBP < 135 AND mean DBP < 85`,
           `<b>Near goal:</b> Mean SBP < 140 AND mean DBP < 90`,
           `<b>Low severe burden:</b> < 5% severe readings in most recent phase`,
-          `<b>Trajectory direction:</b> Uses centralized bpTier() thresholds (same SBP/DBP tiers as Treatment Trajectory). Tier ≥ meaningful + improving = "effective"; tier = modest + improving = "consider alternatives"; minimal/worsening = "insufficient approach"`,
-          `<b>Hold-event burden:</b> Holds counted per phase. Rate ≥ 2/month = "significant detractor." Frequent holds suggest tolerability boundary`,
+          `<b>Hold-event burden:</b> Holds counted per regimen. Rate ≥ 2/month = tolerability concern. If one regimen accounts for > 60% of holds, it is flagged`,
           `<b>Treatment plan comparison:</b> Composite score = avg(AM SBP, PM SBP) − 0.5 × green% + 1.0 × severe% + 5 × (holds/month). Lower = better. If best regimen ≠ current, suggests re-evaluation`,
         ]
       },
