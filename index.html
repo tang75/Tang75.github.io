@@ -1685,57 +1685,68 @@
 
   // =============================================
   // RESPONSE CHARACTERIZATION HELPERS
-  // Thresholds: 1–5 = modest, >5 = notable, >10 = significant
+  // SBP tiers: 3–4 modest, 5–9 meaningful, 10–14 significant, ≥15 major
+  // DBP tiers: 3–4 modest, 5–9 significant, ≥10 major
   // Rule: if either SBP or DBP qualifies for a higher tier, use it
   // =============================================
-  function bpResponseLabel(dSBP, dDBP) {
+  const TIER_LABELS = ['minimal change', 'modest', 'meaningful', 'significant', 'major'];
+  function bpTier(dSBP, dDBP) {
     const absSBP = Math.abs(dSBP);
     const absDBP = dDBP != null ? Math.abs(dDBP) : 0;
-    const maxAbs = Math.max(absSBP, absDBP);
-    // Direction from SBP if meaningful, else from DBP
-    const improving = absSBP >= 1 ? dSBP < 0 : (dDBP != null && absDBP >= 1 ? dDBP < 0 : false);
-    if (maxAbs < 1) return 'minimal change';
-    let tier;
-    if (maxAbs > 10) tier = 'significant';
-    else if (maxAbs > 5) tier = 'notable';
-    else tier = 'modest';
+    // SBP: 3-4=1(modest), 5-9=2(meaningful), 10-14=3(significant), ≥15=4(major)
+    let sTier = 0;
+    if (absSBP >= 15) sTier = 4;
+    else if (absSBP >= 10) sTier = 3;
+    else if (absSBP >= 5) sTier = 2;
+    else if (absSBP >= 3) sTier = 1;
+    // DBP: 3-4=1(modest), 5-9=3(significant), ≥10=4(major)
+    let dTier = 0;
+    if (absDBP >= 10) dTier = 4;
+    else if (absDBP >= 5) dTier = 3;
+    else if (absDBP >= 3) dTier = 1;
+    const tier = Math.max(sTier, dTier);
+    const improving = absSBP >= 3 ? dSBP < 0 : (dDBP != null && absDBP >= 3 ? dDBP < 0 : false);
+    return { tier, improving };
+  }
+  function bpResponseLabel(dSBP, dDBP) {
+    const { tier, improving } = bpTier(dSBP, dDBP);
+    if (tier === 0) return 'minimal change';
+    const label = TIER_LABELS[tier];
     const dir = improving ? 'improvement' : 'worsening';
+    const bold = tier >= 2;
+    const b = bold ? '<b>' : '', be = bold ? '</b>' : '';
     if (improving) {
-      if (tier === 'significant') return '<span class="ok"><b>significant improvement</b></span>';
-      if (tier === 'notable') return '<span class="ok"><b>notable improvement</b></span>';
-      return '<span class="ok">modest improvement</span>';
+      return `<span class="ok">${b}${label} ${dir}${be}</span>`;
     } else {
-      if (tier === 'significant') return '<span class="danger"><b>significant worsening</b></span>';
-      if (tier === 'notable') return '<span class="warn"><b>notable worsening</b></span>';
-      return '<span class="warn">modest worsening</span>';
+      const cls = tier >= 3 ? 'danger' : 'warn';
+      return `<span class="${cls}">${b}${label} ${dir}${be}</span>`;
     }
   }
   function bpArrow(dSBP, dDBP) {
-    const absSBP = Math.abs(dSBP);
-    const absDBP = dDBP != null ? Math.abs(dDBP) : 0;
-    const maxAbs = Math.max(absSBP, absDBP);
-    const improving = absSBP >= 1 ? dSBP < 0 : (dDBP != null ? dDBP < 0 : false);
-    if (maxAbs > 10) return improving ? ' <span class="ok">↓↓</span>' : ' <span class="danger">↑↑</span>';
-    if (maxAbs > 5) return improving ? ' <span class="ok">↓</span>' : ' <span class="warn">↑</span>';
+    const { tier, improving } = bpTier(dSBP, dDBP);
+    if (tier >= 4) return improving ? ' <span class="ok">↓↓↓</span>' : ' <span class="danger">↑↑↑</span>';
+    if (tier >= 3) return improving ? ' <span class="ok">↓↓</span>' : ' <span class="danger">↑↑</span>';
+    if (tier >= 2) return improving ? ' <span class="ok">↓</span>' : ' <span class="warn">↑</span>';
     return '';
   }
   function ppLabel(dPP, type) {
-    // type: 'green' (positive=good) or 'severe' (negative=good)
+    // pp thresholds mirror SBP: 3-4=modest, 5-9=meaningful, 10-14=significant, ≥15=major
     const abs = Math.abs(dPP);
-    if (abs < 1) return null;
+    if (abs < 3) return null;
     let tier;
-    if (abs > 10) tier = 'significant';
-    else if (abs > 5) tier = 'notable';
+    if (abs >= 15) tier = 'major';
+    else if (abs >= 10) tier = 'significant';
+    else if (abs >= 5) tier = 'meaningful';
     else tier = 'modest';
     const bold = tier !== 'modest';
     const b = bold ? '<b>' : '', be = bold ? '</b>' : '';
     if (type === 'green') {
       const word = dPP > 0 ? 'gain' : 'decline';
-      const cls = dPP > 0 ? 'ok' : (tier === 'significant' ? 'danger' : 'warn');
+      const cls = dPP > 0 ? 'ok' : (tier === 'major' || tier === 'significant' ? 'danger' : 'warn');
       return `<span class="${cls}">${b}${tier} ${word}${be}</span>`;
     } else {
       const word = dPP > 0 ? 'increase' : 'reduction';
-      const cls = dPP < 0 ? 'ok' : (tier === 'significant' ? 'danger' : 'warn');
+      const cls = dPP < 0 ? 'ok' : (tier === 'major' || tier === 'significant' ? 'danger' : 'warn');
       return `<span class="${cls}">${b}${tier} ${word}${be}</span>`;
     }
   }
@@ -2320,7 +2331,7 @@
           `<b>Lookback:</b> ${lookbackMonths} months before the next boundary date`,
           `<b>Last phase:</b> all readings in the most recent ${recentWeeks} week(s)`,
           `<b>Reasoning order:</b> 1. Circadian Pattern → 2. Key Clinical Observations → 3. Treatment Trajectory → 4. Overall Assessment`,
-          `<b>Treatment Trajectory:</b> Each phase shows AM and PM mean SBP/DBP separately (not just combined). Response characterization uses MAX(|ΔSBP|, |ΔDBP|) for tier: 1–5 mmHg = "modest", >5 = "notable", >10 = "significant". If either SBP or DBP qualifies for a higher tier, the higher adjective is applied. Same three-tier labels for green/severe pp changes`,
+          `<b>Treatment Trajectory:</b> Each phase shows AM and PM mean SBP/DBP separately. SBP tiers: 3–4 = modest, 5–9 = meaningful, 10–14 = significant, ≥15 = major. DBP tiers: 3–4 = modest, 5–9 = significant, ≥10 = major (DBP thresholds are stricter because of its narrower range). If either SBP or DBP qualifies for a higher tier, the higher adjective is applied. Arrows: ↓ meaningful, ↓↓ significant, ↓↓↓ major. pp changes use SBP-style tiers`,
           `<b>Within-window time analysis:</b> Each window (AM/PM) is split at midpoint. Early vs late half compared; if SBP differs by ≥ 5 mmHg, reported. Also checks each clock hour for outlier means (≥ 8 mmHg above overall mean, n ≥ 5)`,
           `<b>Net effect:</b> Compares first validated phase vs last validated phase (both need n ≥ 3). AM and PM shown separately with threshold labels`,
           `<b>Overall Assessment focus:</b> Most recent phase's readings (not grand mean over entire date range)`,
