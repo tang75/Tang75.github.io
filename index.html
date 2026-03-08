@@ -279,6 +279,16 @@
       </div>
       <div id="phaseLegend" style="display:none;">
         <div class="hr"></div>
+        <div style="font-weight:600; font-size:12px; margin-bottom:6px; color:var(--accent);">Color Legend</div>
+        <div class="legend-bar" style="margin-bottom:10px;">
+          <div class="legend-item"><span class="legend-swatch" style="background:#27ae60;"></span> At goal (SBP ≤ 135 &amp; DBP ≤ 85)</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:#e74c3c;"></span> Above goal</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:#900; border:1px solid #700;"></span> Severe (SBP ≥ 160 or DBP ≥ 95)</div>
+          <div class="legend-item"><span style="font-weight:700; color:#1a73e8; font-size:13px;">Blue bold</span> New/restarted drug</div>
+          <div class="legend-item"><span style="font-weight:700; color:#c0392b; font-size:13px;">Red bold</span> Changed dose/frequency</div>
+          <div class="legend-item"><span style="color:var(--ok); font-size:13px;">▲</span> Improved from prior phase</div>
+          <div class="legend-item"><span style="color:var(--danger); font-size:13px;">▼</span> Worsened from prior phase</div>
+        </div>
         <div style="font-weight:600; font-size:12px; margin-bottom:6px; color:var(--accent);">Methodology &amp; Parameters</div>
         <div class="muted small" style="line-height:1.6; margin-bottom:8px;">
           For each medication phase, statistics are computed from the <b>last N readings before the next medication change</b>, capturing the effect of that regimen at steady state. If fewer than N readings exist within the lookback window, all available readings are used. The final row reports the most recent readings within a configurable time window. <span style="color:var(--accent)">Δ columns</span> show the change from the prior phase to help track treatment response.
@@ -759,6 +769,11 @@
       if (e.type === 'stop') {
         closeInterval(e.drug, e.dt);
       } else {
+        // If drug is already active at the same daily dose AND same sig, don't split — just continue.
+        // If sig differs (e.g., dose strength or frequency changed but same daily total), create new segment.
+        if (active[e.drug] && e.daily != null && active[e.drug].daily === e.daily && active[e.drug].sig === e.sig) {
+          continue;
+        }
         closeInterval(e.drug, e.dt);
         active[e.drug] = { start:e.dt, daily:e.daily, sig:e.sig };
       }
@@ -2275,6 +2290,19 @@
         ]
       },
       {
+        title: 'Response Characterization Tiers',
+        rules: [
+          `<b>SBP tiers:</b> 3–4 mmHg = modest, 5–9 = meaningful, 10–14 = significant, ≥15 = major`,
+          `<b>DBP tiers:</b> 3–4 mmHg = modest, 5–9 = significant, ≥10 = major (stricter — DBP has a narrower clinical range)`,
+          `<b>Combined rule:</b> When both SBP and DBP are shown, use whichever qualifies for the <u>higher</u> tier`,
+          `<b>Direction:</b> Determined by SBP if |ΔSBP| ≥ 3; otherwise by DBP`,
+          `<b>Arrows:</b> no arrow for modest; ↓/↑ = meaningful; ↓↓/↑↑ = significant; ↓↓↓/↑↑↑ = major`,
+          `<b>Below threshold:</b> |Δ| < 3 mmHg = "minimal change"`,
+          `<b>pp change tiers:</b> Mirror SBP thresholds (3–4 modest, 5–9 meaningful, 10–14 significant, ≥15 major). Note: pp and mmHg are fundamentally different; these thresholds may be revised`,
+          `<b>Styling:</b> modest = plain text; meaningful/significant/major = bold. Worsening ≥ significant uses "danger" color`,
+        ]
+      },
+      {
         title: 'Time-of-Day Windows',
         rules: [
           `<b>Morning:</b> ${amStart}:00 – ${amEnd}:00 (${amStart}AM – ${amEnd > 12 ? (amEnd-12)+'PM' : amEnd+'AM'})`,
@@ -2293,6 +2321,7 @@
           `<b>Drug stop detection:</b> When a segment ends before the data end, a boundary is created at end+1 day where the drug is no longer active. Ongoing drugs (segment ends at data end) do not create stop boundaries`,
           `<b>Deduplication:</b> Consecutive identical regimen labels are suppressed. Boundaries within 2 days are merged (later regimen kept)`,
           `<b>Pre-treatment phase:</b> Only created if the first reading is > 2 days before the first medication boundary (i.e., there are readings with no detected meds). If meds are present from day 1, no pre-treatment phase is shown`,
+          `<b>Same-dose continuation:</b> If a drug is already active at the same daily dose AND same sig, a repeated mention does not split the interval. If sig changes (e.g., dose strength or frequency differs but daily total is unchanged), a new segment is created to show the detail`,
         ]
       },
       {
@@ -2325,18 +2354,44 @@
         ]
       },
       {
+        title: 'Circadian Pattern Analysis',
+        rules: [
+          `<b>Minimum data:</b> ≥ 5 readings in each window (AM and PM) required`,
+          `<b>Clinically meaningful split:</b> ≥ 8 mmHg SBP difference between AM and PM means`,
+          `<b>Severe burden comparison:</b> Reported when one window exceeds the other by > 3 pp in severe readings AND the higher window has > 8% severe`,
+          `<b>Circadian suggestion:</b> If split ≥ 8 mmHg and not at goal, suggests dose timing adjustment for the dominant uncontrolled window`,
+        ]
+      },
+      {
+        title: 'Key Clinical Observations Thresholds',
+        rules: [
+          `<b>SBP variability:</b> SD ≥ 18 = high, ≥ 13 = moderate, < 13 = typical (requires ≥ 10 readings)`,
+          `<b>Late-day/morning burden:</b> Flagged when one window's severe % exceeds the other by > 5 pp AND the higher window has > 8% severe`,
+          `<b>Hold-day signal:</b> Requires ≥ 3 hold-day readings AND ≥ 5 non-hold readings. SBP difference ≥ 5 mmHg = "confirms meds working"; < 2 mmHg = "questions efficacy"`,
+          `<b>Heart rate:</b> HR ≤ 55 = bradycardic (flagged if on beta-blocker, ≥ 3 readings); HR ≥ 90 = tachycardic (≥ 3 readings). Requires ≥ 10 HR readings total`,
+          `<b>Within-window time patterns:</b> Each AM/PM window split at midpoint; early vs late compared at ≥ 5 mmHg threshold. Per-hour outliers: ≥ 8 mmHg above mean with n ≥ 5`,
+        ]
+      },
+      {
         title: 'Clinical Insights Methodology',
         rules: [
           `<b>Readings per phase:</b> ${N} readings or ${MIN_PHASE_DAYS} days (whichever is longer) per AM/PM window`,
           `<b>Lookback:</b> ${lookbackMonths} months before the next boundary date`,
           `<b>Last phase:</b> all readings in the most recent ${recentWeeks} week(s)`,
+          `<b>Validated phase minimum:</b> n ≥ 3 readings required for a phase to be included in trajectory analysis`,
           `<b>Reasoning order:</b> 1. Circadian Pattern → 2. Key Clinical Observations → 3. Treatment Trajectory → 4. Overall Assessment`,
-          `<b>Treatment Trajectory:</b> Each phase shows AM and PM mean SBP/DBP separately. SBP tiers: 3–4 = modest, 5–9 = meaningful, 10–14 = significant, ≥15 = major. DBP tiers: 3–4 = modest, 5–9 = significant, ≥10 = major (DBP thresholds are stricter because of its narrower range). If either SBP or DBP qualifies for a higher tier, the higher adjective is applied. Arrows: ↓ meaningful, ↓↓ significant, ↓↓↓ major. pp changes use SBP-style tiers`,
-          `<b>Within-window time analysis:</b> Each window (AM/PM) is split at midpoint. Early vs late half compared; if SBP differs by ≥ 5 mmHg, reported. Also checks each clock hour for outlier means (≥ 8 mmHg above overall mean, n ≥ 5)`,
-          `<b>Net effect:</b> Compares first validated phase vs last validated phase (both need n ≥ 3). AM and PM shown separately with threshold labels`,
-          `<b>Overall Assessment focus:</b> Most recent phase's readings (not grand mean over entire date range)`,
-          `<b>Hold-event burden:</b> Medication holds counted per phase. Frequent holds (≥ 2/month) are flagged as a "significant detractor." Hold-free regimens are preferred in ranking`,
-          `<b>Treatment plan comparison:</b> All validated phases ranked by composite score: avg(AM SBP, PM SBP) − 0.5×green% + 1.0×severe% + 5×(holds/month). Lower score = better. If best regimen is not the current one, a suggestion is made to re-evaluate`,
+          `<b>Net effect:</b> Compares first validated phase vs last validated phase (both need n ≥ 3). AM and PM shown separately with tier labels`,
+        ]
+      },
+      {
+        title: 'Overall Assessment Thresholds',
+        rules: [
+          `<b>At goal:</b> Mean SBP < 135 AND mean DBP < 85`,
+          `<b>Near goal:</b> Mean SBP < 140 AND mean DBP < 90`,
+          `<b>Low severe burden:</b> < 5% severe readings in most recent phase`,
+          `<b>Trajectory direction:</b> Net SBP ≤ -8 = "meaningful cumulative drop"; ≤ -3 = "modest improvement"; > -3 = "limited response"`,
+          `<b>Hold-event burden:</b> Holds counted per phase. Rate ≥ 2/month = "significant detractor." Frequent holds suggest tolerability boundary`,
+          `<b>Treatment plan comparison:</b> Composite score = avg(AM SBP, PM SBP) − 0.5 × green% + 1.0 × severe% + 5 × (holds/month). Lower = better. If best regimen ≠ current, suggests re-evaluation`,
         ]
       },
       {
@@ -2368,7 +2423,8 @@
         rules: [
           `<b>Source:</b> "Notes" column of the Excel file — multi-line entries parsed per line`,
           `<b>Pattern:</b> Regex matches drug name + dose (mg) + optional frequency (qd, bid, etc.)`,
-          `<b>Hold events:</b> Lines containing "hold" or "held" — marked with ★ on timeline`,
+          `<b>Hold event detection:</b> Notes containing "hold" or "held" AND one of: "med", "htn", "bp" — marked with ★ on timeline`,
+          `<b>Same-dose continuation:</b> If a drug is already active at the same daily dose, a repeated mention is ignored (no interval split)`,
           `<b>Segment merging:</b> Boundaries within 2 days merged into one phase`,
           `<b>Sig format:</b> standardized to "dose mg freq" (e.g., "80 mg qd", "80 mg bid")`,
         ]
