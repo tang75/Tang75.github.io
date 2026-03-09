@@ -324,8 +324,10 @@
   <!-- Tab 3: Clinical Insights -->
   <div id="tab-insights" class="tab-content">
     <div class="card">
-      <div style="font-weight:650; font-size:15px; margin-bottom:4px;">Clinical Insights Dashboard</div>
-      <div class="muted small" id="insightsRange">&mdash;</div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
+        <span style="font-weight:650; font-size:15px;">Clinical Insights Dashboard</span>
+        <span id="insightsRange" style="display:inline-block; font-size:12px; font-weight:600; background:#e8f0fe; color:#1a73e8; padding:3px 10px; border-radius:12px;">&mdash;</span>
+      </div>
       <div class="hr"></div>
       <div id="insightsContainer">
         <div class="muted">Upload data to see clinical insights.</div>
@@ -1894,12 +1896,12 @@
     const ae = recentAll.filter(r => r.window === 'Afternoon/Evening');
     const m = computeMetrics(recentAll);
 
-    // Show the actual recent window dates
+    // Show the actual recent window dates — prominent badge
     if (recentAll.length) {
       const rMin = recentAll[0].t, rMax = recentAll[recentAll.length - 1].t;
-      $('insightsRange').textContent = `Recent ${insightRecentWeeks}-week window: ${fmtDateShort(rMin)}, ${rMin.getFullYear()} – ${fmtDateShort(rMax)}, ${rMax.getFullYear()}`;
+      $('insightsRange').textContent = `Last ${insightRecentWeeks} wks: ${fmtDateShort(rMin)} – ${fmtDateShort(rMax)} · n=${recentAll.length}`;
     } else {
-      $('insightsRange').textContent = `No readings in recent ${insightRecentWeeks}-week window`;
+      $('insightsRange').textContent = `No readings in last ${insightRecentWeeks} weeks`;
     }
 
     const phaseData = phases.map((p, idx) => {
@@ -1977,7 +1979,7 @@
     html += `<span class="kci-badge ${badgeClass}">${statusLabel}</span>`;
     if (recentPhase) {
       html += `<span class="kci-big" style="margin:0;">${Math.round(recentPhase.all.meanSBP)}/${Math.round(recentPhase.all.meanDBP)}</span>`;
-      html += `<span class="kci-detail" style="color:var(--muted);">on ${currentMedStr}</span>`;
+      html += `<span style="font-size:12px; color:var(--muted);">on ${currentMedStr} · n=${recentPhase.all.n}</span>`;
     }
     html += `</div>`;
     html += `</div>`;
@@ -1996,7 +1998,10 @@
       const gridCols = hasHR ? '80px 1fr 90px 70px' : '80px 1fr 90px';
 
       html += `<div class="kci-card kci-full">`;
-      html += `<div class="kci-title">Circadian Pattern</div>`;
+      html += `<div style="display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;">`;
+      html += `<span class="kci-title" style="margin-bottom:0;">Circadian Pattern</span>`;
+      html += `<span style="font-size:11px; font-weight:600; color:#1a73e8;">last ${insightRecentWeeks} wks · AM n=${morning.length}, PM n=${ae.length}</span>`;
+      html += `</div>`;
 
       // Mini legend for bar colors
       html += `<div style="display:flex; gap:14px; margin-bottom:8px; font-size:11px; color:var(--muted);">`;
