@@ -204,6 +204,25 @@
       </div>
       <button id="printBtn">Print / PDF</button>
     </div>
+    <div class="row" style="margin-top:6px; gap:6px; flex-wrap:wrap; align-items:center;">
+      <span class="muted" style="font-size:11px; font-weight:600;">Statistics:</span>
+      <div class="pill" style="padding:4px 8px;">
+        <label style="font-size:11px;">Readings per phase</label>
+        <input id="phaseN" type="number" min="2" max="30" value="10" style="width:50px; font-size:12px; padding:3px 5px;" />
+      </div>
+      <div class="pill" style="padding:4px 8px;">
+        <label style="font-size:11px;">Lookback (months)</label>
+        <input id="phaseLookback" type="number" min="1" max="12" value="3" style="width:50px; font-size:12px; padding:3px 5px;" />
+      </div>
+      <div class="pill" style="padding:4px 8px;">
+        <label style="font-size:11px;">Recent window (wks)</label>
+        <input id="phaseRecentWeeks" type="number" min="1" max="12" value="4" style="width:50px; font-size:12px; padding:3px 5px;" />
+      </div>
+      <div class="pill" style="padding:4px 8px;">
+        <label style="font-size:11px;">Min phase window (wks)</label>
+        <input id="phaseMinWeeks" type="number" min="1" max="12" value="4" style="width:50px; font-size:12px; padding:3px 5px;" />
+      </div>
+    </div>
   </div>
 
   <!-- Drop zone / Welcome -->
@@ -292,27 +311,9 @@
           <div class="legend-item"><span style="font-weight:700; color:#c0392b; font-size:13px;">Red bold</span> Changed dose/frequency</div>
         </div>
         <details class="no-print" style="margin-top:6px;">
-          <summary style="cursor:pointer; font-weight:600; font-size:12px; color:var(--accent);">Methodology &amp; Parameters</summary>
+          <summary style="cursor:pointer; font-weight:600; font-size:12px; color:var(--accent);">Methodology</summary>
           <div class="muted small" style="line-height:1.6; margin:8px 0;">
-            For each medication phase, statistics are computed from the <b>last N readings OR minimum phase window (whichever is longer)</b> before the next medication change, capturing the effect of that regimen at steady state. If fewer than N readings exist within the lookback window, all available readings are used. The final (current) row reports all readings within the <b>recent window</b>. The same recent window is used for the KPI dashboard on the Timeline tab. <span style="color:var(--accent)">Δ columns</span> show the change from the prior phase to help track treatment response.
-          </div>
-          <div class="row" style="gap:8px; flex-wrap:wrap; margin-top:4px;">
-            <div class="pill" style="padding:5px 8px;">
-              <label style="font-size:11px;">Readings per phase (N)</label>
-              <input id="phaseN" type="number" min="2" max="30" value="10" style="width:54px; font-size:12px; padding:4px 6px;" />
-            </div>
-            <div class="pill" style="padding:5px 8px;">
-              <label style="font-size:11px;">Lookback window (months)</label>
-              <input id="phaseLookback" type="number" min="1" max="12" value="3" style="width:54px; font-size:12px; padding:4px 6px;" />
-            </div>
-            <div class="pill" style="padding:5px 8px;">
-              <label style="font-size:11px;">Recent / current window (weeks)</label>
-              <input id="phaseRecentWeeks" type="number" min="1" max="12" value="4" style="width:54px; font-size:12px; padding:4px 6px;" />
-            </div>
-            <div class="pill" style="padding:5px 8px;">
-              <label style="font-size:11px;">Min phase window (weeks)</label>
-              <input id="phaseMinWeeks" type="number" min="1" max="12" value="4" style="width:54px; font-size:12px; padding:4px 6px;" />
-            </div>
+            For each medication phase, statistics are computed from the <b>last N readings OR minimum phase window (whichever is longer)</b> before the next medication change, capturing the effect of that regimen at steady state. If fewer than N readings exist within the lookback window, all available readings are used. The final (current) row reports all readings within the <b>recent window</b>. The same recent window is used for the KPI dashboard on the Timeline tab. <span style="color:var(--accent)">Δ columns</span> show the change from the prior phase to help track treatment response. All parameters are configurable in the settings bar at the top of the page.
           </div>
         </details>
       </div>
