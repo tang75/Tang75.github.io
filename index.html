@@ -418,7 +418,7 @@
   // =============================================
   // EXCEL PARSER (reused from prior version)
   // =============================================
-  function normalizeHeader(h) { return String(h||'').trim().toLowerCase().replace(/\s+/g,'').replace(/[_\-]/g,''); }
+  function normalizeHeader(h) { return String(h||'').trim().toLowerCase().replace(/[^a-z0-9]/g,''); }
   function sheetToAoa(wb) { const s=wb.Sheets[wb.SheetNames[0]]; return XLSX.utils.sheet_to_json(s,{header:1,defval:''}); }
   function findLikelyHeaderRow(aoa) {
     const cands=aoa.slice(0,40);
@@ -471,9 +471,9 @@
     const dtIdx = findAny(['DateTimeLocal','DateTime','Timestamp','Date/Time','Datetime']);
     const dateIdx = findAny(['Date']);
     const timeIdx = findAny(['Time']);
-    const sysIdx = findAny(['Systolic','SYS','SBP','Systolic(mmHg)','Systolicmmhg']);
-    const diaIdx = findAny(['Diastolic','DIA','DBP','Diastolic(mmHg)','Diastolicmmhg']);
-    const pulseIdx = findAny(['Pulse','HR','Heartrate','HeartRate','Pulse(bpm)','Pulsebpm']);
+    const sysIdx = findAny(['Systolic','SYS','SBP','Systolic(mmHg)','Systolicmmhg','SBP(mmHg)','SBPmmhg']);
+    const diaIdx = findAny(['Diastolic','DIA','DBP','Diastolic(mmHg)','Diastolicmmhg','DBP(mmHg)','DBPmmhg']);
+    const pulseIdx = findAny(['Pulse','HR','Heartrate','HeartRate','Pulse(bpm)','Pulsebpm','Pulse(bpm)']);
     const notesIdx = findAny(['Notes','Note','Comment','Comments','Annotation','Annotations']);
 
     const hasDT = dtIdx !== -1;
@@ -1541,7 +1541,13 @@
   function renderPhaseTable(rs) {
     const container = $('phaseTableContainer');
     const legend = $('phaseLegend');
-    if (!rs.length) { container.innerHTML = '<div class="muted">Upload data to see phase comparison.</div>'; legend.style.display='none'; return; }
+    const compContainer = $('regimenComparisonContainer');
+    if (!rs.length) {
+      container.innerHTML = '<div class="muted">Upload data to see phase comparison.</div>';
+      legend.style.display='none';
+      if (compContainer) compContainer.innerHTML = '';
+      return;
+    }
 
     const N = Math.max(2, +$('phaseN').value || 10);
     const lookbackMonths = Math.max(1, +$('phaseLookback').value || 3);
@@ -1554,6 +1560,7 @@
     if (!boundaries.length) {
       container.innerHTML = '<div class="muted">No medication phases detected. Add medication info to the Notes column.</div>';
       legend.style.display='none';
+      if (compContainer) compContainer.innerHTML = '';
       return;
     }
 
@@ -1713,7 +1720,6 @@
     legend.style.display = 'block';
 
     // --- Treatment Plan Comparison ---
-    const compContainer = $('regimenComparisonContainer');
     if (!compContainer) return;
 
     // Build per-phase aggregate stats
@@ -2259,6 +2265,12 @@
   // =============================================
   function handleLoadedRows(rows) {
     if(!rows||rows.length<2){alert('File appears empty or invalid.');return;}
+    // Clear all stale output immediately when loading new data
+    readings = []; medIntervals = {}; holdEvents = [];
+    $('phaseTableContainer').innerHTML = '';
+    $('regimenComparisonContainer').innerHTML = '';
+    $('insightsContainer').innerHTML = '';
+    const leg = $('phaseLegend'); if (leg) leg.style.display = 'none';
     rawRows=rows;
     headers=rows[0].map(h=>String(h??'').trim());
     const d=detectColumns(headers);
