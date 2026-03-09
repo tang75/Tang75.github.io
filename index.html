@@ -312,6 +312,7 @@
           </div>
         </details>
       </div>
+      <div id="regimenComparisonContainer"></div>
     </div>
   </div>
 
@@ -1703,6 +1704,89 @@
     // Show legend
     legend.style.display = 'block';
 
+    // --- Treatment Plan Comparison ---
+    const compContainer = $('regimenComparisonContainer');
+    if (!compContainer) return;
+
+    // Build per-phase aggregate stats
+    const phaseGroups = [];
+    for (let bi = 0; bi < boundaries.length; bi++) {
+      const amRow = tableRows[bi * 2];
+      const pmRow = tableRows[bi * 2 + 1];
+      if (!amRow || !pmRow) continue;
+      const totalN = amRow.n + pmRow.n;
+      if (totalN < 3) continue;
+      const pStart = boundaries[bi].date;
+      const pEnd = (bi + 1 < boundaries.length) ? boundaries[bi + 1].date : rs[rs.length - 1].t;
+      const phaseDays = Math.max(1, daysBetween(pStart, pEnd));
+      const phaseHolds = holdEvents.filter(h => h.getTime() >= pStart.getTime() && h.getTime() < pEnd.getTime());
+      const allReadingsPhase = [...(function() {
+        if (bi === boundaries.length - 1) return getRecentReadings(rs, recentWeeks, 'All');
+        return getLastNReadings(rs, boundaries[bi + 1].date, N * 4, lookbackMonths, 'All');
+      })()];
+      const allStats = phaseStatsFromReadings(allReadingsPhase);
+      phaseGroups.push({
+        label: amRow.phase,
+        amSBP: amRow.meanSBP, pmSBP: pmRow.meanSBP,
+        amN: amRow.n, pmN: pmRow.n,
+        green: allStats.green || 0,
+        severe: allStats.severe || 0,
+        holdCount: phaseHolds.length,
+        days: phaseDays,
+      });
+    }
+    if (phaseGroups.length < 2) { compContainer.innerHTML = ''; return; }
+
+    // New ranking: score = (%at goal) - (%severe) - 5×(holds/mo). Higher = better.
+    const scored = phaseGroups.map(p => {
+      const holdRate = p.holdCount / p.days * 30;
+      const score = p.green - p.severe - 5 * holdRate;
+      return { ...p, holdRate, score };
+    });
+    scored.sort((a, b) => b.score - a.score); // descending: highest score = best
+    const best = scored[0], worst = scored[scored.length - 1];
+
+    // Find max values for highlighting
+    const maxGreen = Math.max(...scored.map(p => p.green));
+    const maxSevere = Math.max(...scored.map(p => p.severe));
+    const maxHolds = Math.max(...scored.map(p => p.holdCount));
+
+    let compHtml = '<div class="hr"></div>';
+    compHtml += '<div style="font-weight:650; font-size:14px; margin-bottom:8px; color:var(--accent);">Treatment Plan Comparison</div>';
+    compHtml += '<table class="phase-table" style="font-size:12px;"><thead><tr>';
+    compHtml += '<th>Regimen</th><th style="color:#1b7a3d;">% At Goal (+)</th><th style="color:#c62828;">% Severe (&minus;)</th><th style="color:#c62828;">Holds (&minus;)</th><th>Score</th><th>Rank</th>';
+    compHtml += '</tr></thead><tbody>';
+    scored.forEach((p, idx) => {
+      const isBest = idx === 0;
+      const isWorst = idx === scored.length - 1 && scored.length > 1;
+      const rowBg = isBest ? 'background:rgba(0,200,100,.08);' : (isWorst && scored.length > 2) ? 'background:rgba(255,80,80,.06);' : '';
+      const rankIcon = isBest ? ' \u{1F3C6}' : '';
+      // Highlight: green for best at-goal, red for worst severe/holds
+      const greenStyle = p.green === maxGreen ? 'color:#1b7a3d; font-weight:700;' : '';
+      const sevStyle = p.severe === maxSevere && p.severe > 0 ? 'color:#c62828; font-weight:700;' : '';
+      const holdStyle = p.holdCount === maxHolds && p.holdCount > 0 ? 'color:#c62828; font-weight:700;' : '';
+      compHtml += `<tr style="${rowBg}">`;
+      compHtml += `<td style="text-align:left; max-width:200px; word-break:break-word;">${p.label}</td>`;
+      compHtml += `<td style="${greenStyle}">${p.green.toFixed(0)}%</td>`;
+      compHtml += `<td style="${sevStyle}">${p.severe.toFixed(0)}%</td>`;
+      compHtml += `<td style="${holdStyle}">${p.holdCount}</td>`;
+      compHtml += `<td>${p.score.toFixed(1)}</td>`;
+      compHtml += `<td style="font-weight:600;">#${idx + 1}${rankIcon}</td>`;
+      compHtml += '</tr>';
+    });
+    compHtml += '</tbody></table>';
+
+    // Methodology
+    compHtml += '<div class="muted" style="font-size:10px; margin-top:6px; line-height:1.4;">';
+    compHtml += 'Score = <span style="color:#1b7a3d;">(%at goal)</span> &minus; <span style="color:#c62828;">(%severe)</span> &minus; <span style="color:#c62828;">5&times;(holds/mo)</span>. Higher = better.';
+    compHtml += '</div>';
+
+    // Best-is-not-current warning
+    const bestIsLast = best.label === phaseGroups[phaseGroups.length - 1].label;
+    if (!bestIsLast) {
+      compHtml += `<div style="margin-top:6px;"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:rgba(184,120,0,.12);color:#b87800;border:1px solid rgba(184,120,0,.2);">Best regimen (${best.label}) is not the current one — consider revisiting</span></div>`;
+    }
+    compContainer.innerHTML = compHtml;
   }
 
   // =============================================
@@ -1846,7 +1930,7 @@
     // ===== BUILD VISUAL CARD DASHBOARD =====
     let html = '<div class="kci-grid">';
 
-    // ── Card 1: Current Status + Treatment Plan Comparison (full width) ──
+    // ── Card 1: Current Status (full width) ──
     const recentPhase = validPhases.length ? validPhases[validPhases.length - 1] : null;
     const recentAtGoal = recentPhase && recentPhase.all.meanSBP < 135 && recentPhase.all.meanDBP < 85;
     const recentNearGoal = recentPhase && recentPhase.all.meanSBP < 140 && recentPhase.all.meanDBP < 90;
@@ -1871,52 +1955,6 @@
       html += `<span class="kci-detail" style="color:var(--muted);">on ${currentMedStr}</span>`;
     }
     html += `</div>`;
-
-    // Treatment Plan Comparison table (ranked by composite score)
-    if (validPhases.length >= 2) {
-      const scored = validPhases.map(p => {
-        const amS = p.am.n >= 2 ? p.am.meanSBP : (p.pm.n >= 2 ? p.pm.meanSBP : 999);
-        const pmS = p.pm.n >= 2 ? p.pm.meanSBP : (p.am.n >= 2 ? p.am.meanSBP : 999);
-        const holdPenalty = p.holdCount / Math.max(1, p.days) * 30 * 5;
-        const green = p.all.green || 0;
-        const severe = p.all.severe || 0;
-        const score = (amS + pmS) / 2 - green * 0.5 + severe * 1.0 + holdPenalty;
-        return { ...p, amS, pmS, green, severe, holdPenalty, score };
-      });
-      scored.sort((a, b) => a.score - b.score);
-      const best = scored[0];
-
-      html += `<table class="phase-table" style="font-size:12px; margin-top:10px;"><thead><tr>`;
-      html += `<th>Regimen</th><th>AM SBP</th><th>PM SBP</th><th>At Goal</th><th>Severe</th><th>Holds</th><th>Rank</th>`;
-      html += `</tr></thead><tbody>`;
-      scored.forEach((p, idx) => {
-        const isBest = idx === 0;
-        const isWorst = idx === scored.length - 1 && scored.length > 1;
-        const rowBg = isBest ? 'background:rgba(0,200,100,.08);' : (isWorst && scored.length > 2) ? 'background:rgba(255,80,80,.06);' : '';
-        const rankIcon = isBest ? ' \u{1F3C6}' : '';
-        html += `<tr style="${rowBg}">`;
-        html += `<td style="text-align:left; max-width:200px; word-break:break-word;">${p.label}</td>`;
-        html += `<td>${p.am.n >= 2 ? Math.round(p.amS) : '\u2014'}</td>`;
-        html += `<td>${p.pm.n >= 2 ? Math.round(p.pmS) : '\u2014'}</td>`;
-        html += `<td>${p.green.toFixed(0)}%</td>`;
-        html += `<td>${p.severe.toFixed(0)}%</td>`;
-        html += `<td>${p.holdCount}</td>`;
-        html += `<td style="font-weight:600;">#${idx + 1}${rankIcon}</td>`;
-        html += `</tr>`;
-      });
-      html += `</tbody></table>`;
-
-      // Methodology note
-      html += `<div class="muted" style="font-size:10px; margin-top:6px; line-height:1.4;">`;
-      html += `Ranking: composite = avg(AM, PM SBP) &minus; 0.5&times;(%at goal) + 1.0&times;(%severe) + 5&times;(holds/mo). Lower = better.`;
-      html += `</div>`;
-
-      // Best-is-not-current warning
-      const bestIsLast = best.label === validPhases[validPhases.length - 1].label;
-      if (!bestIsLast) {
-        html += `<div style="margin-top:6px;"><span class="kci-pill pill-warn">Best regimen (${best.label}) is not the current one — consider revisiting</span></div>`;
-      }
-    }
     html += `</div>`;
 
     // ── Card 2: Circadian Pattern (full width — merges BP split, HR, and time hotspots) ──
@@ -1972,107 +2010,13 @@
       if (hasHR) html += `<span style="text-align:right; font-size:13px; color:var(--muted);">${pmHRMean != null ? Math.round(pmHRMean) + ' bpm' : '—'}</span>`;
       html += `</div>`;
 
-      // Delta annotation
+      // Delta annotation (text only, no colored pills)
       const absDiff = Math.abs(circDiff);
       const absDiffDBP = Math.abs(circDiffDBP);
       html += `<div class="kci-detail" style="margin-top:6px;">`;
       html += `${higherWindow === 'afternoon/evening' ? 'Afternoon/Evening' : 'Morning'} runs <b>+${absDiff.toFixed(0)}/${absDiffDBP.toFixed(0)}</b> mmHg higher`;
-      if (absDiff >= 8) {
-        html += ` <span class="kci-pill pill-warn">Clinically meaningful — consider dose timing</span>`;
-      }
       html += `</div>`;
 
-      // Severe burden by window if notable
-      if (mornSevPct != null && aeSevPct != null && Math.abs(mornSevPct - aeSevPct) > 5) {
-        const burdenWin = aeSevPct > mornSevPct ? 'Afternoon/Evening' : 'Morning';
-        const burdenVal = Math.max(aeSevPct, mornSevPct);
-        html += `<div style="margin-top:4px;"><span class="kci-pill pill-danger">${burdenWin} severe burden: ${burdenVal.toFixed(0)}%</span></div>`;
-      }
-
-      // HR alerts (bradycardia / tachycardia)
-      if (meanHRVal != null && hrReadings.length >= 10) {
-        const hrLow = hrReadings.filter(x => x.hr <= 55);
-        const hrHigh = hrReadings.filter(x => x.hr >= 90);
-        const onBeta = medNames.some(n => /metoprolol|atenolol|propranolol/i.test(n));
-        if (hrLow.length >= 3 && onBeta) {
-          html += `<div style="margin-top:4px;"><span class="kci-pill pill-warn">${hrLow.length} readings HR ≤55 on beta-blocker</span></div>`;
-        }
-        if (hrHigh.length >= 3) {
-          html += `<div style="margin-top:4px;"><span class="kci-pill pill-danger">${hrHigh.length} readings HR ≥90</span></div>`;
-        }
-      }
-
-      // Peak-hour hotspot pill (specific actionable data point)
-      if (rs.length >= 20) {
-        const hourBuckets = {};
-        for (const r of rs) { const h = r.t.getHours(); if (!hourBuckets[h]) hourBuckets[h] = []; hourBuckets[h].push(r.sys); }
-        const overallMeanSBP = mean(rs.map(x => x.sys));
-        const hotHours = [];
-        for (const [h, vals] of Object.entries(hourBuckets)) {
-          if (vals.length >= 5) {
-            const hMean = mean(vals);
-            if (hMean - overallMeanSBP >= 8) hotHours.push({ hour: +h, mean: hMean, n: vals.length, diff: hMean - overallMeanSBP });
-          }
-        }
-        const hotPills = [];
-        if (hotHours.length) {
-          hotHours.sort((a, b) => b.diff - a.diff);
-          const top = hotHours[0];
-          const hLabel = top.hour > 12 ? `${top.hour - 12}PM` : top.hour === 12 ? '12PM' : `${top.hour}AM`;
-          hotPills.push(`Peak hour: ${hLabel} (SBP ${Math.round(top.mean)}, +${Math.round(top.diff)} vs mean)`);
-        }
-
-        if (hotPills.length) {
-          html += `<div style="margin-top:6px;">`;
-          html += hotPills.map(p => `<span class="kci-pill pill-warn">${p}</span>`).join(' ');
-          html += `</div>`;
-        }
-      }
-
-      html += `</div>`;
-    }
-
-    // ── Card 3: Medication Hold Pattern (conditional) ──
-    if (holdEvents.length >= 2) {
-      const totalHolds = holdEvents.length;
-      const holdRate = totalHolds / Math.max(1, totalDays) * 30;
-
-      // Find which regimen had the most holds
-      const phaseHoldData = validPhases.map(p => {
-        const pHolds = holdEvents.filter(h =>
-          h.getTime() >= p.start.getTime() && h.getTime() < p.end.getTime()
-        );
-        const pDays = Math.max(1, daysBetween(p.start, p.end));
-        return { label: p.label, holds: pHolds.length, days: pDays, rate: pHolds.length / pDays * 30 };
-      }).filter(p => p.holds > 0);
-      phaseHoldData.sort((a, b) => b.holds - a.holds);
-
-      html += `<div class="kci-card">`;
-      html += `<div class="kci-title">Medication Hold Pattern</div>`;
-
-      // Total holds summary
-      html += `<div style="display:flex; align-items:baseline; gap:8px; margin-bottom:8px;">`;
-      html += `<span class="kci-big">${totalHolds}</span>`;
-      html += `<span style="font-size:14px; color:var(--muted);">holds total (${holdRate.toFixed(1)}/mo)</span>`;
-      html += `</div>`;
-
-      // Per-regimen breakdown
-      if (phaseHoldData.length > 0) {
-        html += `<div style="font-size:12px; line-height:1.7;">`;
-        for (const ph of phaseHoldData) {
-          const pctOfTotal = (ph.holds / totalHolds * 100).toFixed(0);
-          html += `<div><b>${ph.label}</b>: ${ph.holds} hold${ph.holds > 1 ? 's' : ''} (${ph.rate.toFixed(1)}/mo, ${pctOfTotal}% of all holds)</div>`;
-        }
-        html += `</div>`;
-      }
-
-      // Tolerability alert
-      if (holdRate >= 2) {
-        html += `<div style="margin-top:6px;"><span class="kci-pill pill-danger">Frequent holds — tolerability concern</span></div>`;
-      }
-      if (phaseHoldData.length > 0 && phaseHoldData[0].holds > totalHolds * 0.6 && phaseHoldData.length > 1) {
-        html += `<div style="margin-top:4px;"><span class="kci-pill pill-warn">${phaseHoldData[0].label} accounts for most holds</span></div>`;
-      }
       html += `</div>`;
     }
 
@@ -2181,21 +2125,11 @@
         ]
       },
       {
-        title: 'Key Clinical Observations Thresholds',
-        rules: [
-          `<b>Late-day/morning burden:</b> Flagged when one window's severe % exceeds the other by > 5 pp`,
-          `<b>Hold-day signal:</b> Requires ≥ 3 hold-day readings AND ≥ 5 non-hold readings. SBP difference ≥ 5 mmHg = "confirms meds working"; < 2 mmHg = "questions efficacy"`,
-          `<b>Heart rate:</b> HR ≤ 55 = bradycardic (flagged if on beta-blocker, ≥ 3 readings); HR ≥ 90 = tachycardic (≥ 3 readings). Requires ≥ 10 HR readings total`,
-          `<b>Peak-hour hotspots:</b> Per-hour outliers: ≥ 8 mmHg above mean with n ≥ 5`,
-        ]
-      },
-      {
         title: 'Clinical Insights Dashboard',
         rules: [
-          `<b>Layout:</b> Visual card dashboard — up to 3 cards`,
-          `<b>Card 1 (Status + Treatment Plan Comparison):</b> Always shown (full width). Color-coded badge (green = at target, amber = near target, red = above). Treatment Plan Comparison table with composite scoring and ranking methodology. Warns if best regimen ≠ current`,
-          `<b>Card 2 (Circadian Pattern):</b> Full width. Shown if AM ≥ 5 AND PM ≥ 5 readings. Combines: proportion bars (green/red/severe) with labeled mini-legend and hatched severe icon, Mean BP column, HR by window, circadian delta, severe burden, HR alerts, peak-hour hotspot pills`,
-          `<b>Card 3 (Hold Pattern):</b> Shown if ≥ 2 hold events. Total holds + rate, per-regimen breakdown with hold count and rate, tolerability alerts`,
+          `<b>Layout:</b> Visual card dashboard — 2 cards`,
+          `<b>Card 1 (Current Status):</b> Always shown (full width). Color-coded badge: green = AT TARGET (mean SBP < 135 AND DBP < 85), amber = NEAR TARGET (mean SBP < 140 AND DBP < 90), red = ABOVE TARGET. Shows current mean BP and active regimen`,
+          `<b>Card 2 (Circadian Pattern):</b> Full width. Shown if AM ≥ 5 AND PM ≥ 5 readings. Proportion bars (green/red/severe) with labeled mini-legend and hatched severe icon, Mean BP column, HR by window (if ≥ 3 readings per window), circadian delta annotation`,
           `<b>Phase data:</b> ${N} readings per phase, ${lookbackMonths}-month lookback, most recent ${recentWeeks} week(s). Minimum n ≥ 3 for a phase to be validated`,
         ]
       },
@@ -2205,8 +2139,7 @@
           `<b>At goal:</b> Mean SBP < 135 AND mean DBP < 85`,
           `<b>Near goal:</b> Mean SBP < 140 AND mean DBP < 90`,
           `<b>Low severe burden:</b> < 5% severe readings in most recent phase`,
-          `<b>Hold-event burden:</b> Holds counted per regimen. Rate ≥ 2/month = tolerability concern. If one regimen accounts for > 60% of holds, it is flagged`,
-          `<b>Treatment plan comparison:</b> Composite score = avg(AM SBP, PM SBP) − 0.5 × green% + 1.0 × severe% + 5 × (holds/month). Lower = better. If best regimen ≠ current, suggests re-evaluation`,
+          `<b>Treatment plan comparison:</b> On the Medication Response tab. Score = (%at goal) − (%severe) − 5 × (holds/month). Higher = better. Green column = positive factor, red columns = negative factors. If best regimen ≠ current, warns for re-evaluation`,
         ]
       },
       {
