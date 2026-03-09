@@ -1878,20 +1878,30 @@
     const container = $('insightsContainer');
     if (!rs.length) { container.innerHTML = '<div class="muted">Upload data to see clinical insights.</div>'; return; }
 
-    const xMin = rs[0].t, xMax = rs[rs.length-1].t;
-    const totalDays = Math.max(1, daysBetween(xMin, xMax));
-    $('insightsRange').textContent = `${fmtDateShort(xMin)}, ${xMin.getFullYear()} – ${fmtDateShort(xMax)}, ${xMax.getFullYear()}`;
+    const xMax = rs[rs.length-1].t;
 
-    const morning = rs.filter(r => r.window === 'Morning');
-    const ae = rs.filter(r => r.window === 'Afternoon/Evening');
-    const m = computeMetrics(rs);
     const phases = buildTreatmentPhases(rs);
     const medNames = Object.keys(medIntervals);
 
-    // Compute per-phase stats using last-N-readings methodology (consistent with Phase table)
+    // Use configurable recent window (same as Medication Response tab)
     const insightN = Math.max(2, +$('phaseN').value || 10);
     const insightLookback = Math.max(1, +$('phaseLookback').value || 3);
     const insightRecentWeeks = Math.max(1, +$('phaseRecentWeeks').value || 2);
+
+    // Recent readings for Clinical Insights — same window as dashboard KPI + current phase
+    const recentAll = getRecentReadings(rs, insightRecentWeeks, 'All');
+    const morning = recentAll.filter(r => r.window === 'Morning');
+    const ae = recentAll.filter(r => r.window === 'Afternoon/Evening');
+    const m = computeMetrics(recentAll);
+
+    // Show the actual recent window dates
+    if (recentAll.length) {
+      const rMin = recentAll[0].t, rMax = recentAll[recentAll.length - 1].t;
+      $('insightsRange').textContent = `Recent ${insightRecentWeeks}-week window: ${fmtDateShort(rMin)}, ${rMin.getFullYear()} – ${fmtDateShort(rMax)}, ${rMax.getFullYear()}`;
+    } else {
+      $('insightsRange').textContent = `No readings in recent ${insightRecentWeeks}-week window`;
+    }
+
     const phaseData = phases.map((p, idx) => {
       const nextStart = (idx + 1 < phases.length) ? phases[idx + 1].start : null;
       let allSub, amSub, pmSub;
@@ -1919,8 +1929,8 @@
     // Hold-day data
     const holdDaySet = new Set(holdEvents.map(d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`));
 
-    // HR data
-    const hrReadings = rs.filter(r => r.hr != null);
+    // HR data — also scoped to recent window
+    const hrReadings = recentAll.filter(r => r.hr != null);
     const meanHRVal = hrReadings.length ? mean(hrReadings.map(x => x.hr)) : null;
 
     const mornMean = mean(morning.map(x => x.sys));
@@ -1931,7 +1941,7 @@
     const currentMedStr = currentMeds.length ? currentMeds.join(' + ') : 'current regimen';
     const validPhases = phaseData.filter(p => p.all.n >= 3);
 
-    // Circadian variables
+    // Circadian variables — computed from recent window only
     const mornSevPct = morning.length >= 5 ? 100 * morning.filter(x => x.severe).length / morning.length : null;
     const aeSevPct = ae.length >= 5 ? 100 * ae.filter(x => x.severe).length / ae.length : null;
     const mornGreenPct = morning.length >= 5 ? 100 * morning.filter(x => x.green).length / morning.length : null;
