@@ -1992,12 +1992,17 @@
     html += `<div class="kci-card kci-full kci-status ${statusClass}">`;
     html += `<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">`;
     html += `<span class="kci-badge ${badgeClass}">${statusLabel}</span>`;
+    // Compact context label for inline placement next to numbers
+    const recentCtx = recentAll.length
+      ? `last ${insightRecentWeeks} wk${insightRecentWeeks>1?'s':''} · n=${statusN}`
+      : '';
     if (recentPhase) {
       html += `<span class="kci-big" style="margin:0;">${Math.round(recentPhase.all.meanSBP)}/${Math.round(recentPhase.all.meanDBP)}</span>`;
-      html += `<span style="font-size:12px; color:var(--muted);">on ${currentMedStr} · n=${recentPhase.all.n}</span>`;
+      html += `<span style="font-size:12px; color:#1a73e8; font-weight:600;">${recentCtx}</span>`;
+      html += `<span style="font-size:12px; color:var(--muted);">on ${currentMedStr}</span>`;
     } else if (statusSBP != null) {
       html += `<span class="kci-big" style="margin:0;">${Math.round(statusSBP)}/${Math.round(statusDBP)}</span>`;
-      html += `<span style="font-size:12px; color:var(--muted);">n=${statusN}</span>`;
+      html += `<span style="font-size:12px; color:#1a73e8; font-weight:600;">${recentCtx}</span>`;
     }
     html += `</div>`;
     html += `</div>`;
@@ -2030,7 +2035,7 @@
 
       // Header row
       html += `<div style="display:grid; grid-template-columns:${gridCols}; align-items:center; gap:6px; margin-bottom:3px; font-size:11px; color:var(--muted); font-weight:600;">`;
-      html += `<div></div><div>Distribution of BP Readings</div><div style="text-align:right;">Mean BP</div>`;
+      html += `<div></div><div>Distribution of BP Readings <span style="color:#1a73e8;">· last ${insightRecentWeeks} wk${insightRecentWeeks>1?'s':''}</span></div><div style="text-align:right;">Mean BP</div>`;
       if (hasHR) html += `<div style="text-align:right;">HR</div>`;
       html += `</div>`;
 
