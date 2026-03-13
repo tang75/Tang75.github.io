@@ -1240,6 +1240,7 @@
         amSBP: amRow.meanSBP, pmSBP: pmRow.meanSBP,
         amN: amRow.n, pmN: pmRow.n,
         green: allStats.green || 0,
+        red: (allStats.red || 0) + (allStats.severe || 0),
         severe: allStats.severe || 0,
         holdCount: phaseHolds.length,
         days: phaseDays,
@@ -1258,13 +1259,14 @@
 
     // Find max values for highlighting
     const maxGreen = Math.max(...scored.map(p => p.green));
+    const maxRed = Math.max(...scored.map(p => p.red));
     const maxSevere = Math.max(...scored.map(p => p.severe));
     const maxHolds = Math.max(...scored.map(p => p.holdCount));
 
     let compHtml = '<div class="hr"></div>';
     compHtml += `<div style="font-weight:650; font-size:14px; margin-bottom:8px; color:var(--accent);">Treatment Plan Comparison <span style="font-weight:400; font-size:12px; color:#1a73e8;">· last ${recentWeeks} wk${recentWeeks>1?'s':''} per phase</span></div>`;
     compHtml += '<table class="phase-table" style="font-size:12px;"><thead><tr>';
-    compHtml += '<th>Regimen</th><th style="color:#1b7a3d;">% At Goal (+)</th><th style="color:#c62828;">% Severe (&minus;)</th><th style="color:#c62828;">Holds (&minus;)</th><th>Score</th><th>Rank</th>';
+    compHtml += '<th>Regimen</th><th style="color:#1b7a3d;">% At Goal (+)</th><th style="color:#c62828;">% Uncontrolled</th><th style="color:#c62828;">% Severe (&minus;)</th><th style="color:#c62828;">Holds (&minus;)</th><th>Score</th><th>Rank</th>';
     compHtml += '</tr></thead><tbody>';
     scored.forEach((p, idx) => {
       const isBest = idx === 0;
@@ -1273,11 +1275,13 @@
       const rankIcon = isBest ? ' \u{1F3C6}' : '';
       // Highlight: green for best at-goal, red for worst severe/holds
       const greenStyle = p.green === maxGreen ? 'color:#1b7a3d; font-weight:700;' : '';
+      const redStyle = p.red === maxRed && p.red > 0 ? 'color:#c62828; font-weight:700;' : '';
       const sevStyle = p.severe === maxSevere && p.severe > 0 ? 'color:#c62828; font-weight:700;' : '';
       const holdStyle = p.holdCount === maxHolds && p.holdCount > 0 ? 'color:#c62828; font-weight:700;' : '';
       compHtml += `<tr style="${rowBg}">`;
       compHtml += `<td style="text-align:left; max-width:200px; word-break:break-word;">${p.label}</td>`;
       compHtml += `<td style="${greenStyle}">${p.green.toFixed(0)}%</td>`;
+      compHtml += `<td style="${redStyle}">${p.red.toFixed(0)}%</td>`;
       compHtml += `<td style="${sevStyle}">${p.severe.toFixed(0)}%</td>`;
       compHtml += `<td style="${holdStyle}">${p.holdCount}</td>`;
       compHtml += `<td>${p.score.toFixed(1)}</td>`;
@@ -1681,7 +1685,7 @@
           `<b>At goal:</b> Mean SBP < ${goal.sys} AND mean DBP < ${goal.dia}`,
           `<b>Near goal:</b> Mean SBP < ${goal.sys+5} AND mean DBP < ${goal.dia+5}`,
           `<b>Low severe burden:</b> < 5% severe readings in most recent phase`,
-          `<b>Treatment plan comparison:</b> On the Medication Response tab. Score = (%at goal) − (%severe) − 5 × (holds/month). Higher = better. Green column = positive factor, red columns = negative factors. If best regimen ≠ current, warns for re-evaluation`,
+          `<b>Treatment plan comparison:</b> On the Medication Response tab. Columns: %At Goal (green, positive), %Uncontrolled (red+severe combined), %Severe, Holds. Score = (%at goal) − (%severe) − 5 × (holds/month). Higher = better. If best regimen ≠ current, warns for re-evaluation`,
           `<b>Treatment plan comparison — data windows:</b> All phases use the same window: the most recent ${recentWeeks} week(s) of readings before the phase ended (or before today for the current phase). This ensures an apples-to-apples comparison across regimens. Configurable via "Recent window (wks)" in the settings bar`,
         ]
       },
