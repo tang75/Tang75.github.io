@@ -91,6 +91,16 @@
     /* Proportion bars (for circadian) */
     .kci-bar-track{ flex:1; height:18px; border-radius:4px; background:rgba(0,0,0,.06); display:flex; overflow:hidden; }
     .kci-bar-seg{ height:100%; }
+    .kci-bar-seg.hatched-severe{
+      background-color:#6A0000;
+      background-image: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 3px,
+        rgba(255,255,255,0.35) 3px,
+        rgba(255,255,255,0.35) 6px
+      );
+    }
 
     /* Alert pills */
     .kci-pill{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; margin:2px 4px 2px 0; }
@@ -150,6 +160,7 @@
       .kci-status.status-amber{ background:#fff8e1; border-color:#b87800; }
       .kci-status.status-red{ background:#ffebee; border-color:#c62828; }
       .kci-badge{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
+      .hatched-severe{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
       .kci-bar-seg{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
       .kci-pill{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
       #tab-phases{ page-break-before:always; }
@@ -1275,7 +1286,7 @@
     compHtml += `<span><span style="display:inline-block;width:10px;height:10px;background:#7B1FA2;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Low</span>`;
     compHtml += `<span><span style="display:inline-block;width:10px;height:10px;background:#00C853;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>At goal</span>`;
     compHtml += `<span><span style="display:inline-block;width:10px;height:10px;background:#FF4444;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Above goal</span>`;
-    compHtml += `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:3px;"><svg width="10" height="10" xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" rx="2" fill="#FF0000"/><line x1="0" y1="10" x2="10" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="3" y1="10" x2="13" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="-3" y1="10" x2="7" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/></svg></span>Severe</span>`;
+    compHtml += `<span><span class="hatched-severe" style="display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Severe</span>`;
     compHtml += `</div>`;
 
     compHtml += '<table class="phase-table" style="font-size:12px;"><thead><tr>';
@@ -1304,12 +1315,9 @@
         // Show label inside if segment wide enough (>=12%), otherwise just show the segment
         const showLabel = seg.pct >= 12;
         const textColor = seg.color === '#00C853' ? 'rgba(0,0,0,.7)' : '#fff';
-        let bgStyle = `background:${seg.color};`;
-        // SVG hatching for severe
-        if (seg.hatched) {
-          bgStyle = `background:${seg.color}; background-image: url("data:image/svg+xml,%3Csvg width='8' height='8' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='8' x2='8' y2='0' stroke='rgba(255,255,255,0.5)' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat:repeat;`;
-        }
-        barHtml += `<div class="kci-bar-seg" style="width:${seg.pct}%; ${bgStyle} display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:${textColor}; overflow:hidden; white-space:nowrap;">`;
+        const hatchClass = seg.hatched ? ' hatched-severe' : '';
+        const bgStyle = seg.hatched ? '' : `background:${seg.color};`;
+        barHtml += `<div class="kci-bar-seg${hatchClass}" style="width:${seg.pct}%; ${bgStyle} display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:${textColor}; overflow:hidden; white-space:nowrap;">`;
         if (showLabel) barHtml += `${rounded}%`;
         barHtml += `</div>`;
       }
