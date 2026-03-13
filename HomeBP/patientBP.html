@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Home Blood Pressure and Heart Rate Readings</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="bp-core.js?v=5"></script>
+  <style>
+    :root { --bg:#ffffff; --card:#ffffff; --muted:#444; --text:#111; --accent:#2c5dcd; --warn:#b87800; --danger:#c62828; --ok:#1b7a3d; --canvas-bg:#ffffff; }
+    *{box-sizing:border-box;}
+    body{ margin:0; font:18px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--text); }
+    header{ padding:24px 24px 14px; border-bottom:1px solid rgba(0,0,0,.12); text-align:center; }
+    h1{ margin:0 0 8px; font-size:36px; font-weight:700; color:#111; }
+    .sub{ color:var(--muted); font-size:18px; }
+    main{ padding:24px; max-width:1200px; margin:0 auto; }
+    .card{ background:var(--card); border:1px solid rgba(0,0,0,.12); border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:18px; }
+    .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    label{ color:var(--muted); font-size:15px; font-weight:600; }
+    input[type="file"]{ color:var(--muted); font-size:16px; }
+    select, input[type="number"], input[type="text"]{
+      background:#fff; color:var(--text); border:1px solid rgba(0,0,0,.18); border-radius:10px; padding:10px 12px; font-size:16px;
+    }
+    button{
+      background:linear-gradient(180deg,rgba(44,93,205,.12),rgba(44,93,205,.04));
+      border:1px solid rgba(44,93,205,.30); color:var(--text);
+      padding:10px 16px; border-radius:12px; cursor:pointer; font-size:16px; font-weight:600;
+    }
+    button:hover{ filter:brightness(0.97); }
+    .pill{ display:inline-flex; gap:10px; align-items:center; padding:8px 14px; border-radius:999px; border:1px solid rgba(0,0,0,.12); background:rgba(0,0,0,.02); }
+    .muted{ color:var(--muted); }
+    .danger{ color:var(--danger); }
+    .warn{ color:var(--warn); }
+    .ok{ color:var(--ok); }
+    .small{ font-size:15px; }
+
+    /* Chart canvases */
+    .chart-stack{ display:flex; flex-direction:column; gap:2px; }
+    .chart-stack canvas{ width:100%; background:var(--canvas-bg); border:1px solid rgba(0,0,0,.15); border-radius:8px; image-rendering:-webkit-optimize-contrast; }
+
+    /* Legend */
+    .legend-bar{ display:flex; flex-wrap:wrap; gap:18px; padding:14px 18px; background:rgba(0,0,0,.02); border:1px solid rgba(0,0,0,.10); border-radius:10px; margin-top:8px; font-size:16px; font-weight:500; color:#111; }
+    .legend-item{ display:flex; align-items:center; gap:8px; }
+    .legend-swatch{ width:22px; height:16px; border-radius:3px; display:inline-block; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+    /* Column mapping */
+    .mapping{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    @media(max-width:680px){ .mapping{ grid-template-columns:1fr; } }
+    .hr{ height:1px; background:rgba(0,0,0,.08); margin:14px 0; }
+
+    /* Drop zone / welcome overlay */
+    #dropOverlay{
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      border:3px dashed rgba(44,93,205,.4); border-radius:18px; padding:56px 28px; margin-bottom:20px;
+      background:rgba(44,93,205,.03); cursor:pointer; transition:all .2s;
+    }
+    #dropOverlay:hover, #dropOverlay.drag-over{
+      border-color:var(--accent); background:rgba(44,93,205,.08);
+    }
+    #dropOverlay .drop-icon{ font-size:56px; margin-bottom:14px; color:var(--accent); }
+    #dropOverlay .drop-title{ font-size:28px; font-weight:650; margin-bottom:8px; color:#111; }
+    #dropOverlay .drop-sub{ color:var(--muted); font-size:18px; }
+    #dropOverlay .drop-btn{
+      margin-top:18px; padding:14px 32px; font-size:18px; font-weight:600;
+      background:var(--accent); color:#fff; border:none; border-radius:12px; cursor:pointer;
+    }
+    #dropOverlay .drop-btn:hover{ filter:brightness(1.1); }
+
+    @page { size: landscape; margin: 0.3in; }
+    @media print {
+      body{ background:#fff; color:#000; margin:0; }
+      main{ padding:4px 10px; }
+      header{ border:none; padding:4px 10px 0; text-align:center; }
+      h1{ font-size:22px; margin-bottom:2px; }
+      .sub{ display:none; }
+      .card{ box-shadow:none; border:1px solid #ccc; background:#fff; padding:6px; margin-bottom:6px; }
+      canvas{ border:1px solid #ccc; image-rendering:-webkit-optimize-contrast; }
+      button, input, select, .no-print{ display:none !important; }
+      .muted{ color:#333; }
+      .danger{ color:#b00020; }
+      .warn{ color:#8a5200; }
+      .ok{ color:#0a6a2c; }
+      .legend-bar{ background:#f8f8f8; border-color:#ccc; padding:4px 10px; margin-top:2px; font-size:13px; gap:12px; }
+      .legend-swatch{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
+      .chart-stack{ gap:0px; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Home Blood Pressure and Heart Rate Readings</h1>
+  <div class="sub">
+    Upload your Omron report file (Excel .xlsx/.xls or CSV). All processing is local &mdash; nothing leaves your computer.
+  </div>
+</header>
+
+<main>
+  <!-- Control bar -->
+  <div class="card no-print">
+    <div class="row">
+      <div class="pill" id="filePill">
+        <label style="font-weight:700; color:var(--accent);">BP Data File</label>
+        <input id="file" type="file" accept=".csv,.xlsx,.xls" />
+        <span id="fileNameLabel" style="font-size:15px; font-weight:600; color:var(--text); display:none;"></span>
+        <button id="changeFileBtn" style="display:none; font-size:13px; padding:5px 10px;">Change file</button>
+        <span id="dropHint" class="muted" style="font-size:14px;">(or drag &amp; drop anywhere on this bar)</span>
+      </div>
+      <div class="pill">
+        <label>Date range</label>
+        <select id="range">
+          <option value="30">Last 30 days</option>
+          <option value="60">Last 60 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="all" selected>All data</option>
+        </select>
+      </div>
+      <button id="clearBtn" style="display:none; font-size:13px; padding:5px 10px;">Clear Data</button>
+    </div>
+  </div>
+
+  <!-- Drop zone / Welcome -->
+  <div id="dropOverlay" class="no-print">
+    <div class="drop-icon">&#128202;</div>
+    <div class="drop-title">Drop your BP file here</div>
+    <div class="drop-sub">or click the button below to browse</div>
+    <button class="drop-btn" id="browseBtn">Choose File</button>
+    <div class="drop-sub" style="margin-top:12px">Accepts .xlsx, .xls, or .csv &mdash; all processing stays on your computer</div>
+  </div>
+
+  <!-- Column mapping (shown when auto-detection fails) -->
+  <div id="mappingCard" class="card no-print" style="display:none;">
+    <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+      <div>
+        <div style="font-weight:650; margin-bottom:4px; font-size:20px;">Column Mapping</div>
+        <div class="muted" style="font-size:16px;">Headers not recognized. Map them below, then click <b>Apply</b>.</div>
+      </div>
+      <button id="applyMapBtn">Apply mapping</button>
+    </div>
+    <div class="hr"></div>
+    <div class="mapping">
+      <div><label>Date column</label><select id="colDate"></select></div>
+      <div><label>Time column (optional if combined)</label><select id="colTime"></select></div>
+      <div><label>Systolic column</label><select id="colSys"></select></div>
+      <div><label>Diastolic column</label><select id="colDia"></select></div>
+      <div><label>Pulse column (optional)</label><select id="colPulse"></select></div>
+      <div><label>Notes column (optional)</label><select id="colNotes"></select></div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="card">
+    <div class="chart-stack">
+      <canvas id="chartMorning" height="340"></canvas>
+      <canvas id="chartEvening" height="340"></canvas>
+      <canvas id="chartMeds" height="160"></canvas>
+    </div>
+    <div class="legend-bar">
+      <div class="legend-item"><span class="legend-swatch" style="background:#7B1FA2"></span> Low: SBP &lt;100 or DBP &lt;60</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:#00C853"></span> At Goal: SBP &lt;130 AND DBP &lt;80</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:#FF4444"></span> Above Goal: SBP 130-159 or DBP &ge;80</div>
+      <div class="legend-item"><span style="display:inline-block;width:22px;height:16px;border-radius:3px;vertical-align:middle;"><svg width="22" height="16" xmlns="http://www.w3.org/2000/svg"><rect width="22" height="16" rx="2" fill="#FF0000"/><line x1="0" y1="16" x2="16" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="6" y1="16" x2="22" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="-6" y1="16" x2="10" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/></svg></span> High: SBP &ge;160 or DBP &ge;100</div>
+      <div class="legend-item"><span style="display:inline-block;width:22px;height:2px;background:#8a8a8a;vertical-align:middle;"></span> Heart Rate</div>
+      <div class="legend-item"><span style="display:inline-block;width:22px;height:0;border-top:2px dashed #666;vertical-align:middle;"></span> Targets (SBP &lt;130, DBP &lt;80)</div>
+      <div class="legend-item"><span style="font-size:20px;">&#9733;</span> Held BP meds</div>
+    </div>
+  </div>
+
+  <!-- KPI Dashboard -->
+  <div class="card" style="margin-top:18px;">
+    <div style="text-align:center;">
+      <div style="font-size:20px; font-weight:700; color:var(--muted);" id="avgAllLabel">Recent 2-week average</div>
+      <div style="font-size:36px; font-weight:750; letter-spacing:.3px; margin-top:6px;" id="avgAll">&mdash;</div>
+      <div style="font-size:18px; margin-top:4px;" id="avgAllDetail">&mdash;</div>
+    </div>
+    <div id="kpiSplitBar" style="margin-top:14px;"></div>
+  </div>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+
+  // =============================================
+  // IMPORT SHARED LOGIC FROM bp-core.js
+  // =============================================
+  const {
+    // Constants
+    COLOR_GREEN, COLOR_RED, COLOR_SEVERE, COLOR_HYPO, HR_COLOR, TARGET_COLOR, HOLD_STAR_COLOR,
+    SEVERE_SBP_MIN, SEVERE_DBP_MIN, SEVERE_LABEL_SBP_MIN,
+    HYPO_SBP_MAX, HYPO_DBP_MAX,
+    BASE_BAR_W, SEVERE_BAR_W, CANVAS_BG,
+    // Utilities
+    mean, fmtBP, fmtDate, fmtDateShort, fmtPct, daysBetween,
+    // Parsing
+    parseCSV, normalizeHeader, sheetToAoa, findLikelyHeaderRow, excelAoaToRows,
+    tryParseDate, parseDateAndTime, detectColumns,
+    // Classification
+    classifyBP,
+    // Medication engine
+    parseMedIntervals,
+    // Dose shading
+    getStartingDose, alphaForDailyDose, getMedColor, hexToRgb01, chooseSigTextColor,
+    medSigLabel,
+    // Persistence
+    saveToLocalStorage, loadFromLocalStorage, arrayBufferToBase64, base64ToArrayBuffer,
+  } = BPCore;
+
+  // =============================================
+  // HARDCODED PATIENT DEFAULTS
+  // =============================================
+  const PATIENT_GOAL = { sys: 130, dia: 80 };
+  const AM_CONFIG = { amStart: 0, amEnd: 12 };
+  const GOAL_CONFIG = { profile: 'us', customSys: 130, customDia: 80 };
+  const TARGET_SBP = 130, TARGET_DBP = 80;
+  const RECENT_WEEKS = 2;
+
+  // =============================================
+  // STATE
+  // =============================================
+  let rawRows = null;
+  let headers = null;
+  let mapping = null;
+  let readings = [];
+  let medIntervals = {};
+  let holdEvents = [];
+
+  // =============================================
+  // MAPPING UI
+  // =============================================
+  function showMappingUI() {
+    $('mappingCard').style.display = 'block';
+    const sels = [$('colDate'),$('colTime'),$('colSys'),$('colDia'),$('colPulse'),$('colNotes')];
+    for (const sel of sels) {
+      sel.innerHTML = '<option value="">— none —</option>';
+      headers.forEach((h,i) => { const o=document.createElement('option'); o.value=String(i); o.textContent=`${h} (col ${i+1})`; sel.appendChild(o); });
+    }
+  }
+  function applyMappingFromUI() {
+    const dateIdx=$('colDate').value===''?-1:+$('colDate').value;
+    const timeIdx=$('colTime').value===''?-1:+$('colTime').value;
+    const sysIdx=$('colSys').value===''?-1:+$('colSys').value;
+    const diaIdx=$('colDia').value===''?-1:+$('colDia').value;
+    const pulseIdx=$('colPulse').value===''?null:+$('colPulse').value;
+    const notesIdx=$('colNotes').value===''?null:+$('colNotes').value;
+    if(dateIdx===-1||sysIdx===-1||diaIdx===-1){alert('Please map Date, Systolic, and Diastolic.');return;}
+    mapping = { useCombinedDT:false, dtIdx:-1, dateIdx, timeIdx, sysIdx, diaIdx, pulseIdx, notesIdx };
+    $('mappingCard').style.display='none';
+    processData(); renderAll();
+  }
+
+  // =============================================
+  // BUILD READINGS (delegates to BPCore)
+  // =============================================
+  function buildReadings() {
+    readings = BPCore.buildReadings(rawRows, mapping, AM_CONFIG);
+  }
+  function findHoldEventsFromReadings() {
+    holdEvents = BPCore.findHoldEventsFromReadings(readings);
+  }
+
+  // =============================================
+  // PROCESS DATA
+  // =============================================
+  function processData() {
+    buildReadings();
+    findHoldEventsFromReadings();
+    if (readings.length > 0) {
+      const startDt = readings[0].t;
+      const endDt = new Date(readings[readings.length-1].t.getTime() + 12*3600000);
+      medIntervals = parseMedIntervals(readings, startDt, endDt);
+    } else {
+      medIntervals = {};
+    }
+  }
+
+  // =============================================
+  // RANGE FILTER
+  // =============================================
+  function getRangeFiltered() {
+    const range = $('range').value;
+    const days = range === 'all' ? 'all' : +range;
+    return BPCore.getRangeFiltered(readings, days);
+  }
+
+  // =============================================
+  // CANVAS SETUP
+  // =============================================
+  let printDPR = 0;
+  function setupCanvas(canvas, displayW, displayH) {
+    const dpr = printDPR > 0 ? printDPR : Math.max(3, window.devicePixelRatio||1);
+    canvas.width = displayW*dpr;
+    canvas.height = displayH*dpr;
+    canvas.style.width = displayW+'px';
+    canvas.style.height = displayH+'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr,dpr);
+    return ctx;
+  }
+
+  // =============================================
+  // CHART: BP PANEL — Patient version (larger fonts)
+  // =============================================
+  const PAD = {l:82,r:24,t:36,b:44};
+
+  function drawBPPanel(canvas, rs, title, xMinMs, xMaxMs, holdEvts, windowFilter) {
+    const container = canvas.parentElement;
+    const displayW = container.clientWidth - 4;
+    const displayH = 340;
+    const ctx = setupCanvas(canvas, displayW, displayH);
+    const W=displayW, H=displayH;
+    const plotW=W-PAD.l-PAD.r, plotH=H-PAD.t-PAD.b;
+
+    const yMin=50, yMax=200;
+    const xOf=t=>PAD.l+((t-xMinMs)/Math.max(1,xMaxMs-xMinMs))*plotW;
+    const yOf=y=>PAD.t+(1-(y-yMin)/(yMax-yMin))*plotH;
+
+    // Background
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,W,H);
+
+    // Title — large bold
+    ctx.fillStyle='rgba(0,0,0,.90)';
+    ctx.font='bold 20px system-ui';
+    ctx.fillText(title, PAD.l, 26);
+
+    // Grid
+    ctx.strokeStyle='rgba(0,0,0,.10)';
+    ctx.lineWidth=1;
+    for(let y=50;y<=200;y+=25){
+      const yy=yOf(y);
+      ctx.beginPath();ctx.moveTo(PAD.l,yy);ctx.lineTo(W-PAD.r,yy);ctx.stroke();
+      ctx.fillStyle='rgba(0,0,0,.70)';ctx.font='bold 14px system-ui';ctx.textAlign='right';
+      ctx.fillText(String(y), PAD.l-8, yy+5);ctx.textAlign='left';
+    }
+
+    // Target lines — using patient goal 130/80
+    ctx.strokeStyle=TARGET_COLOR;
+    ctx.setLineDash([6,4]);ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(PAD.l,yOf(TARGET_SBP));ctx.lineTo(W-PAD.r,yOf(TARGET_SBP));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(PAD.l,yOf(TARGET_DBP));ctx.lineTo(W-PAD.r,yOf(TARGET_DBP));ctx.stroke();
+    ctx.setLineDash([]);
+
+    if(!rs.length){
+      ctx.fillStyle='rgba(0,0,0,.5)';ctx.font='bold 16px system-ui';
+      ctx.fillText('No readings in this window.',W/2-110,H/2);
+      drawXAxis(ctx,W,H,xMinMs,xMaxMs);
+      return;
+    }
+
+    // Bars
+    const barWBase = Math.max(3, (BASE_BAR_W/(daysBetween(new Date(xMinMs),new Date(xMaxMs))))*plotW);
+    const barWSevere = Math.max(5, (SEVERE_BAR_W/(daysBetween(new Date(xMinMs),new Date(xMaxMs))))*plotW);
+
+    for(const r of rs){
+      const x=xOf(r.t.getTime());
+      const ySys=yOf(r.sys), yDia=yOf(r.dia);
+      const bw=r.severe?barWSevere:barWBase;
+      const bh=yDia-ySys;
+
+      // Use patient goal for green classification
+      const patCls = classifyPatient(r.sys, r.dia);
+      ctx.fillStyle=r.hypo?COLOR_HYPO:r.severe?COLOR_SEVERE:patCls.green?COLOR_GREEN:COLOR_RED;
+      ctx.fillRect(x-bw/2, ySys, bw, bh);
+
+      // Hatch for severe
+      if(r.severe){
+        ctx.save();
+        ctx.beginPath();ctx.rect(x-bw/2,ySys,bw,bh);ctx.clip();
+        ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1;
+        for(let i=-bh;i<bw+bh;i+=5){
+          ctx.beginPath();ctx.moveTo(x-bw/2+i,ySys);ctx.lineTo(x-bw/2+i-bh,ySys+bh);ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+
+    // HR line
+    const hrReadings = rs.filter(r=>r.hr!=null);
+    if(hrReadings.length>1){
+      ctx.strokeStyle=HR_COLOR;ctx.lineWidth=1.2;ctx.beginPath();
+      let started=false;
+      for(const r of hrReadings){
+        const x=xOf(r.t.getTime()),y=yOf(r.hr);
+        if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+
+    // Severe SBP labels
+    const sevReadings = rs.filter(r=>r.sys>=SEVERE_LABEL_SBP_MIN).sort((a,b)=>a.t-b.t);
+    if(sevReadings.length>0){
+      const barBoxes = rs.map(r => {
+        const bx=xOf(r.t.getTime());
+        const bw=r.severe?barWSevere:barWBase;
+        return {x:bx-bw/2, y:yOf(r.sys), w:bw, h:yOf(r.dia)-yOf(r.sys)};
+      });
+
+      const placedLabels = [];
+      const unplacedIdx = [];
+      ctx.font='bold 13px system-ui';
+
+      const overlapsAny = (lx, ly, lw, lh) => {
+        for(const b of barBoxes){
+          if(lx<b.x+b.w&&lx+lw>b.x&&ly<b.y+b.h&&ly+lh>b.y) return true;
+        }
+        for(const b of placedLabels){
+          if(lx<b.x+b.w&&lx+lw>b.x&&ly<b.y+b.h&&ly+lh>b.y) return true;
+        }
+        return false;
+      };
+
+      for(let ri=0;ri<sevReadings.length;ri++){
+        const sr=sevReadings[ri];
+        const x=xOf(sr.t.getTime());
+        const y=yOf(sr.sys);
+        const lab=String(Math.round(sr.sys));
+        const tw=ctx.measureText(lab).width;
+        const th=14;
+        const lw=tw+4, lh=th+2;
+        let placed=false;
+        for(let dy=-4;dy>=-100;dy-=6){
+          const lx=x-tw/2, ly=y+dy-lh;
+          if(ly<2)continue;
+          if(!overlapsAny(lx,ly,lw,lh)){
+            ctx.fillStyle='rgba(160,0,0,.90)';
+            ctx.fillText(lab, lx+2, ly+th);
+            placedLabels.push({x:lx,y:ly,w:lw,h:lh});
+            placed=true;break;
+          }
+        }
+        if(!placed) unplacedIdx.push(ri);
+      }
+
+      if(unplacedIdx.length>0){
+        const half=24*3600000;
+        const winners48=new Set();
+        for(const i of unplacedIdx){
+          const ti=sevReadings[i].t.getTime();
+          let maxSBP=-Infinity, maxIdx=-1;
+          for(const j of unplacedIdx){
+            const tj=sevReadings[j].t.getTime();
+            if(Math.abs(tj-ti)<=half && sevReadings[j].sys>maxSBP){
+              maxSBP=sevReadings[j].sys; maxIdx=j;
+            }
+          }
+          if(maxIdx>=0) winners48.add(maxIdx);
+        }
+        for(const wi of winners48){
+          const sr=sevReadings[wi];
+          const x=xOf(sr.t.getTime());
+          const lab=String(Math.round(sr.sys));
+          const tw=ctx.measureText(lab).width;
+          ctx.fillStyle='rgba(160,0,0,.90)';
+          ctx.fillText(lab, x-tw/2+2, 14);
+        }
+      }
+    }
+
+    // Hold-med stars
+    if(holdEvts&&holdEvts.length){
+      const yStar=yOf(yMin+5);
+      ctx.fillStyle=HOLD_STAR_COLOR;ctx.font='16px system-ui';
+      for(const dt of holdEvts){
+        const hr=dt.getHours();
+        if(windowFilter==='Morning'&&hr>=12)continue;
+        if(windowFilter==='Afternoon/Evening'&&hr<12)continue;
+        ctx.fillText('\u2605', xOf(dt.getTime())-7, yStar);
+      }
+    }
+
+    // Y-axis label — larger bold
+    ctx.save();ctx.translate(18,H/2);ctx.rotate(-Math.PI/2);
+    ctx.fillStyle='rgba(0,0,0,.70)';ctx.font='bold 14px system-ui';ctx.textAlign='center';
+    ctx.fillText('mmHg / bpm',0,0);ctx.restore();
+
+    drawXAxis(ctx,W,H,xMinMs,xMaxMs);
+  }
+
+  function drawXAxis(ctx, W, H, xMinMs, xMaxMs) {
+    const ticks = computeDateTicks(xMinMs, xMaxMs);
+    const plotW=W-PAD.l-PAD.r;
+    const xOf=t=>PAD.l+((t-xMinMs)/Math.max(1,xMaxMs-xMinMs))*plotW;
+    ctx.fillStyle='rgba(0,0,0,.75)';ctx.font='bold 13px system-ui';ctx.textAlign='center';
+    for(const t of ticks){
+      const x=xOf(t);
+      if(x<PAD.l+5||x>W-PAD.r-5)continue;
+      ctx.beginPath();ctx.strokeStyle='rgba(0,0,0,.20)';ctx.lineWidth=1;
+      ctx.moveTo(x,H-PAD.b);ctx.lineTo(x,H-PAD.b+6);ctx.stroke();
+      ctx.fillText(fmtDateShort(new Date(t)), x, H-PAD.b+22);
+    }
+  }
+
+  function computeDateTicks(xMinMs, xMaxMs) {
+    // Adaptively choose interval to get 5-10 tick marks
+    const totalDays = daysBetween(new Date(xMinMs), new Date(xMaxMs));
+    // Try week intervals: 1wk, 2wk, 4wk, 8wk — pick the one giving 5-10 ticks
+    const candidates = [7, 14, 28, 56];
+    let intervalDays = 14; // default
+    for (const c of candidates) {
+      const approxTicks = totalDays / c;
+      if (approxTicks >= 4 && approxTicks <= 12) { intervalDays = c; break; }
+    }
+    // If very short range (<30 days), use 5-day intervals
+    if (totalDays <= 30) intervalDays = 5;
+
+    const ticks=[];
+    const d=new Date(xMinMs);d.setHours(0,0,0,0);
+    // For week-based intervals, align to Monday
+    if (intervalDays >= 7) {
+      while(d.getDay()!==1)d.setDate(d.getDate()+1);
+    }
+    while(d.getTime()<=xMaxMs){
+      ticks.push(d.getTime());
+      d.setDate(d.getDate()+intervalDays);
+    }
+    return ticks;
+  }
+
+  // =============================================
+  // PATIENT-SPECIFIC BP CLASSIFICATION (goal 130/80)
+  // =============================================
+  function classifyPatient(sys, dia) {
+    const hypo = sys < HYPO_SBP_MAX || dia < HYPO_DBP_MAX;
+    const severe = sys >= SEVERE_SBP_MIN || dia >= SEVERE_DBP_MIN;
+    const green = !hypo && sys < PATIENT_GOAL.sys && dia < PATIENT_GOAL.dia && !severe;
+    const red = !green && !severe && !hypo;
+    return { severe, green, red, hypo };
+  }
+
+  // =============================================
+  // CHART: MEDICATION PANEL — larger fonts
+  // =============================================
+  function drawMedPanel(canvas, intervals, xMinMs, xMaxMs) {
+    const container = canvas.parentElement;
+    const displayW = container.clientWidth - 4;
+    const meds = getMedOrder(intervals);
+    const n = Math.max(1, meds.length);
+    const displayH = Math.max(60, n*30+20);
+    canvas.style.height = displayH+'px';
+    const ctx = setupCanvas(canvas, displayW, displayH);
+    const W=displayW, H=displayH;
+
+    medBarRegions = [];
+
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+
+    if(!meds.length){
+      ctx.fillStyle='rgba(0,0,0,.5)';ctx.font='bold 14px system-ui';
+      ctx.fillText('No medications detected in Notes column.',PAD.l,H/2+5);
+      return;
+    }
+
+    const plotW=W-PAD.l-PAD.r;
+    const xOf=t=>PAD.l+((t-xMinMs)/Math.max(1,xMaxMs-xMinMs))*plotW;
+    const rowH = (H-10)/n;
+    const gap=4, bandH=rowH-gap;
+    const SHORT_BAR_DAYS=5;
+
+    const startDose = {};
+    for(const med of meds)startDose[med]=getStartingDose(med,intervals[med]||[]);
+
+    let lastLabel = {};
+
+    for(let i=0;i<meds.length;i++){
+      const med=meds[i];
+      const y0=6+i*rowH;
+      const yCenter=y0+bandH/2;
+      const baseColor=getMedColor(med);
+
+      // Med name — larger bold
+      ctx.fillStyle='rgba(0,0,0,.90)';ctx.font='bold 14px system-ui';ctx.textAlign='left';
+      ctx.fillText(med, 6, yCenter+5);
+
+      for(const seg of (intervals[med]||[])){
+        const [s,e,daily,sig,ongoing]=seg;
+        if(!s||!e)continue;
+        const sd=startDose[med]||1;
+        const alpha=alphaForDailyDose(daily!=null?daily:sd, sd);
+        const x0=xOf(s.getTime()), x1=xOf(e.getTime());
+        const widthDays=daysBetween(s,e);
+
+        // Draw bar (clamp to visible plot area)
+        const [cr,cg,cb]=hexToRgb01(baseColor);
+        ctx.fillStyle=`rgba(${Math.round(cr*255)},${Math.round(cg*255)},${Math.round(cb*255)},${alpha})`;
+        const clampX0 = Math.max(x0, PAD.l);
+        const clampX1 = Math.min(x1, W - PAD.r);
+        if (clampX1 <= clampX0) continue; // segment entirely outside visible range
+        ctx.fillRect(clampX0, y0, clampX1-clampX0, bandH);
+
+        // For ongoing meds, draw arrow (only if end is within visible area)
+        if (ongoing && x1 < W - PAD.r) {
+          const arrowX = clampX1 - 2;
+          ctx.fillStyle='rgba(0,0,0,.5)';
+          ctx.font='bold 12px system-ui';ctx.textAlign='left';
+          ctx.fillText('\u2192', arrowX, yCenter+5);
+        }
+
+        // Store hit region for hover (use clamped coords)
+        let label=sig||((daily!=null)?medSigLabel(med,daily):'');
+        if(!label)label=lastLabel[med]||'';
+        lastLabel[med]=label;
+        medBarRegions.push({ x0: clampX0, x1: clampX1, y0, y1: y0 + bandH, med, label, start: s, end: e, daily, ongoing: !!ongoing });
+
+        if(!label)continue;
+
+        const midX=(clampX0+clampX1)/2;
+        const clampedWidth = clampX1 - clampX0;
+        const visibleDays = widthDays * (clampedWidth / Math.max(x1 - x0, 1));
+        if(visibleDays>=SHORT_BAR_DAYS){
+          const tc=chooseSigTextColor(baseColor,alpha);
+          ctx.fillStyle=tc;ctx.font='bold 12px system-ui';ctx.textAlign='center';
+          ctx.fillText(label, midX, yCenter+4);
+        } else if (clampX1 < W - PAD.r - 30) {
+          // Callout to the right (only if there's room)
+          ctx.fillStyle='rgba(0,0,0,.90)';ctx.font='bold 12px system-ui';ctx.textAlign='left';
+          ctx.fillText(label, clampX1+4, yCenter+4);
+          ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=0.5;
+          ctx.beginPath();ctx.moveTo(clampX1,yCenter);ctx.lineTo(clampX1+3,yCenter);ctx.stroke();
+        }
+      }
+    }
+  }
+
+  let medBarRegions = [];
+
+  function getMedOrder(intervals) {
+    const meta=[];
+    for(const [med,segs] of Object.entries(intervals||{})){
+      const starts=segs.map(s=>s[0]).filter(Boolean);
+      const first=starts.length?Math.min(...starts.map(d=>d.getTime())):Infinity;
+      meta.push({med,first});
+    }
+    meta.sort((a,b)=>a.first-b.first||a.med.localeCompare(b.med));
+    return meta.map(m=>m.med);
+  }
+
+  // =============================================
+  // HOVER TOOLTIPS — larger text
+  // =============================================
+  let tip = null;
+  function ensureTip() {
+    if(tip)return;
+    tip=document.createElement('div');tip.id='tip';
+    Object.assign(tip.style,{position:'fixed',pointerEvents:'none',zIndex:'9999',padding:'10px 14px',borderRadius:'10px',border:'1px solid rgba(0,0,0,.18)',background:'rgba(255,255,255,.97)',color:'#111',font:'15px system-ui',display:'none',boxShadow:'0 2px 10px rgba(0,0,0,.15)',maxWidth:'340px'});
+    document.body.appendChild(tip);
+  }
+
+  function attachBPHover(canvas, rs, xMinMs, xMaxMs) {
+    ensureTip();
+    canvas.onmousemove=e=>{
+      if(!rs.length){tip.style.display='none';return;}
+      const rect=canvas.getBoundingClientRect();
+      const W=rect.width, H=rect.height;
+      const mx=(e.clientX-rect.left);
+      const my=(e.clientY-rect.top);
+      // Only show tooltip when mouse is within the plot area
+      if(mx<PAD.l||mx>W-PAD.r||my<PAD.t||my>H-PAD.b){tip.style.display='none';return;}
+      const pw=W-PAD.l-PAD.r, pH=H-PAD.t-PAD.b;
+      const xOf=t=>PAD.l+((t-xMinMs)/Math.max(1,xMaxMs-xMinMs))*pw;
+      const yOf=v=>PAD.t+(1-(v-50)/(200-50))*pH;
+      const spanDays=daysBetween(new Date(xMinMs),new Date(xMaxMs));
+      const barWBase=Math.max(3,(BASE_BAR_W/spanDays)*pw);
+      const barWSevere=Math.max(5,(SEVERE_BAR_W/spanDays)*pw);
+      // Hit test: closest bar center wins, as long as mouse is within bar's y-range (+6px)
+      // and within reasonable x proximity (half bar width + 6px).
+      // This handles overlapping bars naturally — hover near green to see green, near purple to see purple.
+      const xPad=Math.max(6,barWBase/2+2);
+      let best=null,bestD=Infinity;
+      for(const r of rs){
+        const cx=xOf(r.t.getTime());
+        const dx=Math.abs(mx-cx);
+        const yTop=yOf(r.sys), yBot=yOf(r.dia);
+        if(dx<=xPad && my>=yTop-6 && my<=yBot+6 && dx<bestD){bestD=dx;best=r;}
+      }
+      if(!best){tip.style.display='none';return;}
+      let cls;
+      if (best.hypo) cls = '<span style="color:#7B1FA2"><b>LOW</b></span>';
+      else if (best.severe) cls = '<span style="color:#c62828"><b>HIGH</b></span>';
+      else if (classifyPatient(best.sys,best.dia).green) cls = '<span style="color:#1b7a3d">At Goal</span>';
+      else cls = '<span style="color:#b87800">Above Goal</span>';
+      const notesClean = (best.notes||'').replace(/[;\-\u2014\u2013\s]+/g,' ').trim();
+      // Show individual readings when this is a merged (averaged) reading
+      let compHtml = '';
+      if (best.components && best.components.length > 1) {
+        compHtml = '<div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(0,0,0,.12);font-size:13px;color:#555;">';
+        compHtml += `<div style="font-weight:600;margin-bottom:2px;">Averaged from ${best.components.length} readings:</div>`;
+        for (const c of best.components) {
+          const timeStr = c.t.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+          const cNotes = (c.notes||'').replace(/[;\-\u2014\u2013\s]+/g,' ').trim();
+          compHtml += `<div>${timeStr} &mdash; ${fmtBP(c.sys,c.dia)}${c.hr!=null?' &bull; HR '+c.hr:''}${cNotes?' &bull; <span style="color:#666;font-style:italic;">'+cNotes+'</span>':''}</div>`;
+        }
+        compHtml += '</div>';
+      }
+      tip.innerHTML=`<div style="font-weight:700;margin-bottom:3px;font-size:15px;">${fmtDate(best.t)}</div><div style="font-size:15px;">BP: <b>${fmtBP(best.sys,best.dia)}</b>${best.mergedCount>1?' <span style="font-size:12px;color:#888;">(avg of '+best.mergedCount+')</span>':''} ${cls}</div><div style="font-size:15px;">HR: ${best.hr??'\u2014'} &bull; ${best.window}</div>${notesClean?'<div style="color:#444;margin-top:3px;font-size:14px;">'+notesClean+'</div>':''}${compHtml}`;
+      tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY+14)+'px';tip.style.display='block';
+    };
+    canvas.onmouseleave=()=>{tip.style.display='none';};
+  }
+
+  function attachMedHover(canvas) {
+    ensureTip();
+    canvas.onmousemove = e => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      let hit = null;
+      for (const r of medBarRegions) {
+        if (mx >= r.x0 && mx <= r.x1 && my >= r.y0 && my <= r.y1) { hit = r; break; }
+      }
+      if (!hit) { tip.style.display = 'none'; return; }
+      const days = Math.round(daysBetween(hit.start, hit.end));
+
+      let endLine;
+      if (hit.ongoing) {
+        endLine = `<div style="color:var(--ok);">Current (ongoing)</div>`;
+      } else {
+        const nextSeg = medBarRegions.find(r =>
+          r.med === hit.med &&
+          r.start.getTime() > hit.start.getTime() &&
+          Math.abs(r.start.getTime() - hit.end.getTime()) < 3 * 86400000
+        );
+        if (nextSeg) {
+          endLine = `<div>Changed to <b>${nextSeg.label || 'new dose'}</b> on ${fmtDateShort(hit.end)}, ${hit.end.getFullYear()}</div>`;
+        } else {
+          endLine = `<div>Stopped: <b>${fmtDateShort(hit.end)}, ${hit.end.getFullYear()}</b></div>`;
+        }
+      }
+
+      tip.innerHTML = `<div style="font-weight:700;margin-bottom:3px;font-size:15px;">${hit.med}</div>` +
+        `<div style="font-size:15px;">${hit.label || '(no dose info)'}</div>` +
+        `<div style="margin-top:3px;font-size:14px;">Start: <b>${fmtDateShort(hit.start)}, ${hit.start.getFullYear()}</b></div>` +
+        endLine +
+        `<div style="color:#444;margin-top:2px;font-size:14px;">${days} day${days !== 1 ? 's' : ''}</div>`;
+      tip.style.left = (e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; tip.style.display = 'block';
+    };
+    canvas.onmouseleave = () => { tip.style.display = 'none'; };
+  }
+
+  // =============================================
+  // KPIs — larger patient-friendly dashboard
+  // =============================================
+  function renderKPIs(rs) {
+    let rec = rs;
+    let labelSuffix = '';
+    if (rs.length > 0) {
+      const latest = rs[rs.length - 1].t.getTime();
+      const cutoff = latest - RECENT_WEEKS * 7 * 86400000;
+      rec = rs.filter(x => x.t.getTime() >= cutoff);
+      const cutDate = new Date(cutoff);
+      labelSuffix = ` (${fmtDateShort(cutDate)} \u2013 ${fmtDateShort(new Date(latest))})`;
+    }
+    const rm = BPCore.computeMetrics(rec, GOAL_CONFIG);
+
+    $('avgAllLabel').textContent = `Recent ${RECENT_WEEKS}-week average${labelSuffix}`;
+    $('avgAll').textContent = fmtBP(rm.avgSys, rm.avgDia);
+    $('avgAllDetail').innerHTML = `n=${rm.count} &bull; <span class="ok"><b>At Goal (&lt;${PATIENT_GOAL.sys}/${PATIENT_GOAL.dia})</b> ${fmtPct(rm.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Above Goal</b> ${fmtPct(rm.pctRed)}</span> &bull; <span style="color:#c62828"><b>High ${fmtPct(rm.pctSevere)}</b></span>${rm.pctHypo > 0 ? ' &bull; <span style="color:#7B1FA2"><b>Low</b> ' + fmtPct(rm.pctHypo) + '</span>' : ''}`;
+
+    // Split-status bar: AM | PM
+    const amReadings = rec.filter(x => x.window === 'Morning');
+    const pmReadings = rec.filter(x => x.window === 'Afternoon/Evening');
+
+    function statusColor(avgSys, avgDia) {
+      if (avgSys == null || avgDia == null) return { bg: '#e0e0e0', text: '#555', label: '\u2014' };
+      // Classify based on rounded values so color matches what the user sees displayed
+      const s = Math.round(avgSys), d = Math.round(avgDia);
+      if (s < PATIENT_GOAL.sys && d < PATIENT_GOAL.dia) return { bg: '#00C853', text: '#fff', label: 'At Goal' };
+      return { bg: '#e53935', text: '#fff', label: 'Above Goal' };
+    }
+
+    const amAvgSys = amReadings.length ? Math.round(mean(amReadings.map(x=>x.sys))) : null;
+    const amAvgDia = amReadings.length ? Math.round(mean(amReadings.map(x=>x.dia))) : null;
+    const pmAvgSys = pmReadings.length ? Math.round(mean(pmReadings.map(x=>x.sys))) : null;
+    const pmAvgDia = pmReadings.length ? Math.round(mean(pmReadings.map(x=>x.dia))) : null;
+
+    const amStatus = statusColor(amAvgSys, amAvgDia);
+    const pmStatus = statusColor(pmAvgSys, pmAvgDia);
+
+    const totalN = amReadings.length + pmReadings.length;
+    const amPct = totalN > 0 ? (amReadings.length / totalN * 100) : 50;
+    const pmPct = totalN > 0 ? (pmReadings.length / totalN * 100) : 50;
+
+    const barEl = $('kpiSplitBar');
+    let barHtml = `<div style="display:flex; border-radius:12px; overflow:hidden; height:72px; font-size:16px; font-weight:600;">`;
+    // AM half
+    barHtml += `<div style="flex:${amPct}; background:${amStatus.bg}; color:${amStatus.text}; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:6px 8px; min-width:100px;">`;
+    barHtml += `<div style="font-size:14px; opacity:.85; letter-spacing:.5px; font-weight:700;">MORNING</div>`;
+    barHtml += `<div style="font-size:22px; font-weight:750;">${amReadings.length > 0 ? fmtBP(amAvgSys, amAvgDia) : '\u2014'}</div>`;
+    barHtml += `<div style="font-size:13px; opacity:.8; font-weight:600;">n=${amReadings.length}</div>`;
+    barHtml += `</div>`;
+    // Divider
+    barHtml += `<div style="width:2px; background:rgba(255,255,255,.4);"></div>`;
+    // PM half
+    barHtml += `<div style="flex:${pmPct}; background:${pmStatus.bg}; color:${pmStatus.text}; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:6px 8px; min-width:100px;">`;
+    barHtml += `<div style="font-size:14px; opacity:.85; letter-spacing:.5px; font-weight:700;">AFT / EVE</div>`;
+    barHtml += `<div style="font-size:22px; font-weight:750;">${pmReadings.length > 0 ? fmtBP(pmAvgSys, pmAvgDia) : '\u2014'}</div>`;
+    barHtml += `<div style="font-size:13px; opacity:.8; font-weight:600;">n=${pmReadings.length}</div>`;
+    barHtml += `</div>`;
+    barHtml += `</div>`;
+
+    barEl.innerHTML = barHtml;
+  }
+
+  // =============================================
+  // RENDER ALL
+  // =============================================
+  function renderAll() {
+    // Re-classify readings for patient goal (130/80) since bp-core defaults to 140/90
+    BPCore.reclassifyForGoal(readings, PATIENT_GOAL);
+
+    const rs = getRangeFiltered();
+
+    const morning = rs.filter(x=>x.window==='Morning');
+    const ae = rs.filter(x=>x.window==='Afternoon/Evening');
+
+    let xMinMs, xMaxMs;
+    if(rs.length){
+      xMinMs=rs[0].t.getTime()-12*3600000;
+      xMaxMs=rs[rs.length-1].t.getTime()+12*3600000;
+    } else {
+      const now=Date.now();
+      xMinMs=now-30*86400000;xMaxMs=now;
+    }
+
+    drawBPPanel($('chartMorning'), morning, 'Morning BP', xMinMs, xMaxMs, holdEvents, 'Morning');
+    drawBPPanel($('chartEvening'), ae, 'Afternoon / Evening BP', xMinMs, xMaxMs, holdEvents, 'Afternoon/Evening');
+    drawMedPanel($('chartMeds'), medIntervals, xMinMs, xMaxMs);
+
+    attachBPHover($('chartMorning'), morning, xMinMs, xMaxMs);
+    attachBPHover($('chartEvening'), ae, xMinMs, xMaxMs);
+    attachMedHover($('chartMeds'));
+
+    renderKPIs(rs);
+  }
+
+  // =============================================
+  // FILE HANDLING
+  // =============================================
+  function handleLoadedRows(rows) {
+    if(!rows||rows.length<2){alert('File appears empty or invalid.');return;}
+    readings = []; medIntervals = {}; holdEvents = [];
+    rawRows=rows;
+    headers=rows[0].map(h=>String(h??'').trim());
+    const d=detectColumns(headers);
+    if(d.ok){
+      mapping={useCombinedDT:d.useCombinedDT, dtIdx:d.dtIdx, dateIdx:d.dateIdx, timeIdx:d.timeIdx, sysIdx:d.sysIdx, diaIdx:d.diaIdx, pulseIdx:d.pulseIdx, notesIdx:d.notesIdx};
+      $('mappingCard').style.display='none';
+      processData();renderAll();
+    } else {
+      showMappingUI();
+      if(d.dateIdx>=0)$('colDate').value=String(d.dateIdx);
+      if(d.timeIdx>=0)$('colTime').value=String(d.timeIdx);
+      if(d.sysIdx>=0)$('colSys').value=String(d.sysIdx);
+      if(d.diaIdx>=0)$('colDia').value=String(d.diaIdx);
+      if(d.pulseIdx!=null)$('colPulse').value=String(d.pulseIdx);
+      if(d.notesIdx!=null)$('colNotes').value=String(d.notesIdx);
+    }
+  }
+
+  function loadFileData(name, buf) {
+    const nm = name.toLowerCase();
+    if (nm.endsWith('.csv')) {
+      const dec = new TextDecoder();
+      const text = dec.decode(buf);
+      handleLoadedRows(parseCSV(text));
+    } else if (nm.endsWith('.xlsx') || nm.endsWith('.xls')) {
+      const wb = XLSX.read(buf, {type:'array'});
+      handleLoadedRows(excelAoaToRows(sheetToAoa(wb)));
+    } else {
+      alert('Unsupported file type.');
+      return false;
+    }
+    // Show filename, hide raw file input
+    $('fileNameLabel').textContent = name;
+    $('fileNameLabel').style.display = 'inline';
+    $('file').style.display = 'none';
+    $('changeFileBtn').style.display = 'inline-block';
+    $('dropHint').style.display = 'none';
+    $('clearBtn').style.display = 'inline-block';
+    return true;
+  }
+
+  function clearData() {
+    rawRows = null; headers = null; mapping = null;
+    readings = []; medIntervals = {}; holdEvents = [];
+    try { localStorage.removeItem('hbp_fileName'); localStorage.removeItem('hbp_fileData'); } catch(e) {}
+    // Reset file input & label
+    $('file').value = '';
+    $('file').style.display = '';
+    $('fileNameLabel').textContent = '';
+    $('fileNameLabel').style.display = 'none';
+    $('changeFileBtn').style.display = 'none';
+    $('dropHint').style.display = '';
+    $('clearBtn').style.display = 'none';
+    // Show drop zone again
+    $('dropOverlay').style.display = '';
+    renderAll();
+  }
+
+  $('file').addEventListener('change',async e=>{
+    const f=e.target.files?.[0];if(!f)return;
+    try{
+      const buf = await f.arrayBuffer();
+      if (loadFileData(f.name, buf)) {
+        saveToLocalStorage(f.name, arrayBufferToBase64(buf));
+      }
+    }catch(err){console.error(err);alert('Could not read file. Try re-exporting from Omron Connect.');}
+  });
+
+  // =============================================
+  // EVENT WIRING
+  // =============================================
+  $('applyMapBtn').addEventListener('click', applyMappingFromUI);
+  $('range').addEventListener('change', renderAll);
+  $('clearBtn').addEventListener('click', clearData);
+
+  // Browse button triggers the hidden file input
+  $('browseBtn').addEventListener('click',(e)=>{ e.preventDefault(); $('file').click(); });
+  $('changeFileBtn').addEventListener('click',(e)=>{ e.preventDefault(); $('file').click(); });
+
+  // Drag-and-drop on the overlay
+  const dropZone = $('dropOverlay');
+  function handleDroppedFile(file) {
+    if (!file) return;
+    const name = (file.name||'').toLowerCase();
+    if (name.endsWith('.csv') || name.endsWith('.xlsx') || name.endsWith('.xls')) {
+      file.arrayBuffer().then(buf => {
+        if (loadFileData(file.name, buf)) {
+          saveToLocalStorage(file.name, arrayBufferToBase64(buf));
+          dropZone.style.display='none';
+        }
+      });
+    } else { alert('Unsupported file type. Please use .xlsx, .xls, or .csv'); }
+  }
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('drag-over'); });
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files?.[0];
+    handleDroppedFile(file);
+  });
+
+  // Hide drop overlay when file is loaded via the normal file input
+  $('file').addEventListener('change', () => { if ($('file').files?.length) dropZone.style.display='none'; });
+
+  // Drag-and-drop on the control bar
+  const controlBar = $('file').closest('.card');
+  controlBar.addEventListener('dragover', (e) => { e.preventDefault(); controlBar.style.outline='2px dashed var(--accent)'; controlBar.style.outlineOffset='-2px'; });
+  controlBar.addEventListener('dragleave', () => { controlBar.style.outline=''; controlBar.style.outlineOffset=''; });
+  controlBar.addEventListener('drop', (e) => {
+    e.preventDefault(); controlBar.style.outline=''; controlBar.style.outlineOffset='';
+    const file = e.dataTransfer.files?.[0];
+    handleDroppedFile(file);
+  });
+
+  // Resize handler
+  let resizeTimer;
+  window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(renderAll,150);});
+
+  // Print DPR
+  window.addEventListener('beforeprint', () => { printDPR = 6; renderAll(); });
+  window.addEventListener('afterprint', () => { printDPR = 0; renderAll(); });
+
+  // Auto-restore last file from localStorage
+  const saved = loadFromLocalStorage();
+  if (saved) {
+    try {
+      const buf = base64ToArrayBuffer(saved.data);
+      if (loadFileData(saved.name, buf)) {
+        dropZone.style.display = 'none';
+      }
+    } catch(e) { console.warn('Failed to restore saved file:', e); }
+  }
+
+  // Initial render
+  renderAll();
+})();
+</script>
+</body>
+</html>
