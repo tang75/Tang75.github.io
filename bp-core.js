@@ -18,8 +18,8 @@ const BPCore = (() => {
   const TARGET_COLOR = 'rgba(0,0,0,.25)';
   const HOLD_STAR_COLOR = '#000000';
 
-  const TARGET_SBP = 135, TARGET_DBP = 85;
-  const GREEN_SBP_MAX = 135, GREEN_DBP_MAX = 85;
+  const TARGET_SBP = 140, TARGET_DBP = 90;
+  const GREEN_SBP_MAX = 140, GREEN_DBP_MAX = 90;
   const SEVERE_SBP_MIN = 160, SEVERE_DBP_MIN = 100;
   const SEVERE_LABEL_SBP_MIN = 160;
   const HYPO_SBP_MAX = 100, HYPO_DBP_MAX = 60;
@@ -114,18 +114,54 @@ const BPCore = (() => {
   function parseDateAndTime(dateVal, timeVal) {
     // Handle Excel serial date numbers (e.g. 46083.31162 → 2026-03-02 07:28)
     if (typeof dateVal === 'number' && isFinite(dateVal) && dateVal > 1) {
+      let year, month, day, hours = 0, mins = 0, secs = 0;
       if (typeof XLSX !== 'undefined' && XLSX.SSF && XLSX.SSF.parse_date_code) {
         const d = XLSX.SSF.parse_date_code(dateVal);
-        if (d && d.y) return new Date(d.y, (d.m||1)-1, d.d||1, d.H||0, d.M||0, d.S||0);
+        if (d && d.y) { year = d.y; month = (d.m||1)-1; day = d.d||1; hours = d.H||0; mins = d.M||0; secs = d.S||0; }
       }
-      const jsDate = new Date(Math.round((dateVal - 25569) * 86400000));
-      if (!isNaN(jsDate.getTime())) return jsDate;
+      if (year == null) {
+        const jsDate = new Date(Math.round((dateVal - 25569) * 86400000));
+        if (!isNaN(jsDate.getTime())) { year = jsDate.getUTCFullYear(); month = jsDate.getUTCMonth(); day = jsDate.getUTCDate(); }
+      }
+      if (year != null) {
+        // If serial had no meaningful time (midnight) and a separate timeVal exists, parse it
+        const hasEmbeddedTime = (hours !== 0 || mins !== 0 || secs !== 0);
+        if (!hasEmbeddedTime && timeVal != null && timeVal !== '') {
+          const tp = parseTimeValue(timeVal);
+          if (tp) { hours = tp.h; mins = tp.m; secs = tp.s; }
+        }
+        return new Date(year, month, day, hours, mins, secs);
+      }
     }
     const dStr = String(dateVal||'').trim();
     const tStr = String(timeVal||'').trim();
     if (!dStr) return null;
     const combined = tStr ? `${dStr} ${tStr}` : dStr;
     return tryParseDate(combined);
+  }
+
+  // Parse a time value from various formats: string ("6:51 PM"), number (Excel fraction 0.785)
+  function parseTimeValue(val) {
+    if (typeof val === 'number' && isFinite(val)) {
+      // Excel time fraction: 0.0 = midnight, 0.5 = noon, 0.75 = 6PM
+      const frac = val < 1 ? val : val - Math.floor(val);
+      const totalSecs = Math.round(frac * 86400);
+      return { h: Math.floor(totalSecs / 3600) % 24, m: Math.floor((totalSecs % 3600) / 60), s: totalSecs % 60 };
+    }
+    const s = String(val||'').trim();
+    if (!s) return null;
+    // "6:51 PM", "18:51", "6:51:30 AM", etc.
+    const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i);
+    if (m) {
+      let h = parseInt(m[1], 10);
+      const min = parseInt(m[2], 10);
+      const sec = parseInt(m[3] || '0', 10);
+      const ampm = (m[4] || '').toLowerCase();
+      if (ampm === 'pm' && h < 12) h += 12;
+      if (ampm === 'am' && h === 12) h = 0;
+      return { h, m: min, s: sec };
+    }
+    return null;
   }
 
   // =============================================
@@ -168,9 +204,18 @@ const BPCore = (() => {
   function classifyBP(sys, dia) {
     const hypo = sys < HYPO_SBP_MAX || dia < HYPO_DBP_MAX;
     const severe = sys >= SEVERE_SBP_MIN || dia >= SEVERE_DBP_MIN;
-    const green = !hypo && sys <= GREEN_SBP_MAX && dia <= GREEN_DBP_MAX && !severe;
+    const green = !hypo && sys < GREEN_SBP_MAX && dia < GREEN_DBP_MAX && !severe;
     const red = !green && !severe && !hypo;
     return { severe, green, red, hypo };
+  }
+
+  // Re-tag .green and .red on readings based on a custom goal (e.g. US 130/80 or custom).
+  // Hypo and severe are independent of goal and remain unchanged.
+  function reclassifyForGoal(readings, goal) {
+    for (const r of readings) {
+      r.green = !r.hypo && r.sys < goal.sys && r.dia < goal.dia && !r.severe;
+      r.red = !r.green && !r.severe && !r.hypo;
+    }
   }
 
   // =============================================
@@ -257,6 +302,7 @@ const BPCore = (() => {
           green: cls.green, red: cls.red, severe: cls.severe, hypo: cls.hypo,
           dateOnly: new Date(midTime.getFullYear(), midTime.getMonth(), midTime.getDate()),
           mergedCount: group.length,
+          components: group.map(r => ({ t: r.t, sys: r.sys, dia: r.dia, hr: r.hr, notes: r.notes })),
         });
       }
       i = j;
@@ -505,10 +551,11 @@ const BPCore = (() => {
   // Accepts goalConfig: { profile, customSys, customDia }
   // =============================================
   function getGoal(goalConfig) {
-    const p = goalConfig.profile || 'intl';
+    const p = goalConfig.profile || 'us';
     if (p === 'us') return { sys:130, dia:80 };
+    if (p === 'who') return { sys:140, dia:90 };
     if (p === 'custom') return { sys: goalConfig.customSys || 135, dia: goalConfig.customDia || 85 };
-    return { sys:135, dia:85 };
+    return { sys:130, dia:80 };
   }
 
   // =============================================
@@ -572,6 +619,12 @@ const BPCore = (() => {
     const latest = rs[rs.length - 1].t;
     const cutoff = new Date(latest.getTime() - weeksBack * 7 * 86400000);
     return rs.filter(r => r.t >= cutoff && (windowLabel === 'All' || r.window === windowLabel));
+  }
+
+  function getRecentReadingsBeforeDate(rs, beforeDate, weeksBack, windowLabel) {
+    if (!rs.length) return [];
+    const cutoff = new Date(beforeDate.getTime() - weeksBack * 7 * 86400000);
+    return rs.filter(r => r.t >= cutoff && r.t < beforeDate && (windowLabel === 'All' || r.window === windowLabel));
   }
 
   function phaseStats(rs, startDt, endDt, windowLabel) {
@@ -686,13 +739,15 @@ const BPCore = (() => {
   // =============================================
   // LOCAL STORAGE PERSISTENCE
   // =============================================
-  function saveToLocalStorage(name, base64) {
-    try { localStorage.setItem('hbp_fileName', name); localStorage.setItem('hbp_fileData', base64); } catch(e) { console.warn('localStorage save failed:', e); }
+  function saveToLocalStorage(name, base64, prefix) {
+    const p = prefix || 'hbp';
+    try { localStorage.setItem(p + '_fileName', name); localStorage.setItem(p + '_fileData', base64); } catch(e) { console.warn('localStorage save failed:', e); }
   }
-  function loadFromLocalStorage() {
+  function loadFromLocalStorage(prefix) {
+    const p = prefix || 'hbp';
     try {
-      const name = localStorage.getItem('hbp_fileName');
-      const data = localStorage.getItem('hbp_fileData');
+      const name = localStorage.getItem(p + '_fileName');
+      const data = localStorage.getItem(p + '_fileData');
       if (name && data) return { name, data };
     } catch(e) {}
     return null;
@@ -730,7 +785,7 @@ const BPCore = (() => {
     tryParseDate, parseDateAndTime, detectColumns,
 
     // Classification
-    classifyBP,
+    classifyBP, reclassifyForGoal,
 
     // Data pipeline
     buildReadings, findHoldEventsFromReadings, processData,
@@ -746,7 +801,7 @@ const BPCore = (() => {
     getRangeFiltered, getGoal, computeMetrics,
 
     // Phase / statistics
-    phaseStatsFromReadings, getLastNReadings, getRecentReadings, phaseStats,
+    phaseStatsFromReadings, getLastNReadings, getRecentReadings, getRecentReadingsBeforeDate, phaseStats,
     buildMedChangeBoundaries, getCurrentMeds,
 
     // Comparison helpers
