@@ -579,34 +579,43 @@
         const x0=xOf(s.getTime()), x1=xOf(e.getTime());
         const widthDays=daysBetween(s,e);
 
+        // Draw bar (clamp to visible plot area)
         const [cr,cg,cb]=hexToRgb01(baseColor);
         ctx.fillStyle=`rgba(${Math.round(cr*255)},${Math.round(cg*255)},${Math.round(cb*255)},${alpha})`;
-        ctx.fillRect(x0, y0, x1-x0, bandH);
+        const clampX0 = Math.max(x0, PAD.l);
+        const clampX1 = Math.min(x1, W - PAD.r);
+        if (clampX1 <= clampX0) continue; // segment entirely outside visible range
+        ctx.fillRect(clampX0, y0, clampX1-clampX0, bandH);
 
-        if (ongoing) {
-          const arrowX = x1 - 2;
+        // For ongoing meds, draw arrow (only if end is within visible area)
+        if (ongoing && x1 < W - PAD.r) {
+          const arrowX = clampX1 - 2;
           ctx.fillStyle='rgba(0,0,0,.5)';
           ctx.font='bold 12px system-ui';ctx.textAlign='left';
           ctx.fillText('\u2192', arrowX, yCenter+5);
         }
 
+        // Store hit region for hover (use clamped coords)
         let label=sig||((daily!=null)?medSigLabel(med,daily):'');
         if(!label)label=lastLabel[med]||'';
         lastLabel[med]=label;
-        medBarRegions.push({ x0, x1, y0, y1: y0 + bandH, med, label, start: s, end: e, daily, ongoing: !!ongoing });
+        medBarRegions.push({ x0: clampX0, x1: clampX1, y0, y1: y0 + bandH, med, label, start: s, end: e, daily, ongoing: !!ongoing });
 
         if(!label)continue;
 
-        const midX=(x0+x1)/2;
-        if(widthDays>=SHORT_BAR_DAYS){
+        const midX=(clampX0+clampX1)/2;
+        const clampedWidth = clampX1 - clampX0;
+        const visibleDays = widthDays * (clampedWidth / Math.max(x1 - x0, 1));
+        if(visibleDays>=SHORT_BAR_DAYS){
           const tc=chooseSigTextColor(baseColor,alpha);
           ctx.fillStyle=tc;ctx.font='bold 12px system-ui';ctx.textAlign='center';
           ctx.fillText(label, midX, yCenter+4);
-        } else {
+        } else if (clampX1 < W - PAD.r - 30) {
+          // Callout to the right (only if there's room)
           ctx.fillStyle='rgba(0,0,0,.90)';ctx.font='bold 12px system-ui';ctx.textAlign='left';
-          ctx.fillText(label, x1+4, yCenter+4);
+          ctx.fillText(label, clampX1+4, yCenter+4);
           ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=0.5;
-          ctx.beginPath();ctx.moveTo(x1,yCenter);ctx.lineTo(x1+3,yCenter);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(clampX1,yCenter);ctx.lineTo(clampX1+3,yCenter);ctx.stroke();
         }
       }
     }
