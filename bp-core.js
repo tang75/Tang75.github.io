@@ -594,13 +594,14 @@ const BPCore = (() => {
   // =============================================
   function phaseStatsFromReadings(sub) {
     const n = sub.length;
-    if (!n) return { meanSBP: null, meanDBP: null, green: null, red: null, severe: null, n: 0 };
+    if (!n) return { meanSBP: null, meanDBP: null, green: null, red: null, severe: null, hypo: null, n: 0 };
     return {
       meanSBP: mean(sub.map(x => x.sys)),
       meanDBP: mean(sub.map(x => x.dia)),
       green: 100 * sub.filter(x => x.green).length / n,
       red: 100 * sub.filter(x => x.red).length / n,
       severe: 100 * sub.filter(x => x.severe).length / n,
+      hypo: 100 * sub.filter(x => x.hypo).length / n,
       n
     };
   }
