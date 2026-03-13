@@ -242,7 +242,13 @@ const BPCore = (() => {
       const pulse = mapping.pulseIdx!=null ? Number(String(row[mapping.pulseIdx]??'').trim()) : null;
       const notes = mapping.notesIdx!=null ? String(row[mapping.notesIdx]||'').trim() : '';
 
-      if (!t || !Number.isFinite(sys) || !Number.isFinite(dia)) continue;
+      if (!t || !Number.isFinite(sys) || !Number.isFinite(dia)) {
+        // Continuation row: no date/BP but may have notes — merge into previous reading
+        if (notes && result.length > 0) {
+          result[result.length - 1].notes += '\n' + notes;
+        }
+        continue;
+      }
       if (sys < 60 || sys > 260 || dia < 30 || dia > 160) continue;
 
       const hour = t.getHours();
