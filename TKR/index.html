@@ -1581,8 +1581,8 @@ function renderBanner(){
   el.hidden = true;
 }
 document.addEventListener("click", e => {
-  if(e.target.closest("[data-goback]")){ show("backup"); window.scrollTo({top:0,behavior:"instant"}); }
-  if(e.target.closest("[data-gotl]")){ show("timeline"); window.scrollTo({top:0,behavior:"instant"}); }
+  if(e.target.closest("[data-goback]")){ show("backup", true); }
+  if(e.target.closest("[data-gotl]")){ show("timeline"); }   /* back to where she was */
 });
 
 function buildIndex(){
@@ -2170,10 +2170,17 @@ document.getElementById("tabs").innerHTML = TABS.map((t,i) =>
   '<span>'+t.label+'</span>' +
   (t.id==="ask" ? '<span class="badge">'+Object.keys(CONFLICTS).length+'</span>' : '') + '</button>').join("");
 
-function show(id){
+/* Each tab remembers where you were. Leaving the timeline half way down to
+   check a phone number and coming back to the top is a small thing that makes
+   a long list feel hostile — and she will be doing it one-handed. */
+const scrollPos = Object.create(null);
+let currentTab = "timeline";
+function show(id, toTop){
+  scrollPos[currentTab] = window.scrollY;
+  currentTab = id;
   document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on", p.id === "p"+"-"+id));
   document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===id));
-  window.scrollTo({top:0, behavior:"instant"});
+  window.scrollTo({top: toTop ? 0 : (scrollPos[id] || 0), behavior:"instant"});
 }
 
 document.getElementById("tabs").addEventListener("click", e => {
