@@ -1,0 +1,2308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Knee Passport">
+<meta name="theme-color" content="#EFF2EE">
+<meta name="robots" content="noindex, nofollow">
+</head>
+<body>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Right Knee Passport</title>
+<style>
+/* ============ TOKENS: light is the base; both dark states override tokens only ============ */
+:root{
+  --paper:#EFF2EE;        /* pale green-biased paper — surgical drape, not cream */
+  --card:#FBFCFA;
+  --card-2:#F5F8F4;
+  --ink:#161E1A;
+  --ink-2:#4E5C55;
+  --ink-3:#5C6A63;
+  --rule:#D8DFD8;
+  --rule-2:#C3CDC4;
+  --accent:#0E5C4A;       /* deep surgical teal */
+  --accent-soft:#DCEAE3;
+  --accent-ink:#0A4739;
+  --on-accent:#F4F8F5;
+  --on-warn:#FFFFFF;
+  --pen:#2C4FA8;          /* the blue ballpoint in the scans — semantic: handwritten */
+  --pen-soft:#E4E9F6;
+  --mine:#63409B;         /* semantic: a task she typed herself, not from any document */
+  --mine-soft:#EEE7F8;
+  --warn:#8F5407;
+  --warn-soft:#F7EBD8;
+  --warn-rule:#DFBE8A;
+  --crit:#9C2A20;
+  --crit-soft:#F8E4E1;
+  --crit-rule:#E0A9A2;
+  --shadow:0 1px 2px rgba(22,30,26,.06), 0 6px 20px -12px rgba(22,30,26,.22);
+  --shadow-lift:0 2px 4px rgba(22,30,26,.08), 0 14px 34px -16px rgba(22,30,26,.3);
+
+  --f-display:"Avenir Next","Avenir","Segoe UI Semibold",ui-sans-serif,system-ui,sans-serif;
+  --f-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-hand:"Bradley Hand","Chalkboard SE","Segoe Script","Comic Sans MS",cursive;
+  --f-data:ui-monospace,"SF Mono","Menlo","Cascadia Mono","Roboto Mono",monospace;
+
+  --wrap:41rem;
+  --tabbar:4.25rem;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1512; --card:#171F1B; --card-2:#1D2723;
+    --ink:#E3EAE5; --ink-2:#A3B1AA; --ink-3:#8A9891;
+    --rule:#28332D; --rule-2:#37453D;
+    --accent:#54C3A3; --accent-soft:#12332A; --accent-ink:#8FE0C5;
+    --on-accent:#08130F; --on-warn:#1A1206;
+    --pen:#8CA8F0; --pen-soft:#18213A;
+    --mine:#C0A6EE; --mine-soft:#241B38;
+    --warn:#E5AC63; --warn-soft:#2E2313; --warn-rule:#5C4522;
+    --crit:#F08A7C; --crit-soft:#331714; --crit-rule:#63302A;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 20px -12px rgba(0,0,0,.8);
+    --shadow-lift:0 2px 4px rgba(0,0,0,.5), 0 14px 34px -16px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F1512; --card:#171F1B; --card-2:#1D2723;
+  --ink:#E3EAE5; --ink-2:#A3B1AA; --ink-3:#8A9891;
+  --rule:#28332D; --rule-2:#37453D;
+  --accent:#54C3A3; --accent-soft:#12332A; --accent-ink:#8FE0C5;
+  --on-accent:#08130F; --on-warn:#1A1206;
+  --pen:#8CA8F0; --pen-soft:#18213A;
+  --mine:#C0A6EE; --mine-soft:#241B38;
+  --warn:#E5AC63; --warn-soft:#2E2313; --warn-rule:#5C4522;
+  --crit:#F08A7C; --crit-soft:#331714; --crit-rule:#63302A;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 20px -12px rgba(0,0,0,.8);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.5), 0 14px 34px -16px rgba(0,0,0,.9);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--f-body); font-size:16px; line-height:1.5;
+  -webkit-text-size-adjust:100%; -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 1rem);
+}
+h1,h2,h3,h4{font-family:var(--f-display); font-weight:600; text-wrap:balance; margin:0; letter-spacing:-.012em}
+p{margin:0}
+a{color:var(--accent-ink); text-decoration-color:color-mix(in srgb, var(--accent) 40%, transparent); text-underline-offset:2px}
+:focus-visible{outline:2.5px solid var(--accent); outline-offset:2px; border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important; scroll-behavior:auto !important}}
+
+.wrap{max-width:var(--wrap); margin:0 auto; padding:0 1rem}
+
+/* ============ HEADER ============ */
+header{position:sticky; top:0; z-index:40; background:var(--paper); border-bottom:1px solid var(--rule); padding-top:env(safe-area-inset-top,0px)}
+.hd{display:flex; align-items:baseline; gap:.6rem; padding:.7rem 0 .1rem}
+.hd h1{font-size:1.02rem; letter-spacing:-.01em; flex:1; min-width:0}
+.hd h1 span{color:var(--ink-3); font-weight:500}
+.count{font-family:var(--f-display); font-size:2.5rem; font-weight:700; line-height:1; letter-spacing:-.045em; color:var(--accent-ink); font-variant-numeric:tabular-nums}
+.count small{font-size:.95rem; font-weight:600; letter-spacing:0; color:var(--ink-2); margin-left:.15rem}
+.countline{display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; padding-bottom:.55rem}
+.countline .meta{text-align:right; font-family:var(--f-data); font-size:.7rem; color:var(--ink-3); line-height:1.5; letter-spacing:.02em}
+.countline .meta b{color:var(--ink-2); font-weight:600}
+.rail{height:5px; border-radius:99px; background:var(--rule); position:relative; margin-bottom:.5rem}
+.rail i{position:absolute; inset-block:0; left:0; background:var(--accent); border-radius:99px; display:block}
+.rail b{position:absolute; top:50%; width:11px; height:11px; border-radius:50%; background:var(--accent); border:2.5px solid var(--paper); transform:translate(-50%,-50%)}
+.rail u{position:absolute; top:50%; width:3px; height:11px; background:var(--ink-3); transform:translate(-50%,-50%); border-radius:2px; opacity:.55}
+.chips{display:flex; gap:.35rem; overflow-x:auto; padding:0 1rem .55rem; scrollbar-width:none; -webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto; font-family:var(--f-data); font-size:.685rem; letter-spacing:.02em; padding:.32rem .58rem; border-radius:99px; border:1px solid var(--rule-2); background:var(--card); color:var(--ink-2); cursor:pointer; white-space:nowrap; font-weight:500; transition:background .15s, color .15s, border-color .15s}
+.chip[data-state="done"]{color:var(--ink-3); border-color:var(--rule)}
+.chip[data-state="now"]{background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:700}
+.chip:hover{border-color:var(--accent)}
+.chip.sel{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink); font-weight:700}
+.chip.sel[data-state="now"]{background:var(--accent); color:var(--on-accent)}
+/* once she picks a phase, that is the highlight — the current phase steps back
+   to an outline so there are never two things claiming to be "where you are" */
+.chips.has-sel .chip[data-state="now"]:not(.sel){
+  background:var(--card); color:var(--ink-2); border-color:var(--accent); font-weight:600}
+
+.panel{display:none; padding-top:1.15rem}
+.panel.on{display:block}
+
+/* ============ PHASE CARDS ============ */
+.phases{display:flex; flex-direction:column; gap:.7rem}
+.phase{background:var(--card); border:1px solid var(--rule); border-radius:14px; box-shadow:var(--shadow); overflow:hidden; scroll-margin-top:11rem}
+.phase[data-state="now"]{border-color:var(--accent); box-shadow:var(--shadow-lift)}
+.phase[data-state="past"]{opacity:.72}
+.ph-head{display:flex; align-items:flex-start; gap:.75rem; width:100%; text-align:left; padding:.95rem 1rem; background:none; border:0; cursor:pointer; font:inherit; color:inherit}
+.dot{flex:0 0 auto; width:.72rem; height:.72rem; border-radius:50%; margin-top:.4rem; border:2px solid var(--rule-2); background:var(--card)}
+.phase[data-state="now"] .dot{background:var(--accent); border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft)}
+.phase[data-state="past"] .dot{background:var(--rule-2); border-color:var(--rule-2)}
+.ph-t{flex:1; min-width:0}
+.ph-t h2{font-size:1.02rem; line-height:1.28}
+.ph-when{font-family:var(--f-data); font-size:.7rem; color:var(--ink-3); letter-spacing:.035em; text-transform:uppercase; margin-top:.2rem}
+.phase[data-state="now"] .ph-when{color:var(--accent-ink); font-weight:700}
+.ph-r{flex:0 0 auto; display:flex; align-items:center; gap:.5rem; margin-top:.15rem}
+.tally{font-family:var(--f-data); font-size:.72rem; color:var(--ink-3); font-variant-numeric:tabular-nums}
+.tally.full{color:var(--accent-ink); font-weight:700}
+.caret{width:.85rem; height:.85rem; color:var(--ink-3); transition:transform .2s}
+.phase[data-open="1"] .caret{transform:rotate(180deg)}
+.ph-body{padding:0 1rem 1rem; border-top:1px solid var(--rule)}
+.phase[data-open="0"] .ph-body{display:none}
+.ph-blurb{font-size:.875rem; color:var(--ink-2); padding:.75rem 0 .1rem; line-height:1.5}
+
+/* ============ TASK ROWS ============ */
+ul.items{list-style:none; margin:.5rem 0 0; padding:0; display:flex; flex-direction:column}
+li.item{border-top:1px solid var(--rule); padding:.1rem 0}
+li.item:first-child{border-top:0}
+.row{display:flex; gap:.7rem; align-items:flex-start; width:100%; padding:.62rem 0; text-align:left; background:none; border:0; font:inherit; color:inherit; cursor:pointer; min-height:2.75rem}
+.box{flex:0 0 auto; width:1.32rem; height:1.32rem; border-radius:6px; margin-top:.09rem; border:1.8px solid var(--rule-2); background:var(--card-2); display:grid; place-items:center; transition:background .14s, border-color .14s}
+.box svg{width:.82rem; height:.82rem; color:var(--on-accent); opacity:0; transform:scale(.6); transition:opacity .14s, transform .14s}
+.item.done .box{background:var(--accent); border-color:var(--accent)}
+.item.done .box svg{opacity:1; transform:scale(1)}
+.txt{flex:1; min-width:0; font-size:.925rem; line-height:1.45}
+.item.done .txt{color:var(--ink-3); text-decoration:line-through; text-decoration-color:var(--rule-2)}
+.item.info .row{cursor:default}
+.item.info .box{border:0; background:none; position:relative}
+.item.info .box::after{content:""; width:5px; height:5px; border-radius:50%; background:var(--ink-3)}
+.sub{display:block; font-size:.8rem; color:var(--ink-2); margin-top:.25rem; line-height:1.45}
+.when-tag{display:inline-block; font-family:var(--f-data); font-size:.66rem; letter-spacing:.03em; color:var(--accent-ink); background:var(--accent-soft); padding:.09rem .38rem; border-radius:4px; margin-right:.35rem; vertical-align:1px; font-weight:600; white-space:nowrap}
+.src{display:inline; font-family:var(--f-data); font-size:.62rem; color:var(--ink-3); letter-spacing:.05em; margin-left:.3rem; white-space:nowrap}
+
+/* ============ HANDWRITTEN MARGINALIA ============ */
+.hand{margin:.3rem 0 .55rem; padding:.5rem .7rem .55rem; border-left:2.5px solid var(--pen); background:var(--pen-soft); border-radius:0 8px 8px 0; transform:rotate(-.35deg)}
+.hand .lbl{display:block; font-family:var(--f-data); font-size:.6rem; letter-spacing:.09em; text-transform:uppercase; color:var(--pen); margin-bottom:.12rem; font-weight:600}
+.hand q{font-family:var(--f-hand); font-size:1.02rem; color:var(--pen); line-height:1.4; quotes:'"' '"'}
+
+/* ============ CONFLICT DISCLOSURE ============ */
+details.cf{margin:.35rem 0 .55rem; border:1px solid var(--warn-rule); background:var(--warn-soft); border-radius:9px}
+details.cf > summary{list-style:none; cursor:pointer; padding:.5rem .65rem; display:flex; gap:.5rem; align-items:flex-start; font-size:.8rem; color:var(--warn); font-weight:600; line-height:1.4}
+details.cf > summary::-webkit-details-marker{display:none}
+details.cf > summary::after{content:"›"; margin-left:auto; font-size:1.1rem; line-height:1; transition:transform .2s; color:var(--warn); padding-left:.3rem}
+details.cf[open] > summary::after{transform:rotate(90deg)}
+.cf-tri{flex:0 0 auto; width:.95rem; height:.95rem; margin-top:.08rem}
+.cf-body{padding:0 .65rem .6rem 2.1rem; display:flex; flex-direction:column; gap:.5rem}
+.cf-why{font-size:.79rem; color:var(--ink-2); line-height:1.45}
+.cf-opt{border-left:2px solid var(--warn-rule); padding-left:.6rem; font-size:.815rem; line-height:1.45; color:var(--ink)}
+.cf-opt.pick{border-left-color:var(--accent); border-left-width:3px}
+.cf-opt b{display:block; font-family:var(--f-data); font-size:.62rem; letter-spacing:.05em; color:var(--warn); font-weight:700; margin-bottom:.1rem}
+.cf-opt.pick b{color:var(--accent-ink)}
+.cf-opt i{display:block; font-style:normal; color:var(--ink-3); font-size:.75rem; margin-top:.15rem}
+.follow{display:inline-block; font-family:var(--f-data); font-size:.58rem; letter-spacing:.06em; text-transform:uppercase; background:var(--accent); color:var(--on-accent); padding:.1rem .34rem; border-radius:4px; margin-left:.35rem; font-weight:700; vertical-align:1px}
+.cf-rule{font-size:.775rem; line-height:1.45; color:var(--ink); background:var(--accent-soft); border-radius:7px; padding:.45rem .6rem}
+.cf-rule b{color:var(--accent-ink)}
+.pickline{display:block; margin-top:.2rem; font-weight:700; color:var(--accent-ink); font-size:.79rem}
+.pickline.open{color:var(--warn)}
+
+/* ============ DAILY TRACKER ============ */
+.day{background:var(--card); border:1px solid var(--rule); border-radius:14px; box-shadow:var(--shadow); margin-bottom:.7rem; overflow:hidden}
+.day[data-state="now"]{border-color:var(--accent); box-shadow:var(--shadow-lift)}
+.day-h{display:flex; align-items:baseline; gap:.6rem; padding:.8rem 1rem .6rem; border-bottom:1px solid var(--rule)}
+.day-h h3{font-size:.97rem; flex:1}
+.day-h .dnum{font-family:var(--f-data); font-size:.66rem; color:var(--ink-3); letter-spacing:.04em; text-transform:uppercase}
+.grp{padding:.7rem 1rem .2rem}
+.grp + .grp{border-top:1px solid var(--rule)}
+.trow{padding:.5rem 0 .7rem}
+.trow + .trow{border-top:1px solid var(--rule)}
+.trow-h{display:flex; align-items:baseline; gap:.45rem; flex-wrap:wrap}
+.trow-h b{font-size:.9rem; font-weight:600}
+.trow-h .prn{font-family:var(--f-data); font-size:.6rem; letter-spacing:.05em; text-transform:uppercase; color:var(--warn); background:var(--warn-soft); border-radius:4px; padding:.06rem .3rem; font-weight:700}
+.trow p{font-size:.785rem; color:var(--ink-2); line-height:1.45; margin-top:.2rem}
+.slots{display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.5rem}
+.slot{width:2.15rem; height:2.15rem; border-radius:8px; border:1.8px solid var(--rule-2); background:var(--card-2); cursor:pointer; display:grid; place-items:center; font:inherit; font-family:var(--f-data); font-size:.68rem; color:var(--ink-3); font-weight:600; padding:0; transition:background .14s, border-color .14s, color .14s}
+.slot[aria-checked="true"]{background:var(--accent); border-color:var(--accent); color:var(--on-accent)}
+.slot.prn[aria-checked="true"]{background:var(--warn); border-color:var(--warn); color:var(--on-warn)}
+.slot:hover{border-color:var(--accent)}
+/* recorded dose times */
+.dts{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.5rem}
+.dt{display:inline-flex; align-items:center; gap:.3rem; background:var(--accent-soft); border:1px solid var(--accent);
+  border-radius:8px; padding:.2rem .4rem .2rem .5rem; min-height:2.4rem}
+.dt span{font-family:var(--f-data); font-size:.64rem; font-weight:700; color:var(--accent-ink); letter-spacing:.03em}
+.dt input{font:inherit; font-family:var(--f-data); font-size:.78rem; font-weight:600; color:var(--ink);
+  background:var(--card); border:1px solid var(--rule-2); border-radius:5px; padding:.15rem .25rem; min-height:1.9rem}
+.dt input:focus-visible{outline:2.5px solid var(--accent); outline-offset:1px}
+.due{font-size:.8rem; font-weight:600; color:var(--accent-ink); background:var(--accent-soft);
+  border-radius:7px; padding:.42rem .55rem; margin-top:.45rem; line-height:1.4}
+.due:empty{display:none}
+.cap{font-family:var(--f-data); font-size:.7rem; color:var(--ink-2); margin-top:.4rem; letter-spacing:.01em}
+.cap.over{color:var(--crit); font-weight:700}
+.ses-when{font-size:.8rem; color:var(--ink-2); line-height:1.45; padding-bottom:.4rem}
+.ses{padding:.55rem 0; border-top:1px solid var(--rule)}
+.ses:first-of-type{border-top:0}
+.ses-h{display:flex; align-items:baseline; gap:.5rem; margin-bottom:.4rem}
+.ses-h b{font-size:.88rem; font-weight:600}
+.steps{display:flex; flex-wrap:wrap; gap:.4rem}
+.step{display:flex; align-items:center; gap:.42rem; padding:.4rem .6rem .4rem .45rem; border-radius:9px;
+  border:1.8px solid var(--rule-2); background:var(--card-2); cursor:pointer; font:inherit;
+  min-height:2.6rem; color:var(--ink-2); transition:background .14s, border-color .14s, color .14s}
+.step:hover{border-color:var(--accent)}
+.stepbox{flex:0 0 auto; width:1.15rem; height:1.15rem; border-radius:5px; border:1.8px solid var(--rule-2);
+  background:var(--card); display:grid; place-items:center}
+.stepbox svg{width:.72rem; height:.72rem; color:var(--on-accent); opacity:0; transform:scale(.6); transition:opacity .14s, transform .14s}
+.steptxt{font-size:.78rem; font-weight:600; line-height:1.25; text-align:left}
+.steptxt i{display:block; font-style:normal; font-weight:500; font-size:.66rem; color:var(--ink-3); margin-top:.05rem}
+.step[aria-checked="true"]{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink)}
+.step[aria-checked="true"] .stepbox{background:var(--accent); border-color:var(--accent)}
+.step[aria-checked="true"] .stepbox svg{opacity:1; transform:scale(1)}
+.step[aria-checked="true"] .steptxt i{color:var(--accent-ink)}
+
+/* ============ REFERENCE BLOCKS ============ */
+.block{background:var(--card); border:1px solid var(--rule); border-radius:14px; box-shadow:var(--shadow); padding:1rem; margin-bottom:.7rem}
+.block > h2{font-size:1.02rem; margin-bottom:.15rem}
+.block > .lede{font-size:.85rem; color:var(--ink-2); margin-bottom:.6rem; line-height:1.5}
+.block.crit{border-color:var(--crit-rule); background:var(--crit-soft)}
+.block.crit > h2{color:var(--crit)}
+.eyebrow{font-family:var(--f-data); font-size:.65rem; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3); font-weight:600; margin-bottom:.4rem; display:block}
+ul.plain{list-style:none; margin:0; padding:0; display:flex; flex-direction:column}
+ul.plain li{border-top:1px solid var(--rule); padding:.55rem 0; font-size:.9rem; line-height:1.45; display:flex; gap:.6rem; align-items:flex-start}
+ul.plain li:first-child{border-top:0}
+.block.crit ul.plain li{border-color:var(--crit-rule)}
+.bul{flex:0 0 auto; width:1.05rem; height:1.05rem; margin-top:.16rem; color:var(--crit)}
+.bul.ok{color:var(--accent)}
+.med{border-top:1px solid var(--rule); padding:.7rem 0}
+.med:first-of-type{border-top:0}
+.med h3{font-size:.95rem; display:flex; align-items:baseline; gap:.45rem; flex-wrap:wrap}
+.dose{font-family:var(--f-data); font-size:.78rem; color:var(--accent-ink); background:var(--accent-soft); padding:.1rem .4rem; border-radius:5px; font-weight:600}
+.med p{font-size:.83rem; color:var(--ink-2); margin-top:.28rem; line-height:1.5}
+a.call{display:flex; align-items:center; gap:.75rem; padding:.72rem .2rem; border-top:1px solid var(--rule); text-decoration:none; color:inherit; min-height:3rem}
+a.call:first-of-type{border-top:0}
+.call .who{flex:1; min-width:0}
+.call .who b{display:block; font-size:.9rem; font-weight:600}
+.call .who span{display:block; font-size:.755rem; color:var(--ink-3); line-height:1.4}
+.call .num{font-family:var(--f-data); font-size:.85rem; color:var(--accent-ink); font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums}
+.call svg{width:1rem; height:1rem; color:var(--accent); flex:0 0 auto}
+.ask{border:1px solid var(--warn-rule); background:var(--card); border-radius:12px; margin-bottom:.6rem; overflow:hidden}
+.ask .q{padding:.75rem .85rem; font-size:.9rem; font-weight:600; line-height:1.4; display:flex; gap:.6rem; align-items:flex-start; background:var(--warn-soft); color:var(--ink)}
+.ask .q em{font-family:var(--f-data); font-style:normal; font-size:.7rem; color:var(--warn); font-weight:700; flex:0 0 auto; margin-top:.15rem; letter-spacing:.04em}
+.ask .body{padding:.7rem .85rem .8rem; display:flex; flex-direction:column; gap:.5rem}
+.prov{font-size:.775rem; color:var(--ink-2); line-height:1.55}
+.prov dl{margin:.5rem 0 0; display:grid; grid-template-columns:auto 1fr; gap:.3rem .6rem; align-items:baseline}
+.prov dt{font-family:var(--f-data); font-size:.66rem; color:var(--ink); background:var(--card-2); border:1px solid var(--rule); padding:.06rem .32rem; border-radius:4px; letter-spacing:.04em; font-weight:600; white-space:nowrap}
+.prov dd{margin:0; font-size:.775rem; color:var(--ink-2); line-height:1.45}
+.acts{display:flex; gap:.5rem; margin:1rem 0 .5rem; flex-wrap:wrap}
+button.act{font:inherit; font-size:.8rem; font-weight:600; padding:.5rem .8rem; border-radius:8px; border:1px solid var(--rule-2); background:var(--card); color:var(--ink-2); cursor:pointer}
+button.act:hover{border-color:var(--accent); color:var(--accent-ink)}
+button.act.prim{background:var(--accent); border-color:var(--accent); color:var(--on-accent)}
+button.act.prim:hover{color:var(--on-accent); opacity:.9}
+button.act[hidden]{display:none}
+.bk-msg{font-size:.82rem; line-height:1.45; color:var(--accent-ink); background:var(--accent-soft); border-radius:8px; padding:.5rem .65rem; margin-top:.15rem}
+.bk-msg:empty{display:none}
+.bk-msg[data-tone="warn"]{color:var(--warn); background:var(--warn-soft)}
+.bk-panel[hidden]{display:none}
+.bk-panel{margin-top:.6rem; display:flex; flex-direction:column; gap:.4rem}
+.bk-text{width:100%; font-family:var(--f-data); font-size:.75rem; line-height:1.4; padding:.55rem .6rem; border-radius:8px; border:1px solid var(--rule-2); background:var(--card-2); color:var(--ink); resize:vertical; min-height:5.5rem}
+.bk-text:focus-visible, .bk-out:focus-visible{outline:2.5px solid var(--accent); outline-offset:1px}
+.bk-out{width:100%; font-family:var(--f-data); font-size:.72rem; line-height:1.4; padding:.55rem .6rem;
+  border-radius:8px; border:1px solid var(--accent); background:var(--accent-soft); color:var(--ink);
+  resize:vertical; min-height:6rem; margin-top:.3rem}
+.bk-outwrap[hidden]{display:none}
+.bk-rule{border:0; border-top:1px solid var(--rule); margin:1.1rem 0 .9rem}
+.bk h2{margin-top:0}
+
+/* ============ NOTES ============ */
+.note{margin:.3rem 0 .5rem}
+.note-add{display:inline-flex; align-items:center; gap:.3rem; font:inherit; font-size:.735rem; font-weight:600;
+  color:var(--ink-3); background:none; border:1px dashed var(--rule-2); border-radius:7px;
+  padding:.5rem .7rem; cursor:pointer; min-height:2.75rem}
+.note-add svg{width:.78rem; height:.78rem}
+.note-add:hover{border-color:var(--accent); color:var(--accent-ink); border-style:solid}
+.note-add[hidden]{display:none}
+.note-body[hidden]{display:none}
+.note-body{display:flex; flex-direction:column; gap:.2rem; border-left:2.5px solid var(--accent);
+  padding-left:.6rem; background:var(--accent-soft); border-radius:0 8px 8px 0; padding:.45rem .6rem .4rem}
+.note-text{width:100%; font:inherit; font-size:.85rem; line-height:1.45; color:var(--ink);
+  background:var(--card); border:1px solid var(--rule-2); border-radius:7px; padding:.45rem .55rem;
+  resize:vertical; min-height:3.1rem; overflow:hidden}
+.note-text:focus-visible{outline:2.5px solid var(--accent); outline-offset:1px}
+.note-state{font-family:var(--f-data); font-size:.62rem; letter-spacing:.05em; color:var(--accent-ink);
+  font-weight:700; text-transform:uppercase; min-height:.9rem}
+.note-state:empty{display:none}
+.note-state[data-pending]{color:var(--ink-3)}
+.note-state:not([data-pending])::before{content:"✓ "}
+/* ============ HER OWN TASKS ============ */
+li.item.mine{position:relative}
+li.item.mine .txt{padding-right:0}
+.when-tag.mine{color:var(--mine); background:var(--mine-soft)}
+.src.mine{color:var(--mine); font-weight:700; letter-spacing:.07em; text-transform:uppercase}
+li.item.mine .box{border-color:var(--mine)}
+li.item.mine.done .box{background:var(--mine); border-color:var(--mine)}
+.del{font:inherit; font-size:.7rem; font-weight:600; color:var(--ink-3); background:none;
+  border:1px solid var(--rule-2); border-radius:7px; padding:.32rem .6rem; cursor:pointer;
+  margin:0 0 .5rem 2.02rem; min-height:2.2rem}
+.del:hover{border-color:var(--crit); color:var(--crit)}
+.addblk .add-open[hidden], .addform[hidden]{display:none}
+.addform{display:flex; flex-direction:column; gap:.55rem; margin-top:.7rem}
+.fld{display:flex; flex-direction:column; gap:.22rem}
+.fld > span{font-family:var(--f-data); font-size:.63rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600}
+.fld input{font:inherit; font-size:.9rem; color:var(--ink); background:var(--card-2);
+  border:1px solid var(--rule-2); border-radius:8px; padding:.55rem .6rem; min-height:2.75rem; width:100%}
+.fld input:focus-visible{outline:2.5px solid var(--accent); outline-offset:1px}
+.fld2{display:flex; gap:.5rem}
+.fld2 .fld{flex:1; min-width:0}
+.addmsg{font-size:.79rem; color:var(--crit); font-weight:600; line-height:1.4}
+.addmsg:empty{display:none}
+.answer{margin-top:.2rem; border-top:1px dashed var(--warn-rule); padding-top:.55rem}
+
+/* ============ ADD-A-TASK BUTTON ============
+   Floats above the tab bar on every tab. The form itself lives at the top of
+   the Timeline, which the open-on-current-phase scroll pushes off screen — so
+   without this the feature is effectively invisible. */
+.fab{
+  position:fixed; right:1rem; z-index:45;
+  bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + .75rem);
+  display:flex; align-items:center; gap:.4rem;
+  min-height:3rem; padding:.7rem 1.05rem .7rem .9rem;
+  border:0; border-radius:99px; cursor:pointer;
+  background:var(--mine); color:var(--on-accent);
+  font:inherit; font-size:.85rem; font-weight:700; letter-spacing:.01em;
+  box-shadow:0 2px 6px rgba(0,0,0,.16), 0 10px 26px -10px rgba(0,0,0,.42);
+  transition:transform .14s, box-shadow .14s;
+}
+.fab svg{width:1.05rem; height:1.05rem}
+.fab:hover{transform:translateY(-1px); box-shadow:0 3px 8px rgba(0,0,0,.2), 0 14px 32px -10px rgba(0,0,0,.5)}
+.fab:active{transform:translateY(0)}
+@media (max-width:360px){ .fab span{display:none} .fab{padding:.7rem; gap:0} }
+
+/* ============ TODAY CARD ============ */
+.today{border-color:var(--accent); box-shadow:var(--shadow-lift)}
+.today-h{display:flex; align-items:baseline; gap:.6rem; flex-wrap:wrap; margin-bottom:.5rem}
+.today-h h2{font-size:1.15rem}
+.today-d{font-family:var(--f-data); font-size:.7rem; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--accent-ink); font-weight:700}
+.today .eyebrow{margin-top:.2rem}
+.today .eyebrow.spaced{margin-top:.9rem}
+.today-clear{font-size:.9rem; line-height:1.5; color:var(--accent-ink); background:var(--accent-soft);
+  border-radius:9px; padding:.6rem .7rem}
+.today ul.items{margin-top:.15rem}
+li.trow-today{border-top:1px solid var(--rule)}
+li.trow-today:first-child{border-top:0}
+.today-meds .due{margin-top:.35rem}
+.today-ses{font-size:.85rem; line-height:1.5; color:var(--ink); background:var(--accent-soft);
+  border-radius:9px; padding:.55rem .7rem; margin-top:.3rem}
+.today-ses span{color:var(--ink-2); font-size:.8rem}
+.today-more{font-size:.8rem; color:var(--ink-2); line-height:1.45; margin-top:.5rem; font-style:italic}
+
+/* ============ RESOURCES ============ */
+.dcount{font-family:var(--f-data); font-size:.68rem; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:700; margin-bottom:.55rem}
+.doc{margin-bottom:1rem}
+.doc-h{display:flex; gap:.6rem; align-items:flex-start; padding:.2rem 0 .6rem}
+.doc-tag{flex:0 0 auto; font-family:var(--f-data); font-size:.63rem; font-weight:700; letter-spacing:.06em;
+  background:var(--accent); color:var(--on-accent); border-radius:5px; padding:.16rem .4rem; margin-top:.15rem}
+.doc-h h3{font-size:1rem; line-height:1.3}
+.doc-who{display:block; font-family:var(--f-data); font-size:.65rem; color:var(--ink-3); margin-top:.2rem; letter-spacing:.02em}
+.dpage{background:var(--card); border:1px solid var(--rule); border-radius:12px; padding:.8rem .9rem;
+  margin-bottom:.5rem; box-shadow:var(--shadow)}
+.dpage h4{font-size:.9rem; font-weight:700; line-height:1.35; margin-bottom:.35rem}
+.dtext{font-size:.85rem; line-height:1.55; color:var(--ink-2)}
+.dpage mark, .dpage h4 mark{background:var(--accent-soft); color:var(--accent-ink); border-radius:3px; padding:0 .1rem}
+.dnote{font-size:.79rem; line-height:1.45; color:var(--warn); background:var(--warn-soft);
+  border-radius:8px; padding:.45rem .6rem; margin-top:.5rem}
+
+/* ============ BANNER ============ */
+.banner[hidden]{display:none}
+.banner{margin-top:1rem; border-radius:12px; padding:.85rem 1rem; border:1px solid var(--warn-rule);
+  background:var(--warn-soft); box-shadow:var(--shadow)}
+.banner > b{display:block; font-family:var(--f-display); font-size:.95rem; font-weight:700; color:var(--warn); margin-bottom:.25rem}
+.banner p b{display:inline; font-weight:700; color:inherit}
+.banner p{font-size:.83rem; line-height:1.5; color:var(--ink)}
+.banner .acts{margin:.6rem 0 0}
+.banner.empty{border-color:var(--accent); background:var(--accent-soft)}
+.banner.empty > b{color:var(--accent-ink)}
+
+/* ============ SEARCH ============ */
+.searchwrap{position:relative; padding-bottom:.55rem}
+.search{width:100%; font:inherit; font-size:.875rem; color:var(--ink); background:var(--card);
+  border:1px solid var(--rule-2); border-radius:99px; padding:.55rem 2.2rem .55rem .9rem; min-height:2.6rem;
+  -webkit-appearance:none appearance:none}
+.search:focus-visible{outline:2.5px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
+.qx{position:absolute; right:1.45rem; top:.42rem; width:1.9rem; height:1.9rem; border-radius:50%;
+  border:0; background:var(--rule); color:var(--ink-2); font:inherit; font-size:.8rem; cursor:pointer}
+.qx[hidden]{display:none}
+.results{position:fixed; left:0; right:0; z-index:39; overflow-y:auto; background:var(--paper);
+  border-top:1px solid var(--rule); padding:.8rem 0 calc(var(--tabbar) + 2rem)}
+.results[hidden]{display:none}
+.rcount{font-family:var(--f-data); font-size:.68rem; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:700; padding:0 1rem .5rem}
+.ritem{display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--rule);
+  border-radius:12px; padding:.7rem .85rem; margin:0 1rem .5rem; cursor:pointer; font:inherit;
+  box-shadow:var(--shadow)}
+.ritem:hover{border-color:var(--accent)}
+.ritem b{display:block; font-size:.88rem; font-weight:600; line-height:1.4; color:var(--ink)}
+.ritem mark{background:var(--accent-soft); color:var(--accent-ink); border-radius:3px; padding:0 .1rem}
+.ritem i{display:block; font-style:normal; font-size:.775rem; color:var(--ink-2); line-height:1.45; margin-top:.25rem}
+.rwhere{display:block; font-family:var(--f-data); font-size:.62rem; letter-spacing:.05em; color:var(--ink-3);
+  text-transform:uppercase; font-weight:700; margin-top:.35rem}
+.rnone{padding:0 1rem; font-size:.875rem; color:var(--ink-2); line-height:1.5}
+
+/* ============ CONFIRMATION DIALOG ============
+   Built in the page rather than window.confirm(), which a sandboxed iframe can
+   suppress — a destructive action must never proceed on a dialog nobody saw. */
+.modal[hidden]{display:none}
+.modal{position:fixed; inset:0; z-index:60; display:grid; place-items:center; padding:1.1rem;
+  background:rgba(10,16,13,.55); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px)}
+.modal-card{background:var(--card); border:1px solid var(--rule); border-radius:16px; padding:1.1rem;
+  max-width:26rem; width:100%; box-shadow:var(--shadow-lift)}
+.modal-card h2{font-size:1.05rem; margin-bottom:.4rem}
+.modal-card p{font-size:.875rem; line-height:1.5; color:var(--ink-2)}
+button.act.danger{background:var(--crit); border-color:var(--crit); color:#fff; font-weight:700}
+button.act.danger:hover{opacity:.9; color:#fff}
+
+/* ============ BOTTOM TAB BAR ============ */
+nav.tabs{position:fixed; left:0; right:0; bottom:0; z-index:50; background:color-mix(in srgb, var(--card) 92%, transparent); -webkit-backdrop-filter:saturate(180%) blur(18px); backdrop-filter:saturate(180%) blur(18px); border-top:1px solid var(--rule); padding-bottom:env(safe-area-inset-bottom,0px); display:flex}
+nav.tabs button{flex:1; background:none; border:0; font:inherit; cursor:pointer; color:var(--ink-3); display:flex; flex-direction:column; align-items:center; gap:.14rem; padding:.55rem .15rem .5rem; font-size:.6rem; font-weight:600; letter-spacing:.01em; position:relative}
+nav.tabs button svg{width:1.32rem; height:1.32rem}
+nav.tabs button[aria-selected="true"]{color:var(--accent-ink)}
+nav.tabs .badge{position:absolute; top:.35rem; left:calc(50% + .42rem); min-width:1.05rem; height:1.05rem; border-radius:99px; background:var(--warn); color:var(--on-warn); font-family:var(--f-data); font-size:.6rem; font-weight:700; display:grid; place-items:center; padding:0 .22rem}
+
+@media (min-width:700px){ .count{font-size:2.9rem} .hd h1{font-size:1.12rem} }
+</style>
+
+<header>
+  <div class="wrap">
+    <div class="hd">
+      <h1>Right Knee Passport <span>· Total Knee Replacement</span></h1>
+      <button class="act" id="theme" style="padding:.28rem .5rem;font-size:.68rem" aria-label="Switch light and dark">Theme</button>
+    </div>
+    <div class="countline">
+      <div><span class="count" id="count">—</span></div>
+      <div class="meta" id="meta"></div>
+    </div>
+    <div class="rail" id="rail"><i id="railfill"></i><u id="railpivot"></u><b id="railnow"></b></div>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="wrap searchwrap">
+    <input id="q" class="search" type="search" autocomplete="off"
+           placeholder="Search everything — shaving, Miralax, walker, Gloria…"
+           aria-label="Search the documents">
+    <button id="qx" class="qx" hidden aria-label="Clear the search">✕</button>
+  </div>
+</header>
+<div class="results" id="results" hidden></div>
+
+<div class="wrap"><div id="banner" class="banner" hidden></div></div>
+
+<main class="wrap">
+  <section class="panel on" id="p-timeline" role="tabpanel" aria-label="Timeline"></section>
+  <section class="panel" id="p-daily" role="tabpanel" aria-label="Each day"></section>
+  <section class="panel" id="p-alerts" role="tabpanel" aria-label="What to watch for"></section>
+  <section class="panel" id="p-ask" role="tabpanel" aria-label="Ask the team"></section>
+  <section class="panel" id="p-contacts" role="tabpanel" aria-label="Contacts"></section>
+  <section class="panel" id="p-backup" role="tabpanel" aria-label="Backup"></section>
+  <section class="panel" id="p-docs" role="tabpanel" aria-label="Resources"></section>
+</main>
+
+<button class="fab" id="fab" aria-label="Add a task of your own">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  <span>Task</span>
+</button>
+
+<nav class="tabs" id="tabs" role="tablist"></nav>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-t">
+  <div class="modal-card">
+    <h2 id="modal-t"></h2>
+    <p id="modal-b"></p>
+    <div class="acts" style="margin:.9rem 0 0">
+      <button class="act" id="modal-no">Cancel</button>
+      <button class="act danger" id="modal-yes">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ONE PARAMETER. Every date on this page is computed from it at render time.
+   ══════════════════════════════════════════════════════════════════════════ */
+const SURGERY = new Date(2026, 7, 31);   // Monday, August 31, 2026 — right TKR
+const SIDE    = "right";
+const STORE   = "tkr-2026-08-31.v1";
+
+const SRC = {
+  SEQ:  "Sequoia Hospital Total Joint Replacement Pre-Operative Education slides",
+  PAMF: "Palo Alto Medical Foundation Preoperative Hip & Knee Replacement Seminar slides",
+  CHK:  "Sequoia Patient Checklist, Pre-Op Patient Timeline & Knee Replacement FAQs",
+  HW:   "Your own handwritten notes on the printed materials"
+};
+
+const DAY = 864e5;
+const at  = n => new Date(SURGERY.getTime() + n * DAY);
+const fmt = d => d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+const fmtL= d => d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+const midnight = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+/* A test seam: ?today=N pretends it is N days from surgery, so the app can be
+   exercised on any day of the recovery without waiting for the calendar.
+   Absent in normal use, and it only ever changes what is displayed. */
+const DAY_OVERRIDE = (function(){
+  try { const q = new URLSearchParams(location.search).get("today");
+        return q === null || q === "" || isNaN(+q) ? null : Math.round(+q); }
+  catch(e){ return null; }
+})();
+const offsetToday = () => DAY_OVERRIDE !== null ? DAY_OVERRIDE
+                        : Math.round((midnight(new Date()) - SURGERY) / DAY);
+
+/* ── where the documents disagree ───────────────────────────────────────────
+   pref  = index of the reading to follow, under the PAMF-first rule you set.
+           null means PAMF does not address it, so the rule cannot settle it.
+   pick  = one-line statement of what following that reading actually means.  */
+const CONFLICTS = {
+  npo: {
+    q: "Clear liquids: until 4 hours before surgery time, or until 2 hours before arrival?",
+    why: "These two only line up if arrival is exactly 2½ hours before surgery — and the arrival time is itself disputed. Drinking too close to the case risks aspiration under anesthesia, and the case gets cancelled if the team is unsure.",
+    pref: null,
+    pick: "PAMF does not cover the fasting window, so this stays open. Ask Sequoia when they call on the Friday with your time.",
+    opts: [
+      {s:"CHK", v:"“Clear liquids (water, clear broth, apple juice, black coffee, Gatorade) may be consumed until 4 hours before your scheduled surgery time.” … “Stop all food and drink, including water, 4 hours before your scheduled surgery time.”", n:"You circled both phrases."},
+      {s:"SEQ", v:"“Nothing to eat after midnight! Your surgeon may encourage you to drink clear fluids (no jello) up to 2 hours prior to arrival to the hospital.”", n:"You circled “2 hours prior to arrival.”"}
+    ]
+  },
+  arrive: {
+    q: "Arrive 2 hours or 2½ hours before the surgery time?",
+    why: "It changes when you leave the house, and it changes the clear-liquid cutoff above if that one is anchored to arrival.",
+    pref: 1,
+    pick: "Arrive 2 hours before your surgery time.",
+    opts: [
+      {s:"CHK", v:"“Arrive at the hospital 2 hours before your scheduled surgery time.”", n:"You circled it."},
+      {s:"HW",  v:"“2 hrs before” — written on the PAMF Surgery Times slide, beside the date 8/28.", n:"PAMF's printed slide gives no arrival interval; this note of yours sits on it, and the Sequoia checklist agrees with it."},
+      {s:"SEQ", v:"“Arrival 2 1/2 hours prior to surgery.”"}
+    ]
+  },
+  shave: {
+    q: "Stop shaving your legs 7, 5, or 3 days before?",
+    why: "Micro-nicks in the skin are a route for the bacteria that cause a prosthetic joint infection, which is what this whole protocol is built around. Three documents give three different intervals.",
+    pref: 3,
+    pick: "PAMF says do not shave, but gives no interval — so it tells you what, not when. The 7 / 5 / 3 day question still needs one answer.",
+    opts: [
+      {s:"CHK", v:"Patient Checklist, in the “7 Days Before” block: “Stop shaving legs.”"},
+      {s:"SEQ", v:"“No shaving of your operative leg 5 days prior to surgery.”"},
+      {s:"CHK", v:"Pre-Op Timeline, “3 days before surgery”: “Stop shaving body hair. Okay to continue shaving facial hair.”", n:"You wrote 8/27 beside it — 4 days before, slightly earlier than the printed rule."},
+      {s:"PAMF",v:"“DO NOT SHAVE LEGS BEFORE SURGERY!”", n:"No interval given."}
+    ]
+  },
+  miralax: {
+    q: "Start Miralax 7 days or 5 days before?",
+    why: "Opioids plus immobility make constipation after surgery close to universal, so starting early matters — but starting too early causes the loose stools the timeline itself warns about.",
+    pref: null,
+    pick: "PAMF does not mention Miralax, so this stays open.",
+    opts: [
+      {s:"CHK", v:"Pre-Op Timeline, “1 week before surgery”: “Please start taking Miralax one week before surgery date. If you experience loose stools, stop taking.”", n:"You wrote 8/24 and starred it."},
+      {s:"CHK", v:"Patient Checklist, “5 Days Before”: “Start taking a laxative, please consult with MD surgeon.”"},
+      {s:"SEQ", v:"“Miralax (may begin 3-5 days before surgery; check with physician).”"}
+    ]
+  },
+  vitd: {
+    q: "Vitamin D — stop it with the other vitamins at 7 days, or keep taking it?",
+    why: "One document tells you to start Vitamin D two weeks out; another tells you to stop all vitamins seven days out. Your own note on this carries a question mark.",
+    pref: 0,
+    pick: "PAMF puts Vitamin D outside the group Sequoia stops at seven days. Your note on that same PAMF slide sets the stop at Saturday 29 August.",
+    opts: [
+      {s:"PAMF",v:"“Vitamin D: 1000 units/day two weeks before surgery.”", n:"PAMF sets the start but never states a stop."},
+      {s:"CHK", v:"Patient Checklist, “7 Days Before”: “Stop taking blood thinners: non-steroidal anti-inflammatories, vitamins, herbal medications, supplements containing Vitamin E or Fish Oil.”"},
+      {s:"HW",  v:"“Stop Saturday 8/29” beside the Supplements slide — and elsewhere, “Vit D up to PR day (?)”", n:"The question mark is yours."}
+    ]
+  },
+  walk: {
+    q: "Is “one block a day in week one” a floor to reach, or a ceiling not to exceed?",
+    why: "The sharpest disagreement in the folder: the same number, labelled minimum by one document and maximum by the other. Under-walking stiffens the knee and slows range of motion; over-walking drives swelling and pain.",
+    pref: 1,
+    pick: "A ceiling. One block in week one, two in week two — not more.",
+    opts: [
+      {s:"CHK", v:"“General rule of thumb is at a minimum 1 block per day the first week, 2 blocks the second week, 3 blocks the third week. Each block ~250 feet. Can increase walking distance by 25-50% each week, not to exceed more than 2000 feet (or steps) the first two weeks.”"},
+      {s:"PAMF",v:"“One block per day per week · 1000 steps per day per week · Week One = One Block · Week Two = Two Blocks”", n:"You wrote “Maximum” underneath. Because this reverses Sequoia's reading, it is the one most worth confirming out loud."}
+    ]
+  },
+  shower: {
+    q: "First shower at 48 hours, or on day 4?",
+    why: "This one is answerable at discharge — you just need to look at, or ask about, the dressing before you leave the hospital.",
+    pref: 1,
+    pick: "Day 4 — Friday 4 September.",
+    opts: [
+      {s:"CHK", v:"“If you have an Optifoam (waterproof) dressing placed in the operating room, you may shower in 48 hrs. If you do not have the Optifoam dressing on when you leave the hospital, please change it to Optifoam at home (typically postop day 4), then you can shower after dressing change… If your surgeon prefers gauze dressing, please wrap around the dressing with press and seal or saran wrap before showering.”"},
+      {s:"PAMF",v:"“Clean and Dry until 72 hours after. Showers — 4 days after Surgery.”", n:"You wrote “Friday” beside it, and “Press + Seal” under Wound Care."}
+    ]
+  },
+  helper: {
+    q: "How many days do you need someone with you — 3, 5, 7, or 10?",
+    why: "It decides how much cover to arrange, and whether to line up a second person.",
+    pref: 2,
+    pick: "3 days. That is the shortest figure of the four on offer — worth treating as the floor, not the plan.",
+    opts: [
+      {s:"CHK", v:"FAQ: “everyone needs a helper or coach to be with them for the first 3-5 days.” Checklist: “Arrange to have help at home for 5-10 days.”"},
+      {s:"SEQ", v:"“Arrange for help at home prior to surgery — When? For 3-7 days after discharge.”"},
+      {s:"PAMF",v:"“Designated Care Giver for 3 days.”", n:"You wrote “Paul.”"}
+    ]
+  },
+  ice: {
+    q: "Icing: 20 minutes on and 20 off, or three to four sessions totalling 30–60 minutes a day?",
+    why: "Both appear under knee replacement. The second is roughly half the icing of the first.",
+    pref: null,
+    pick: "PAMF gives no icing schedule, so this stays open. The tracker below uses four sessions; adjust once you have an answer.",
+    opts: [
+      {s:"SEQ", v:"“Icing 20 mins on and off with either ice pack (hip) or with ice machine (knee) — Not at night time.”"},
+      {s:"CHK", v:"“Aim for 3-4 sessions of icing for knee replacement 30-60 minutes per day. You can do more than this if you desire, but be careful not to create ice burns on the skin. Many people can taper off icing around week 4-6, but this can be continued for 3 months or more if helpful.”"}
+    ]
+  },
+  tylenol: {
+    q: "Confirm the Tylenol ceiling — your note says 2 grams a day, below the usual over-the-counter maximum.",
+    why: "A lower cap is a deliberate, conservative choice some surgeons make. Worth confirming it is intentional, because 500 mg taken every 4 hours would exceed 2 g a day, and both figures are in your handwriting.",
+    pref: 0,
+    pick: "The 2 g/day ceiling wins. 500 mg every 6 hours comes to exactly 2 g — the only schedule that satisfies both notes, and the one the tracker below uses.",
+    opts: [
+      {s:"HW", v:"“Tylenol 2 gms/day” — written on the PAMF Narcotic Refills slide."},
+      {s:"HW", v:"“Tylenol 500 mg ATC” (around the clock) — written above Discharge Medications."}
+    ]
+  },
+  thinner: {
+    q: "Which blood thinner, at what dose, and for how many days?",
+    why: "The documents list four possible drugs and three possible durations. This is the surgeon's decision and must be confirmed on the discharge paperwork before you leave the hospital.",
+    pref: 1,
+    pick: "PAMF's regimen: Arixtra in hospital, then Lovenox or Coumadin 10–20 days (or Eliquis twice daily for 30 days), then 20 days of aspirin 81 mg. Check it against what is actually prescribed.",
+    opts: [
+      {s:"SEQ", v:"“Blood Thinner determined by MD: Arixtra · Lovenox injection (nursing will teach how to administer) · Eliquis · Aspirin.”", n:"You circled Lovenox and wrote “Lovenox.com.”"},
+      {s:"PAMF",v:"“Blood Thinner (Arixtra) in the Hospital. Blood Thinner (Lovenox, Coumadin) for 10-20 Days after Surgery. Alternative Oral Eliquis 30 Days, two times a day. 20 Days of 81 mg ASA after Blood Thinner.”"},
+      {s:"PAMF",v:"Discharge Medications slide: “Lovenox Injections: or return to Eliquis, Pradaxa.”"}
+    ]
+  },
+  route: {
+    q: "On the morning of surgery — down the hallway on the right, or up to the second floor?",
+    why: "Small, but not something to work out at 5:30 in the morning.",
+    pref: 1,
+    pick: "Admitting, then the 2nd floor. Note this is your note from the PAMF seminar, while the hallway instruction is Sequoia describing its own building — so confirm it.",
+    opts: [
+      {s:"SEQ", v:"“Please go to admitting/registration and continue straight down hallway on the right.”"},
+      {s:"HW",  v:"“Go to admitting then to 2nd floor.”"}
+    ]
+  }
+};
+
+/* ── the timeline ───────────────────────────────────────────────────────── */
+const PHASES = [
+  {
+    id:"clear", short:"Clearance", from:-30, to:-15,
+    title:"Medical clearance, and booking the things that fill up",
+    blurb:"Mostly behind you — the dates in your handwriting all check out against the calendar. The one item worth confirming is that outpatient physical therapy is genuinely booked, because the hospital is explicit that this is your job, not theirs.",
+    items:[
+      {k:"clear-lab-work-done", i:"Lab work done 20–30 days before surgery — haematocrit, metabolic panel, coagulation studies, EKG. Results go to both your primary care physician and the Total Joint Surgery office.", s:"CHK,PAMF", d:-30, hw:"after 8/1/26 · Redraw between 8/1 + 8/14"},
+      {k:"clear-pre-op-appointment", i:"Pre-op appointment with your primary care physician, within 30 days of surgery and after the labs are back.", s:"CHK", d:-19, hw:"8/12"},
+      {k:"clear-bring-pre-operative", i:"Bring the “Pre-operative Physical Clearance Request Form” from the folder to that appointment.", s:"CHK", d:-19},
+      {k:"clear-ask-primary-care", i:"Ask your primary care physician which of your regular medications you may take with a small sip of water on the morning of surgery.", s:"CHK", d:-19},
+      {k:"clear-specialist-visits-cardiology", i:"Any specialist visits (cardiology, pulmonology) and special testing (treadmill, pulmonary function tests) completed — all consults and testing at least 2 weeks before surgery.", s:"PAMF", d:-19},
+      {k:"clear-dental-visit-needed", i:"Dental visit, if needed — before surgery, not after.", s:"PAMF", d:-19},
+      {k:"clear-call-sequoia-s", i:"Call Sequoia's Pre-Admit Clinic to book the pre-admit appointment: blood typed, paperwork reviewed, and you collect the chlorhexidine cleansing sponge.", s:"CHK", d:-21, hw:"8/10/26", n:"Pre-Admit Clinic 650-367-5545."},
+      {k:"clear-book-outpatient-physical", i:"Book outpatient physical therapy now, for three weeks after surgery. The hospital states in red that this one is your responsibility, and that spots are hard to get.", s:"CHK,SEQ", d:-21, hw:"9/22 · 9/24 · 9/29 · 10/1", n:"Those four dates fall 22, 24, 29 and 31 days after surgery — consistent with the “3 weeks after” instruction."},
+      {k:"clear-start-vitamin-d", i:"Start Vitamin D 1000 units a day and one cup of natural yogurt a day. The timeline files this under “start as soon as possible”; the PAMF deck says two weeks before.", s:"PAMF,CHK", d:-30, hw:"started 8/22", c:"vitd"},
+      {k:"clear-blood-donation-ahead", i:"Blood donation ahead of surgery is not needed — transfusion risk is under 1%.", s:"PAMF", d:-30, x:1},
+      {k:"clear-medicare-removed-knee", i:"Medicare removed knee replacement from the inpatient-only list in 2022, so you are admitted as an outpatient. Whether you stay is a medical decision, not an age or housing decision. Gloria Kwok can help if insurance questions come up.", s:"PAMF", d:-30, x:1}
+    ]
+  },
+  {
+    id:"house", short:"House", from:-14, to:-8, when:"From Mon, Aug 17 — through surgery",
+    title:"Get the house ready, and stop doing the things that break skin",
+    blurb:"Two weeks out is when the checklist front-loads everything physical: the house, the equipment, the food, and the list of activities that risk a cut, a scrape or a fall. None of it has a deadline of its own — it simply has to be done before you go in, so this block stays open right up to surgery day.",
+    items:[
+      {k:"house-arrange-help-home", i:"Arrange help at home after discharge.", s:"CHK,SEQ,PAMF", d:-14, hw:"Paul", c:"helper"},
+      {k:"house-ask-helper-sit", i:"Ask your helper to sit in on a physical therapy or occupational therapy session in the hospital, so they see how you actually get in and out of bed.", s:"CHK,SEQ", d:-14, n:"Can be arranged once you have arrived at the hospital."},
+      {k:"house-shop-groceries-pre", i:"Shop for groceries and pre-cook meals. You will need help with groceries, meal prep and housekeeping for several weeks.", s:"CHK,SEQ", d:-14, hw:"Food Preparation for Return Home — me"},
+      {k:"house-walk-house-fall", i:"Walk the house for fall and trip hazards: loose carpets, throw rugs, cords. Every path you will use needs to be clear and at least 26 inches wide for the walker.", s:"CHK", d:-14, f:"crit"},
+      {k:"house-buy-equipment-bedside", i:"Buy the equipment: bedside commode, elevated toilet seat, shower bench, reacher/grabber, long-handled shoe horn, sock aid, and a basket for the walker. Mostly not covered by insurance; available on Amazon, a local pharmacy, or a medical equipment company.", s:"CHK,SEQ,PAMF", d:-14, hw:"Hip Kit (circled)", n:"PAMF also lists alimed.com and medmartusa.com; occupational therapy at the Clark Building front desk sells these."},
+      {k:"house-get-front-wheeled", i:"Get a front-wheeled walker — two wheels on the front, set to wrist height. Not the four-wheeled rollator with a seat; the slide has a red X through it.", s:"SEQ", d:-14, hw:"2 wheels on front · Get new walker · wrist height", n:"One will be provided at the hospital if you do not have one, and billed to insurance. Medicare covers one walker every 5 years."},
+      {k:"house-arrange-transport-hospital", i:"Arrange transport to and from the hospital. You are not allowed to take a taxi, Uber or Lyft home alone.", s:"CHK,SEQ", d:-14, hw:"Paul", f:"crit"},
+      {k:"house-give-pharmacy-s", i:"Give your pharmacy's name, address and phone number to the hospital on admission, and check with them beforehand that they can actually supply the pain medication.", s:"PAMF", d:-14, hw:"CVS — address + phone #"},
+      {k:"house-stop-gardening-yard", i:"Stop: gardening and yard work, sports, climbing ladders, going on the roof, cleaning floors, kneeling, wearing short pants, playing with cats or dogs.", s:"PAMF,SEQ", d:-14, hw:"8/17 · don't scrape the skin", f:"crit"},
+      {k:"house-foot-care-here", i:"Foot care from here on: keep your feet well moisturised, prevent cracking, prevent fungal infection. A foot infection can seed the new implant.", s:"PAMF", d:-14, f:"crit"},
+      {k:"house-read-hospital-surgeon", i:"Read the hospital and surgeon materials — and make sure your caregiver reads them too.", s:"SEQ", d:-14}
+    ]
+  },
+  {
+    id:"meds", short:"Week before", from:-7, to:-4,
+    title:"The week before — what comes out of the medicine cabinet",
+    blurb:"Mostly medication stops, plus the last two hygiene items. Two entries here — how long to stop shaving, and when to start Miralax — have three different answers across the three documents.",
+    items:[
+      {k:"meds-stop-anti-inflammatories", i:"Stop all anti-inflammatories: Advil, Celebrex, Mobic, Aleve, Aspirin. Tylenol is fine to keep taking.", s:"CHK,SEQ", d:-7, hw:"8/24", f:"crit"},
+      {k:"meds-stop-vitamins-herbal", i:"Stop vitamins, herbal medications, and any supplement containing Vitamin E or fish oil. Consult your primary care physician or cardiologist.", s:"CHK", d:-7, c:"vitd"},
+      {k:"meds-plavix-coumadin-prednisone", i:"If you are on Plavix, Coumadin or Prednisone — do not stop these on your own. Consult your primary care physician.", s:"CHK", d:-7, f:"crit"},
+      {k:"meds-stop-shaving-legs", i:"Stop shaving your legs.", s:"CHK,SEQ,PAMF", d:-7, hw:"8/27", c:"shave", f:"crit"},
+      {k:"meds-start-miralax", i:"Start Miralax.", s:"CHK,SEQ", d:-7, hw:"8/24 ★", c:"miralax"},
+      {k:"meds-stop-clipping-toenails", i:"Stop clipping toenails. The PAMF slide lists this among the things to stop two weeks out; your note narrows it to one week.", s:"PAMF", d:-7, hw:"1 week prior"},
+      {k:"meds-start-cleaning-phone", i:"Start cleaning your phone daily. The slide gives no interval; your note sets it at a week before.", s:"PAMF", d:-7, hw:"a week before surgery · buy phone cleaner"},
+      {k:"meds-take-glp-1", i:"If you take a GLP-1 for diabetes or weight (semaglutide/Ozempic/Wegovy, exenatide/Byetta, liraglutide/Victoza, dulaglutide/Trulicity, tirzepatide/Mounjaro): hold one dose if it is daily, hold for one week if it is weekly.", s:"PAMF", d:-7, hw:"aspiration risk", x:1},
+      {k:"meds-take-one-drugs", i:"If you take one of the drugs in the slide's second column (dapagliflozin/Farxiga, canagliflozin/Invokana, empagliflozin/Jardiance, ertugliflozin/Steglatro): hold 72–96 hours before surgery; ertugliflozin needs 96 hours.", s:"PAMF", d:-4, n:"The slide labels these “GLP 2”; they are in fact SGLT2 inhibitors, a different drug class. The hold intervals are as printed.", x:1}
+    ]
+  },
+  {
+    id:"final", short:"Final 72h", from:-3, to:-1,
+    title:"The last three days",
+    blurb:"Hydration starts now, the hospital calls with your time, and the night before is a fixed sequence: chlorhexidine, clean everything, nothing to eat after midnight.",
+    items:[
+      {k:"final-alcohol-three-days", i:"No alcohol from three days before.", s:"SEQ", d:-3},
+      {k:"final-start-drinking-extra", i:"Start drinking extra fluids — three days of good hydration ahead of surgery, to prevent low blood pressure and dizziness afterwards.", s:"SEQ", d:-3, hw:"need electrolytes"},
+      {k:"final-sequoia-calls-exact", i:"Sequoia calls with your exact surgery time. Because surgery is on a Monday, the call comes on the Friday, typically between 2 and 4 pm.", s:"SEQ,CHK", d:-3, hw:"8/28 · Friday · clear phone messages — answer the phone", f:"crit"},
+      {k:"final-confirm-admitting-has", i:"Confirm Admitting has your correct phone number and address.", s:"SEQ", d:-3, n:"Admitting 650-367-5551."},
+      {k:"final-pack-bag-see", i:"Pack the bag — see the packing list below.", s:"CHK", d:-1},
+      {k:"final-bathe-chlorhexidine-soap", i:"Bathe with the chlorhexidine soap provided by Sequoia. Avoid your scalp.", s:"CHK,SEQ,PAMF", d:-1, hw:"+ clean towel", f:"crit"},
+      {k:"final-clean-pyjamas-clean", i:"Clean pyjamas on, clean sheets on the bed, clean towel.", s:"CHK,SEQ,PAMF", d:-1, hw:"Clean Sheets · Clean Pajamas · clean towel"},
+      {k:"final-pets-bed-until", i:"No pets on the bed, until cleared by your surgeon.", s:"CHK", d:-1},
+      {k:"final-nothing-eat-after", i:"Nothing to eat after midnight — no food, no gum, no mints.", s:"CHK,SEQ", d:-1, f:"crit"},
+      {k:"final-keep-drinking-clear", i:"Keep drinking clear liquids for hydration up to the cutoff — Ensure Clear, Propel, water with electrolytes.", s:"CHK", d:-1, c:"npo", f:"crit"},
+      {k:"final-correct-date-paper", i:"Correct the date on your paper copy: the Pre-Op Timeline has “9/30” written beside “Night before surgery.” It should read 8/30. Confirmed as a slip of the pen — surgery is Monday 31 August, so the night before is Sunday 30 August.", s:"HW", d:-1}
+    ]
+  },
+  {
+    id:"day", short:"Surgery", from:0, to:0,
+    title:"Surgery day",
+    blurb:"Everything today is anchored to your surgery time, which you will not know until the Friday call. Two of the anchors — when to stop clear liquids, and how early to arrive — are given differently by different documents.",
+    items:[
+      {k:"day-second-chlorhexidine-bath", i:"Second chlorhexidine bath, morning of surgery.", s:"CHK,SEQ,PAMF", d:0, f:"crit"},
+      {k:"day-stop-clear-liquids", i:"Stop clear liquids.", s:"CHK,SEQ", d:0, c:"npo", f:"crit"},
+      {k:"day-stop-food-drink", i:"Stop all food and drink, including water — 4 hours before your scheduled surgery time.", s:"CHK", d:0, f:"crit"},
+      {k:"day-take-only-medications", i:"Take only the medications your primary care physician approved, with a small sip of water.", s:"CHK", d:0, hw:"don't bring meds", n:"Do not bring your own medications from home to the hospital."},
+      {k:"day-arrive-hospital", i:"Arrive at the hospital.", s:"CHK,SEQ,HW", d:0, c:"arrive", f:"crit"},
+      {k:"day-park-garage-right", i:"Park in the garage to the right of the entrance. Free valet 5:30 am – 2:00 pm, Monday to Friday.", s:"SEQ", d:0},
+      {k:"day-enter-through-main", i:"Enter through the main hospital entrance and go to Admitting/Registration.", s:"SEQ,HW", d:0, c:"route"},
+      {k:"day-ambulatory-care-unit", i:"In the Ambulatory Care Unit: IV started, chlorhexidine wipe and scrub, surgical consent reviewed. The surgeon and anaesthetist both visit and the surgical site is marked. Personal items — glasses, dentures — are collected.", s:"SEQ,PAMF", d:0, x:1},
+      {k:"day-leave-contact-phone", i:"Leave a contact phone number with the nurse in the Ambulatory Care Unit.", s:"SEQ", d:0, f:"crit"},
+      {k:"day-anaesthesia-discussed-pre", i:"Anaesthesia is discussed in the pre-surgery area: spinal, “twilight” sedation, general, and a nerve block for knee replacements.", s:"SEQ,PAMF", d:0, hw:"Spinal ✓ risk of blood clot · Nerve Block — take it · Knock me out · No intubation", x:1},
+      {k:"day-visitors-may-stay", i:"Visitors may stay with you until you go into the operating room.", s:"SEQ", d:0, x:1},
+      {k:"day-operation-itself-takes", i:"The operation itself takes 1–2 hours; you are in the operating room 2–3 hours in total.", s:"SEQ,PAMF", d:0, x:1},
+      {k:"day-recovery-room-pacu", i:"Recovery room (PACU) is typically about an hour — waiting for the spinal to wear off, vital signs monitored, sips of fluid with the head of the bed up. Family are not allowed into recovery.", s:"SEQ,PAMF", d:0, hw:"Family can go home — he will call", x:1},
+      {k:"day-family-should-call", i:"Your family should call 2 hours after you leave the pre-op area, and can see you 4 hours after you leave it.", s:"PAMF", d:0, x:1},
+      {k:"day-expect-anaesthetic-nausea", i:"Expect from the anaesthetic: nausea, vomiting, sore throat, shaking or chills, dizziness, difficulty passing urine, headache, grogginess, and occasionally confusion.", s:"SEQ", d:0, x:1},
+      {k:"day-out-bed-same", i:"Out of bed the same day. Early walking is the single most effective thing against blood clots.", s:"SEQ", d:0, hw:"PT in the afternoon", f:"crit"},
+      {k:"day-start-incentive-spirometer", i:"Start the incentive spirometer: 5–10 breaths every hour you are awake, coughing and deep breathing after each use. It reduces fevers and prevents pneumonia, and it comes home with you.", s:"PAMF,SEQ", d:0},
+      {k:"day-go-home-cryotherapy", i:"You go home with a cryotherapy ice machine — Sequoia provides one for every knee patient to keep at home.", s:"SEQ", d:0, hw:"fill with a case of 8 oz water bottles [frozen] · Game Ready ice machine $300", n:"The PAMF deck instead lists an ice bag or ice machine as something to source yourself, and your note prices one at $300. Worth confirming at discharge which you are getting."},
+      {k:"day-same-day-discharge", i:"Same-day discharge is the expectation. Sequoia: “We encourage the large majority of our patients to go home the same day that their surgery takes place, and most do.”", s:"CHK", d:0, x:1},
+      {k:"day-discharged-must-medically", i:"To be discharged you must: be medically stable, have pain and nausea managed, tolerate a regular diet, hold stable vital signs, walk and climb stairs, be cleared by both physical and occupational therapy, have your medications confirmed, and have transport ready. The discharge paperwork itself takes about an hour.", s:"SEQ,CHK,PAMF", d:0, x:1},
+      {k:"day-before-leaving-check", i:"Before leaving: check with your pharmacy if anything about the medications changed in hospital.", s:"PAMF", d:0, f:"crit"},
+      {k:"day-stay-overnight-post", i:"If you stay overnight — post-op day 1: regular diet, drain removed if there is one, physical therapy once or twice, occupational therapy once, a visit from the Total Joint Nurse Navigator about discharge, IV fluids stopped. Post-op day 2: physical therapy once or twice, occupational therapy if needed, equipment checked, home.", s:"SEQ", d:0, x:1}
+    ]
+  },
+  {
+    id:"home1", short:"First 5 days", from:1, to:5,
+    title:"The first five days at home",
+    blurb:"The hardest stretch. Someone stays with you, the home health agency makes contact, and the day settles into a rhythm of medication, ice, elevation and short walks. The Each day tab has a dose-by-dose tracker for exactly these five days.",
+    items:[
+      {k:"home1-caregiver-present-window", i:"Caregiver present. This is the window every document agrees is non-negotiable, even where they disagree on how long it runs.", s:"CHK,SEQ,PAMF", d:1, hw:"Paul", c:"helper", f:"crit"},
+      {k:"home1-home-health-agency", i:"The home health agency calls within 24–48 hours of discharge to schedule visits. If nobody has called by 48 hours, call Care Coordination on 650-367-5683.", s:"SEQ,CHK", d:2, f:"crit"},
+      {k:"home1-take-pain-medication", i:"Take your pain medication 30–60 minutes before every physical or occupational therapy session, at home as well as in hospital.", s:"SEQ", d:1, f:"crit"},
+      {k:"home1-rest-keep-operated", i:"At rest, keep the operated leg straight and elevated. Never a pillow under the knee — it sets the knee into a bend that is very hard to undo.", s:"SEQ", d:1, f:"crit"},
+      {k:"home1-but-change-knee", i:"But change the knee's position often. It stiffens after 20–30 minutes in any one position. Seated heel slides are the exercise for this; your therapist will teach them.", s:"CHK", d:1},
+      {k:"home1-rolled-towel-blanket", i:"A rolled towel or blanket along the outside of the leg stops it rotating outward while you rest.", s:"CHK", d:1},
+      {k:"home1-sleeping-back-front", i:"Sleeping: on your back, your front, or either side. On your side, a pillow between your legs.", s:"CHK", d:1},
+      {k:"home1-ice-knee", i:"Ice the knee.", s:"SEQ,CHK", d:1, c:"ice"},
+      {k:"home1-elevate-leg-2030", i:"Elevate the leg 20–30 minutes, 4–5 times a day. Not overnight.", s:"SEQ", d:1, hw:"elevate 20 min × 6/day"},
+      {k:"home1-compression-stockings-during", i:"Compression stockings during the daytime only — yours are 18–20 mmHg. Off at night.", s:"SEQ,CHK", d:1, hw:"Compression socks everyday × 30 days. Only during the day. · compressionstockings.com 18-20mm", n:"The FAQ says 3–4 weeks; your note on the slide says 30 days."},
+      {k:"home1-ankle-pump-exercises", i:"Ankle pump exercises through the day, for clot prevention.", s:"SEQ", d:1},
+      {k:"home1-incentive-spirometer-510", i:"Incentive spirometer, 5–10 times every hour you are awake.", s:"PAMF,SEQ", d:1},
+      {k:"home1-blood-thinner-prescribed", i:"Blood thinner as prescribed. If the injection site becomes severely red, call the office.", s:"SEQ,PAMF", d:1, c:"thinner", f:"crit"},
+      {k:"home1-keep-wound-clean", i:"Keep the wound clean and dry for the first 72 hours.", s:"PAMF", d:1, f:"crit"},
+      {k:"home1-first-shower", i:"First shower.", s:"CHK,PAMF", d:4, hw:"Friday · Press + Seal", c:"shower"},
+      {k:"home1-baths-4-weeks", i:"No baths for 4 weeks. Showers only.", s:"PAMF", d:1, f:"crit"},
+      {k:"home1-bowels-fluids-electrolytes", i:"Bowels: fluids with electrolytes, Colace, Miralax, Milk of Magnesia, Dulcolax suppositories if needed, and walking. Walking is the part people skip and it is the part that works.", s:"PAMF,SEQ", d:1, hw:"black coffee · apricots · drink fluids"},
+      {k:"home1-walking-distance-week", i:"Walking distance in week one.", s:"CHK,PAMF", d:1, c:"walk"},
+      {k:"home1-outside-walking-level", i:"Outside walking on level ground with the walker is fine right away. Indoor cycling is fine right away. Irregular surfaces and steep hills wait until your surgeon clears them.", s:"CHK", d:1},
+      {k:"home1-ask-nurse-sleeping", i:"Ask the nurse for a sleeping tablet if you need one — they take about 45 minutes to work.", s:"PAMF", d:1, x:1},
+      {k:"home1-ask-anti-nausea", i:"Ask for anti-nausea medication early, before the nausea has taken hold.", s:"PAMF", d:1, hw:"Ask early"}
+    ]
+  },
+  {
+    id:"wk2", short:"Week 2", from:6, to:14,
+    title:"Week two — home therapy, then the wound check",
+    blurb:"Home physical therapy runs two to three visits a week for one to two weeks. The walker comes off around day ten. The wound check and stitch removal land at the end of this block.",
+    items:[
+      {k:"wk2-home-physical-therapy", i:"Home physical therapy 2–3 times a week; home occupational therapy is typically a single visit.", s:"SEQ,CHK", d:6, x:1},
+      {k:"wk2-exercises-exactly-prescribed", i:"Do the exercises exactly as prescribed — not more often. “Please always follow the education and guidance provided by your therapy team.”", s:"CHK", d:6, f:"crit"},
+      {k:"wk2-two-therapists-tell", i:"If two therapists tell you different things, confirm with your surgeon rather than picking one.", s:"CHK", d:6},
+      {k:"wk2-off-walker-around", i:"Off the walker around day 10, onto a single-point cane or hiking poles. Home therapy decides when.", s:"CHK,PAMF", d:10, hw:"minimum 1 week walker, 2 weeks cane — no cheating"},
+      {k:"wk2-walking-builds-2", i:"Walking builds to 2 blocks a day in week two, 3 blocks in week three — roughly 250 feet a block. Not more than 2000 feet or steps total in the first two weeks.", s:"CHK", d:6, c:"walk"},
+      {k:"wk2-wound-check-stitch", i:"Wound check and stitch removal at 10–14 days — at the clinic, or at home by the home health nurse. You will be seen by a physician assistant or nurse practitioner, not your surgeon.", s:"PAMF,CHK", d:12, hw:"Karen / Jennifer", f:"crit"},
+      {k:"wk2-target-visit-90", i:"Target for that visit: 90 degrees of knee bend. Getting there depends on consistent range-of-motion work, good pain control, icing and elevation.", s:"CHK", d:12, f:"crit"},
+      {k:"wk2-pain-medication-refills", i:"Pain medication refills: call the office on a Wednesday, with enough lead time to get it filled. Do not wait until you are nearly out.", s:"PAMF,CHK", d:6, hw:"check oxycodone amount · get refills if available · can cut oxy in half"}
+    ]
+  },
+  {
+    id:"wk3", short:"Weeks 3–4", from:15, to:28,
+    title:"Weeks three and four — outpatient physical therapy starts",
+    blurb:"Your booked outpatient sessions begin. Icing and compression start to taper. This is where recovery stops being about surviving the day and starts being about range of motion.",
+    items:[
+      {k:"wk3-outpatient-physical-therapy", i:"Outpatient physical therapy begins — booked for 22 September, 24 September, 29 September and 1 October. Expect 4–12 weeks of it.", s:"CHK,PAMF,HW", d:22, hw:"9/22 · 9/24 · 9/29 · 10/1", f:"crit"},
+      {k:"wk3-compression-stockings-can", i:"Compression stockings can come off around now — 3–4 weeks per the FAQ, 30 days per your note.", s:"CHK,SEQ", d:21},
+      {k:"wk3-icing-can-start", i:"Icing can start to taper from week 4–6, but continuing for three months is fine if it helps.", s:"CHK", d:28},
+      {k:"wk3-keep-taking-pain", i:"Keep taking your pain medication 30–60 minutes before each session.", s:"SEQ", d:22},
+      {k:"wk3-swelling-bruising-continue", i:"Swelling and bruising continue. Both are expected and can last up to six months.", s:"PAMF", d:15, hw:"purple is normal · if you get a RED area = reaction", x:1}
+    ]
+  },
+  {
+    id:"wk6", short:"Weeks 5–8", from:29, to:56,
+    title:"Weeks five to eight — the surgeon, the X-rays, and driving",
+    blurb:"Typical knee recovery is 6–8 weeks. Your surgeon sees you around six weeks. Driving comes back in this window — and because it is your right knee, at the slower end of it.",
+    items:[
+      {k:"wk6-x-rays-46", i:"X-rays at 4–6 weeks.", s:"PAMF", d:35, hw:"Look on MHO"},
+      {k:"wk6-surgeon-visit-about", i:"Surgeon visit at about 6 weeks after discharge. The PAMF deck describes this as the clinical evaluation at 8–12 weeks; book it early rather than late.", s:"CHK,PAMF", d:42, hw:"Don't wait until last minute to make appt", f:"crit"},
+      {k:"wk6-driving-46-weeks", i:"Driving: 4–6 weeks for a right knee — so the earliest is around now. You must be completely off narcotics, and able to slam on the brakes. Start in an empty car park.", s:"CHK,PAMF", d:29, n:"The FAQ distinguishes left (3–4 weeks) from right (4–6 weeks) because of the braking foot. The PAMF slide says the side does not matter and gives 4–6 weeks. Both give 4–6 weeks for a right knee, so this one agrees where it counts.", f:"crit"},
+      {k:"wk6-swimming-once-incision", i:"Swimming once the incision is completely healed — likely about 6 weeks, and only once your surgeon clears it.", s:"CHK", d:42},
+      {k:"wk6-outdoor-cycling-earlier", i:"Outdoor cycling no earlier than 6 weeks, once cleared.", s:"CHK", d:42},
+      {k:"wk6-typical-recovery-knee", i:"Typical recovery for a knee replacement is 6–8 weeks. It varies.", s:"CHK", d:42, x:1}
+    ]
+  },
+  {
+    id:"long", short:"Long term", from:57, to:400,
+    title:"Three months and beyond",
+    blurb:"Two things last a long time: the knee's own settling-down, which runs months, and the antibiotic rule before dental work, which runs indefinitely.",
+    items:[
+      {k:"long-back-desired-walking", i:"Back to your desired walking distance somewhere between 6 and 12 weeks.", s:"CHK", d:60},
+      {k:"long-knee-will-feel", i:"The knee will feel warm, and may click, for 3–6 months. Both are normal.", s:"PAMF", d:60, hw:"Knees painful, warm — 3-6 months — take your meds", x:1},
+      {k:"long-swelling-bruising-can", i:"Swelling and bruising can persist up to six months.", s:"PAMF", d:60, x:1},
+      {k:"long-before-dental-procedure", i:"Before any dental procedure, from now on: Amoxicillin 2 grams one hour before, or Erythromycin 1 gram one hour before.", s:"PAMF", d:90, hw:"Amoxicillin 2 gms — one hour before procedure (circled)", f:"crit"},
+      {k:"long-twelve-month-follow", i:"Twelve-month follow-up appointment.", s:"PAMF", d:365},
+      {k:"long-then-follow-up", i:"Then follow-up at 5, 10 and 15 years. Book each one early.", s:"PAMF", d:400, x:1}
+    ]
+  }
+];
+
+/* ── the five-day dose & movement tracker ───────────────────────────────── */
+/* Daily grid runs to day 14 — through home physical therapy and the wound
+   check. After that the meds are tapering and only the booked therapy
+   sessions are tracked. */
+const TRACK_DAYS = Array.from({length:15}, (_,i) => i);   // day 0 = surgery day
+const TRACK = [
+  { g:"Medication", rows:[
+    {id:"tyl", n:"Tylenol 500 mg", slots:4, lab:i=>["1st","2nd","3rd","4th"][i], every:6, mg:500, capMg:2000,
+     p:"Around the clock, roughly every 6 hours. Four doses of 500 mg comes to 2 grams — the daily ceiling in your notes.", c:"tylenol"},
+    {id:"oxy", n:"Oxycodone", slots:6, prn:true, lab:i=>String(i+1), every:4,
+     p:"Every 4 hours as needed — up to six, not a target. Take one 30–60 minutes before each therapy session. Your note says the tablets can be cut in half."},
+    {id:"mel", n:"Meloxicam", slots:1, lab:()=>"✓", every:24,
+     p:"Once a day, with food."},
+    {id:"thin", n:"Blood thinner", slots:1, lab:()=>"✓", every:24,
+     p:"As prescribed on your discharge paperwork. Call the office if the injection site becomes severely red.", c:"thinner"}
+  ]},
+  { g:"Movement and breathing", rows:[
+    {id:"elev", n:"Elevate the leg", slots:5, lab:i=>String(i+1),
+     p:"20–30 minutes each time, leg straight, no pillow under the knee. Not overnight. Sequoia says 4–5 times a day; your note says 6, so there is a spare slot if you want it."},
+    {id:"ice", n:"Ice the knee", slots:4, lab:i=>String(i+1),
+     p:"Four sessions, following the Sequoia FAQ. Do not ice at night, and watch for ice burns on the skin.", c:"ice"},
+    {id:"pump", n:"Ankle pumps", slots:5, lab:i=>String(i+1),
+     p:"Through the day, for clot prevention. Pair them with each elevation session."},
+    {id:"spiro", n:"Incentive spirometer", slots:12, lab:i=>String(i+1),
+     p:"5–10 breaths every hour you are awake — twelve waking hours here. Cough and deep breathe after each use."},
+    {id:"heel", n:"Seated heel slides", slots:4, lab:i=>String(i+1),
+     p:"Change the knee's position often; it stiffens after 20–30 minutes in one place. Your therapist will teach the exercise."},
+    {id:"walk", n:"Walk", slots:1, lab:()=>"✓",
+     p:d => d === 0 ? "First steps with the physical therapist, in hospital, on the afternoon of surgery."
+          : d <= 7  ? "One block, about 250 feet — week one."
+                    : "Two blocks, about 500 feet — week two. Not more than 2000 feet or steps across the first two weeks.", c:"walk"}
+  ]}
+];
+
+/* ── therapy sessions ───────────────────────────────────────────────────────
+   Pre-medication is the reason this list exists: "Premedicate 30 to 60 mins
+   before PT or OT session in the hospital or at home" (SEQ). Home visit dates
+   are set by the agency when it calls, so those slots are numbered, not dated.
+   The outpatient dates are real — transcribed from your handwriting.         */
+const SESSIONS = [
+  { id:"hot", g:"Home occupational therapy", s:"SEQ,CHK", n:1,
+    when:"Typically a single visit, in the first week",
+    note:"The agency calls within 24–48 hours of discharge to schedule. If nobody has called by 48 hours, ring Care Coordination on 650-367-5683." },
+  { id:"hpt", g:"Home physical therapy", s:"SEQ,CHK", n:6,
+    when:"2–3 times a week for 1–2 weeks — six slots, use what you get",
+    note:"Dates are set by the agency, so these are numbered rather than dated. Home therapy also decides when you come off the walker, around day 10." },
+  { id:"opt", g:"Outpatient physical therapy", s:"HW,CHK", dates:["2026-09-22","2026-09-24","2026-09-29","2026-10-01"],
+    when:"Already booked",
+    note:"Expect 4–12 weeks in total, so more sessions will be added after these four. Keep taking your pain medication 30–60 minutes beforehand for every one of them." }
+];
+const SESSION_STEPS = [
+  {k:"pre", n:"Pain med taken", sub:"30–60 min before"},
+  {k:"did", n:"Session done",   sub:""},
+  {k:"ice", n:"Iced after",     sub:""}
+];
+
+const PACK = {
+  yes:[
+    "List of your medications, and which pharmacy you want prescriptions sent to",
+    "Access to a credit card number and your insurance card — a photo in your phone is fine",
+    "Comfortable clothing that allows movement, and slip-on shoes",
+    "Toiletries: toothbrush, hearing aids and case, dental implants, eyeglasses and case",
+    "Any durable medical equipment you use, such as a CPAP",
+    "Long phone charging cable, and adapter",
+    "Entertainment — books, magazines, iPad, headphones",
+    "Copy of your Advance Healthcare Directive",
+    "Hospital blue wristband, if you had blood drawn at Sequoia",
+    "Comfort items: ear plugs, eye shades, note pad and pen"
+  ],
+  no:["Your own medications from home","Valuables — jewellery, money","Anything you would mind losing"]
+};
+
+const MEDS = [
+  {n:"Tylenol (acetaminophen)", d:"500 mg, every 6 hours", p:"The backbone of the pain plan — taken on a schedule rather than only when it hurts. Your notes give both “500 mg ATC” and a ceiling of “2 gms/day”; four doses of 500 mg satisfies both.", s:"HW", c:"tylenol"},
+  {n:"Meloxicam (Mobic)", d:"daily, with food", p:"An anti-inflammatory, restarted after surgery. Note this is the same class you stop seven days before surgery.", s:"HW,PAMF"},
+  {n:"Oxycodone", d:"every 4 hours as needed", p:"Take it 30–60 minutes before every therapy session. Your note says the tablets can be cut in half. Refills go through your surgeon's office on a Wednesday, with lead time.", s:"HW,PAMF"},
+  {n:"Blood thinner", d:"see below", p:"Which drug, and for how long, is your surgeon's decision and must be confirmed on the discharge paperwork.", s:"SEQ,PAMF", c:"thinner"},
+  {n:"Antibiotic", d:"one dose after surgery", p:"A single post-operative dose.", s:"HW"},
+  {n:"Bowel regimen", d:"as needed", p:"Colace, Miralax, Milk of Magnesia, Dulcolax suppositories, Fleet enema. Plus fluids with electrolytes and walking — the two that actually do the work.", s:"SEQ,PAMF"},
+  {n:"Anti-nausea medication", d:"ask early", p:"Do not wait for the nausea to build. Ask at the first hint.", s:"PAMF"},
+  {n:"Your regular medications", d:"resume", p:"Return to your usual medications after surgery, checking with your primary care physician about any changes made in hospital.", s:"SEQ,PAMF"},
+  {n:"Amoxicillin — for dental work only", d:"2 g, one hour before", p:"Prophylaxis before any dental procedure, indefinitely, to protect the implant. Erythromycin 1 gram one hour before is the alternative.", s:"PAMF"}
+];
+
+const RED = {
+  crit:["Shortness of breath","Chest pain"],
+  call:[
+    "Temperature above 101.5 °F — a low-grade temperature is normal",
+    "Sudden bleeding from the wound",
+    "Drainage from the wound",
+    "A foul smell",
+    "Redness spreading around the wound",
+    "Swelling of the leg, or calf pain",
+    "A stitch working its way out of the wound — clean it with peroxide and call the clinic",
+    "A pustule in the wound",
+    "Severe redness at the blood-thinner injection site"
+  ],
+  normal:[
+    "Clicking from the knee replacement, for 3–6 months",
+    "The knee feeling warm, for 3–6 months",
+    "Bruising, including deep purple — a bright red area is different, and is a reaction",
+    "Swelling, for up to six months",
+    "Days that are markedly more painful than the day before",
+    "Light spotting on the dressing"
+  ]
+};
+
+const CONTACTS = [
+  {g:"Sequoia Hospital", list:[
+    {n:"Gloria Kwok, RN — Total Joint Patient Navigator", t:"650-482-6031", d:"First call for anything after discharge, and for insurance questions"},
+    {n:"Care Coordination / Social Services", t:"650-367-5683", d:"Call if home health has not contacted you within 48 hours of discharge"},
+    {n:"Physical & Occupational Therapy", t:"650-367-5517", d:""},
+    {n:"Pre-Operative Department", t:"650-367-5545", d:"Closes 4:30 pm"},
+    {n:"Pre-Operative Department (second line)", t:"650-367-5627", d:"Closes 3:30 pm"},
+    {n:"Admitting Department", t:"650-367-5551", d:"Confirm they have your correct phone number and address"},
+    {n:"Main Hospital Operator", t:"650-369-5811", d:""}
+  ]},
+  {g:"Palo Alto Medical Foundation", list:[
+    {n:"Angel — direct line", t:"650-853-4848", d:"Your note: patients only. Also the number for home physical therapy problems"},
+    {n:"Clinic", t:"650-853-2951", d:"8:30 am – 5:30 pm"},
+    {n:"Doctors' line", t:"650-321-4121", d:""}
+  ]}
+];
+
+/* ══════════════════════════ STATE ══════════════════════════ */
+let done = {};
+try { done = JSON.parse(localStorage.getItem(STORE) || "{}"); } catch(e){ done = {}; }
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify(done)); } catch(e){} };
+
+/* Notes live in their own store so a check mark and a note never overwrite
+   each other, and so a backup can report them separately. */
+/* ── dose times ─────────────────────────────────────────────────────────────
+   Recorded when a medication box is ticked, editable afterwards because a dose
+   is often ticked late. Intervals come from your own notes: Tylenol every 6
+   hours (500 mg x 4 = the 2 g ceiling), oxycodone "q4" as written.
+   For the scheduled medicines the page says DUE. For oxycodone, which is
+   as-needed, it says NOT BEFORE — an opioid should never be presented as
+   falling due on a clock.                                                    */
+const TIMESTORE = STORE + ".times";
+let times = {};
+try { times = JSON.parse(localStorage.getItem(TIMESTORE) || "{}"); } catch(e){ times = {}; }
+const saveTimes = () => { try { localStorage.setItem(TIMESTORE, JSON.stringify(times)); } catch(e){} };
+
+const clock = ms => new Date(ms).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+const hhmm  = ms => { const d=new Date(ms); return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); };
+function gap(ms){
+  const m = Math.round(Math.abs(ms)/60000), h = Math.floor(m/60), r = m%60;
+  return h ? (h + "h" + (r ? " " + r + "m" : "")) : (r + "m");
+}
+
+/* ── her own tasks ──────────────────────────────────────────────────────────
+   Kept in a separate store and rendered with their own marking. A task she
+   typed is NOT something the hospital told her, and the page must never let
+   the two blur together — the whole point of the source tags is that every
+   printed line traces back to one of the three documents.                   */
+const TASKSTORE = STORE + ".tasks";
+let tasks = [];
+try { tasks = JSON.parse(localStorage.getItem(TASKSTORE) || "[]"); } catch(e){ tasks = []; }
+if(!Array.isArray(tasks)) tasks = [];
+const saveTasks = () => { try { localStorage.setItem(TASKSTORE, JSON.stringify(tasks)); } catch(e){} };
+const taskOffset = t => Math.round((new Date(t.date + "T00:00:00") - SURGERY) / DAY);
+function taskPhase(t){
+  const o = taskOffset(t);
+  if(o < PHASES[0].from) return PHASES[0].id;
+  const p = PHASES.find(p => o >= p.from && o <= p.to);
+  return p ? p.id : PHASES[PHASES.length-1].id;
+}
+
+const NOTESTORE = STORE + ".notes";
+let notes = {};
+try { notes = JSON.parse(localStorage.getItem(NOTESTORE) || "{}"); } catch(e){ notes = {}; }
+const saveNotes = () => { try { localStorage.setItem(NOTESTORE, JSON.stringify(notes)); } catch(e){} };
+/* Item keys are the item's own stable id, NEVER its position. Reordering or
+   inserting a task must not move somebody's check mark onto a different task. */
+PHASES.forEach(p => p.items.forEach(it => { it.key = it.k; }));
+
+/* One-time migration from the old position-based keys (phase:index). Runs once,
+   then records that it has run so it can never double-apply. */
+const MIGRATED = STORE + ".migrated.v2";
+const OLD_TO_NEW = {};
+PHASES.forEach(p => p.items.forEach((it,ix) => { OLD_TO_NEW[p.id + ":" + ix] = it.k; }));
+(function migrate(){
+  try {
+    if(localStorage.getItem(MIGRATED)) return;
+    let moved = 0;
+    Object.keys(OLD_TO_NEW).forEach(oldK => {
+      const newK = OLD_TO_NEW[oldK];
+      if(done[oldK] && !done[newK]){ done[newK] = true; moved++; }
+      delete done[oldK];
+      const oldN = "n:item:" + oldK, newN = "n:item:" + newK;
+      if(notes[oldN] && !notes[newN]){ notes[newN] = notes[oldN]; moved++; }
+      delete notes[oldN];
+    });
+    if(moved){ save(); saveNotes(); }
+    localStorage.setItem(MIGRATED, "1");
+  } catch(e){}
+})();
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const svgCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+const svgTri   = '<svg class="cf-tri" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+
+/* ── notes ──────────────────────────────────────────────────────────────────
+   Collapsed to a small "Add a note" button when empty, so 126 of them do not
+   drown the page; always shown expanded once they contain anything, so a note
+   can never be hidden from her. Saved on typing (debounced) and again on
+   leaving the box, with a status line that states plainly which it is.      */
+function noteHTML(key, ph){
+  const val = notes[key] || "";
+  const has = val.trim().length > 0;
+  return '<div class="note" data-note="' + esc(key) + '">' +
+    '<button class="note-add"' + (has ? ' hidden' : '') + '>' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>' +
+      'Add a note</button>' +
+    '<div class="note-body"' + (has ? '' : ' hidden') + '>' +
+      '<textarea class="note-text" rows="2" aria-label="' + esc(ph || "Note") + '" placeholder="' + esc(ph || "Note") + '">' +
+        esc(val) + '</textarea>' +
+      '<span class="note-state" role="status" aria-live="polite">' + (has ? "Saved" : "") + '</span>' +
+    '</div></div>';
+}
+
+const _noteTimers = {};
+function noteState(box, text, pending){
+  const el = box.querySelector(".note-state");
+  el.textContent = text;
+  if(pending) el.setAttribute("data-pending","1"); else el.removeAttribute("data-pending");
+}
+function noteCommit(box){
+  const key = box.dataset.note, ta = box.querySelector(".note-text");
+  const val = ta.value;
+  if(val.trim()) notes[key] = val; else delete notes[key];
+  saveNotes();
+  noteState(box, val.trim() ? "Saved" : "");
+}
+document.addEventListener("click", e => {
+  const add = e.target.closest(".note-add"); if(!add) return;
+  const box = add.closest(".note");
+  add.hidden = true;
+  const body = box.querySelector(".note-body");
+  body.hidden = false;
+  const ta = body.querySelector(".note-text");
+  ta.focus();
+});
+/* Editing a recorded time: the date part stays on that tracker day, only the
+   clock time moves, so a correction can never fling a dose to another day. */
+document.addEventListener("change", e => {
+  const inp = e.target.closest("[data-time]"); if(!inp) return;
+  const k = inp.dataset.time, d = +inp.dataset.day;
+  const parts = String(inp.value||"").split(":");
+  if(parts.length !== 2) return;
+  const base = new Date(times[k] || Date.now());
+  base.setHours(+parts[0], +parts[1], 0, 0);
+  /* A dose cannot have been taken in the future. Two different futures:
+     - 11:00pm typed at half past midnight means LAST night -> roll back a day,
+       which lands it in the last 12 hours and is clearly what was meant.
+     - 4:51am typed at 2:51am is a slip; rolling back would call it 22 hours
+       ago and, for the opioid, wrongly say another may be taken. Clamp to now
+       instead, which only ever delays the next dose. */
+  const now = Date.now();
+  if(base.getTime() > now + 60000){
+    const rolled = base.getTime() - 864e5;
+    base.setTime(now - rolled <= 12*3600000 && rolled <= now ? rolled : now);
+  }
+  times[k] = base.getTime();
+  saveTimes();
+  const trow = inp.closest(".trow");
+  const cap = trow && trow.querySelector(".cap");
+  if(cap){
+    const rid = k.split(":")[2], row = TRACK.flatMap(g=>g.rows).find(x=>x.id===rid);
+    if(row) cap.outerHTML = (function(){ const t=document.createElement("div");
+      t.innerHTML = doseTimesHTML(d,row); const c=t.querySelector(".cap"); return c ? c.outerHTML : ""; })();
+  }
+  refreshDue();
+});
+
+document.addEventListener("input", e => {
+  const ta = e.target.closest(".note-text"); if(!ta) return;
+  const box = ta.closest(".note"), key = box.dataset.note;
+  ta.style.height = "auto"; ta.style.height = (ta.scrollHeight + 2) + "px";
+  noteState(box, "Saving…", true);
+  clearTimeout(_noteTimers[key]);
+  _noteTimers[key] = setTimeout(() => noteCommit(box), 400);
+});
+document.addEventListener("focusout", e => {
+  const ta = e.target.closest(".note-text"); if(!ta) return;
+  const box = ta.closest(".note"), key = box.dataset.note;
+  clearTimeout(_noteTimers[key]);
+  noteCommit(box);
+  /* an empty note collapses back to the button, so blank boxes do not pile up */
+  if(!ta.value.trim()){
+    box.querySelector(".note-body").hidden = true;
+    box.querySelector(".note-add").hidden = false;
+  }
+});
+
+function conflictHTML(id){
+  const c = CONFLICTS[id]; if(!c) return "";
+  const settled = c.pref !== null && c.pref !== undefined;
+  return '<details class="cf"><summary>' + svgTri +
+    '<span>Sources differ — ' + esc(c.q) +
+    '<span class="pickline' + (settled ? '' : ' open') + '">' +
+      (settled ? 'Follow PAMF: ' : 'Still open: ') + esc(c.pick) + '</span></span></summary>' +
+    '<div class="cf-body"><p class="cf-why">' + esc(c.why) + '</p>' +
+    c.opts.map((o,ix) => '<div class="cf-opt' + (ix === c.pref ? ' pick' : '') + '"><b>' + esc(o.s) +
+      (ix === c.pref ? '<span class="follow">Follow this</span>' : '') + '</b>' + esc(o.v) +
+      (o.n ? '<i>' + esc(o.n) + '</i>' : '') + '</div>').join("") +
+    '</div></details>';
+}
+
+function itemHTML(it){
+  const isDone = !!done[it.key];
+  const day = Array.isArray(it.d) ? it.d[0] : it.d;
+  const body = '<span class="txt"><span class="when-tag">' + esc(fmt(at(day))) + '</span>' + esc(it.i) +
+    '<span class="src">' + esc(it.s) + '</span>' +
+    (it.n ? '<span class="sub">' + esc(it.n) + '</span>' : '') + '</span>';
+  const extras = (it.hw ? '<div class="hand"><span class="lbl">Your note</span><q>' + esc(it.hw) + '</q></div>' : '') +
+    (it.c ? conflictHTML(it.c) : '');
+  if(it.x) return '<li class="item info" data-key="' + it.key + '"><div class="row"><span class="box"></span>' + body + '</div>' + extras + '</li>';
+  return '<li class="item' + (isDone ? ' done' : '') + '" data-key="' + it.key + '">' +
+    '<button class="row" role="checkbox" aria-checked="' + isDone + '"><span class="box">' + svgCheck + '</span>' + body + '</button>' +
+    extras + noteHTML("n:item:" + it.key, "Anything to remember about this — who you spoke to, what they said, what is left to do") + '</li>';
+}
+
+/* ── backup & restore ──────────────────────────────────────────────────────
+   Check marks live in this browser's localStorage and nowhere else. iOS can
+   discard that after about a week of not opening the page, so the page offers
+   a file (via the downloads capability) and a copy/paste fallback that works
+   everywhere.                                                                */
+const BACKUP_TAG = "knee-passport";
+/* Memoize the PROMISE, not the resolved value. Memoizing the value lets a
+   second caller read it before the first await settles, get undefined, and
+   wrongly conclude the capability is missing. */
+let _dlPromise = null;
+function getDownloads(){
+  if(_dlPromise) return _dlPromise;
+  _dlPromise = (async () => {
+    try {
+      return (typeof window !== "undefined" && window.claude && typeof window.claude.use === "function")
+        ? await window.claude.use("downloads") : null;
+    } catch(e){ return null; }
+  })();
+  return _dlPromise;
+}
+const backupPayload = () => JSON.stringify({
+  app: BACKUP_TAG, version: 3,
+  surgery: [SURGERY.getFullYear(), String(SURGERY.getMonth()+1).padStart(2,"0"), String(SURGERY.getDate()).padStart(2,"0")].join("-"),
+  savedAt: new Date().toISOString(),
+  marks: done,
+  notes: notes,
+  times: times,
+  tasks: tasks
+}, null, 2);
+const backupName = () => { const n = new Date();
+  return BACKUP_TAG + "-backup-" + [n.getFullYear(), String(n.getMonth()+1).padStart(2,"0"), String(n.getDate()).padStart(2,"0")].join("-") + ".json"; };
+
+/* Two visible halves. The restore box is never hidden behind a toggle: on a tab
+   whose whole job is backup and restore, a collapsed paste box reads as though
+   the feature does not exist. */
+function backupHTML(){
+  return '<div class="block bk">' +
+    '<h2>1 · Save a copy</h2>' +
+    '<p class="lede">Everything you tick, time and write is saved in this browser on this device — not on any server. Clearing the browser, switching devices, or leaving the page unopened for a week can lose it. Saving a copy takes one tap, and it is also how you move your progress to another device.</p>' +
+    '<div class="acts" style="margin:.2rem 0 0">' +
+      '<button class="act prim bk-save">Save a backup file</button>' +
+      '<button class="act bk-copy">Copy backup text</button>' +
+    '</div>' +
+    '<p class="bk-msg" role="status" aria-live="polite"></p>' +
+    '<div class="bk-outwrap" hidden>' +
+      '<p class="prov">Select all of this and copy it, then paste it somewhere safe — an email to yourself works.</p>' +
+      '<textarea class="bk-out" readonly aria-label="Your backup text, ready to copy"></textarea>' +
+    '</div>' +
+    '<hr class="bk-rule">' +
+    '<h2>2 · Restore from a copy</h2>' +
+    '<p class="lede">Paste a backup below, then choose: <b>Add</b> keeps everything currently on this device and adds anything missing. <b>Replace</b> throws away what is here and puts back exactly what the backup holds — use that one to undo changes made since.</p>' +
+    '<textarea class="bk-text" aria-label="Paste your backup text here" placeholder="Paste your backup text here…"></textarea>' +
+    '<div class="acts" style="margin:.35rem 0 0">' +
+      '<button class="act prim bk-apply">Add to what is here</button>' +
+      '<button class="act bk-replace">Replace everything</button>' +
+      '<button class="act bk-clearbox">Clear the box</button></div>' +
+    '<p class="bk-msg bk-msg2" role="status" aria-live="polite"></p>' +
+    '<p class="prov" style="margin-top:.5rem">“Add” never removes anything. “Replace” does — it asks first, and there is no undo, so save a copy above before using it.</p>' +
+    '</div>';
+}
+
+/* Hide the file-save button wherever the capability isn't granted (local file,
+   older viewer, capability revoked). The copy/paste path always works. */
+async function syncBackupUI(){
+  const d = await getDownloads();
+  if(!d) document.querySelectorAll(".bk-save").forEach(b => b.hidden = true);
+}
+
+function bkSay(root, text, tone, which){
+  const el = root.querySelector(which === 2 ? ".bk-msg2" : ".bk-msg");
+  if(!el) return;
+  el.textContent = text;
+  if(tone) el.setAttribute("data-tone", tone); else el.removeAttribute("data-tone");
+}
+
+async function bkSave(root){
+  const d = await getDownloads();
+  if(!d){
+    bkSay(root, "Saving a file isn’t available here. Use “Copy backup text” instead, and paste it somewhere safe — an email to yourself works.", "warn");
+    document.querySelectorAll(".bk-save").forEach(b => b.hidden = true);
+    return;
+  }
+  const name = backupName();
+  try {
+    await d.save({filename:name, data:backupPayload()});
+    bkSay(root, "Backup saved as " + name + "."); markBackedUp();
+  } catch(err){
+    const code = err && err.code;
+    if(code === "declined")            bkSay(root, "Backup cancelled — nothing was saved.", "warn");
+    else if(code === "rate_limited")   bkSay(root, "A save prompt is already open. Wait a moment and try again.", "warn");
+    else if(code === "too_large")      bkSay(root, "That backup is too big to save as a file. Use “Copy backup text” instead.", "warn");
+    else if(code === "bad_request" || code === "transform_error")
+                                       bkSay(root, "The backup file could not be built. Use “Copy backup text” instead.", "warn");
+    else {
+      bkSay(root, "Saving a file isn’t available here. Use “Copy backup text” instead.", "warn");
+      document.querySelectorAll(".bk-save").forEach(b => b.hidden = true);
+    }
+  }
+}
+
+async function bkCopy(root){
+  const text = backupPayload();
+  /* Put the text on screen and selected FIRST, so every path below leaves the
+     user able to copy by hand. This is the OUTPUT box — kept separate from the
+     restore box, so a copy can never be mistaken for something to restore. */
+  const wrap = root.querySelector(".bk-outwrap"), ta = root.querySelector(".bk-out");
+  wrap.hidden = false; ta.value = text; ta.focus(); ta.select();
+  ta.setSelectionRange(0, text.length);
+
+  /* execCommand first: it is synchronous and runs inside the click gesture, so
+     it survives the sandboxed iframe that blocks the async clipboard API. */
+  try { if(document.execCommand && document.execCommand("copy")){
+    bkSay(root, "Backup text copied. Paste it into an email or a note to yourself — that is your restore point.");
+    markBackedUp(); return;
+  }} catch(e){ /* fall through */ }
+
+  try {
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(text);
+      bkSay(root, "Backup text copied. Paste it into an email or a note to yourself — that is your restore point.");
+      markBackedUp(); return;
+    }
+  } catch(e){ /* fall through */ }
+
+  bkSay(root, "This browser will not let the page copy for you. Your backup is in the box just below, already selected — press " +
+    (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘C" : "Ctrl+C") + " to copy it.", "warn");
+  markBackedUp();
+}
+
+function bkApply(root, mode){
+  const raw = root.querySelector(".bk-text").value.trim();
+  if(!raw){ bkSay(root, "Paste your backup text into the box first.", "warn", 2); return; }
+  let data;
+  try { data = JSON.parse(raw); }
+  catch(e){ bkSay(root, "That doesn’t look like a backup — the text is incomplete or something was cut off in copying.", "warn", 2); return; }
+  if(!data || data.app !== BACKUP_TAG || typeof data.marks !== "object" || data.marks === null){
+    bkSay(root, "That is valid text but not a Knee Passport backup.", "warn", 2); return;
+  }
+  const mine = [SURGERY.getFullYear(), String(SURGERY.getMonth()+1).padStart(2,"0"), String(SURGERY.getDate()).padStart(2,"0")].join("-");
+  if(data.surgery && data.surgery !== mine){
+    bkSay(root, "That backup is for a surgery date of " + data.surgery + ", but this page is set to " + mine + ". Nothing was changed.", "warn", 2); return;
+  }
+  /* Every check happens BEFORE anything is cleared. An earlier version wiped
+     first and validated the surgery date after, so a mismatched backup
+     destroyed the device's data and then refused to restore. */
+  if(mode === "replace"){
+    const n = Object.keys(done).length, tn = tasks.length;
+    askConfirm("Replace everything?",
+      "This device holds " + n + " check mark" + (n===1?"":"s") +
+      (tn ? ", " + tn + " task" + (tn===1?"":"s") + " you added" : "") +
+      ", plus any notes and dose times. All of it will be discarded and replaced with what this backup contains. There is no undo.",
+      "Replace everything",
+      () => { done = {}; notes = {}; times = {}; tasks = []; bkCommit(root, data, mode); });
+    return;
+  }
+  bkCommit(root, data, mode);
+}
+
+function bkCommit(root, data, mode){
+  /* A backup taken before stable ids still uses phase:index keys. Map those
+     forward so an older backup restores onto the right tasks. */
+  const fwd = k => OLD_TO_NEW[k] || k;
+  const fwdNote = k => k.indexOf("n:item:")===0 ? "n:item:" + fwd(k.slice(7)) : k;
+  let added = 0, notesAdded = 0, notesKept = 0;
+  Object.keys(data.marks).forEach(k0 => { const k = fwd(k0);
+    if(data.marks[k0] && !done[k]){ done[k] = true; added++; } });
+  /* Notes are never overwritten: if this device already has a note under the
+     same key, the local one wins and the backup's copy is reported as kept
+     back rather than silently discarding either. */
+  if(data.notes && typeof data.notes === "object"){
+    Object.keys(data.notes).forEach(k0 => {
+      const k = fwdNote(k0);
+      const incoming = String(data.notes[k0] || "").trim();
+      if(!incoming) return;
+      if(!notes[k] || !notes[k].trim()){ notes[k] = data.notes[k0]; notesAdded++; }
+      else if(notes[k].trim() !== incoming) notesKept++;
+    });
+  }
+  if(data.times && typeof data.times === "object"){
+    Object.keys(data.times).forEach(k0 => { const k = fwd(k0);
+      if(done[k] && !times[k]) times[k] = data.times[k0]; });
+  }
+  let tasksAdded = 0;
+  if(Array.isArray(data.tasks)){
+    data.tasks.forEach(t => { if(t && t.id && t.text && t.date && !tasks.some(x=>x.id===t.id)){ tasks.push(t); tasksAdded++; } });
+  }
+  save(); saveNotes(); saveTimes(); if(tasksAdded) saveTasks();
+  renderTimeline(); renderDaily(); renderAsk(); renderHead(); refreshDue(); renderBanner();
+  const root2 = document.querySelector("#p-timeline .bk") || root;
+  const bits = [];
+  if(added)      bits.push(added + " check mark" + (added===1?"":"s"));
+  if(notesAdded) bits.push(notesAdded + " note" + (notesAdded===1?"":"s"));
+  if(tasksAdded) bits.push(tasksAdded + " task" + (tasksAdded===1?"":"s") + " of your own");
+  const joined = bits.length > 1 ? bits.slice(0,-1).join(", ") + " and " + bits[bits.length-1] : bits[0];
+  let msg = mode === "replace"
+      ? "Replaced — this device now holds exactly what the backup contained: " + (joined || "nothing") + "."
+      : (bits.length ? "Restored — " + joined + " added. Nothing was removed."
+                     : "Backup read successfully. Everything in it was already here.");
+  if(notesKept) msg += " " + notesKept + " note" + (notesKept===1?" in the backup differs":"s in the backup differ") +
+    " from what is on this device; the version already here was kept.";
+  bkSay(root2, msg, null, 2);
+}
+
+document.addEventListener("click", e => {
+  const btn = e.target.closest(".bk-save,.bk-copy,.bk-apply,.bk-replace,.bk-clearbox");
+  if(!btn) return;
+  const root = btn.closest(".bk");
+  if(btn.classList.contains("bk-save"))     { bkSave(root); return; }
+  if(btn.classList.contains("bk-copy"))     { bkCopy(root); return; }
+  if(btn.classList.contains("bk-apply"))    { bkApply(root); return; }
+  if(btn.classList.contains("bk-replace"))  { bkApply(root, "replace"); return; }
+  if(btn.classList.contains("bk-clearbox")) { root.querySelector(".bk-text").value = ""; bkSay(root, ""); }
+});
+
+/* ── the Today card ─────────────────────────────────────────────────────────
+   What is owed right now, at the very top, tickable in place. Everything dated
+   today, plus anything earlier still unticked — nothing falls off the back,
+   which matters most for the pre-op stops that can cancel an operation.       */
+function outstanding(){
+  const t = offsetToday(), due = [], late = [];
+  PHASES.forEach(p => p.items.forEach(it => {
+    if(it.x || done[it.key]) return;
+    const d = Array.isArray(it.d) ? it.d[0] : it.d;
+    if(d === t) due.push({key:it.key, text:it.i, src:it.s, d});
+    else if(d < t) late.push({key:it.key, text:it.i, src:it.s, d});
+  }));
+  tasks.forEach(x => {
+    const key = "u:" + x.id; if(done[key]) return;
+    const d = taskOffset(x);
+    if(d === t) due.push({key, text:x.text, src:"yours", d, mine:1});
+    else if(d < t) late.push({key, text:x.text, src:"yours", d, mine:1});
+  });
+  /* Most recent first. Oldest-first buried anything current behind pre-op items
+     from weeks ago that will never be ticked — the newest overdue item is the
+     one she can still act on. */
+  late.sort((a,b)=>b.d-a.d);
+  return {due, late, t};
+}
+function todayRow(o){
+  return '<li class="item trow-today' + (o.mine?' mine':'') + '" data-key="' + esc(o.key) + '">' +
+    '<button class="row" role="checkbox" aria-checked="false"><span class="box">' + svgCheck + '</span>' +
+    '<span class="txt">' + (o.d !== offsetToday()
+        ? '<span class="when-tag' + (o.mine?' mine':'') + '">' + esc(fmt(at(o.d))) + '</span>' : '') +
+      esc(o.text) + '<span class="src' + (o.mine?' mine':'') + '">' + esc(o.src) + '</span></span></button></li>';
+}
+function todayHTML(){
+  const {due, late, t} = outstanding();
+  let html = '<section class="block today" id="todaycard">' +
+    '<div class="today-h"><h2>Today</h2><span class="today-d">' + esc(fmtL(at(t))) + '</span></div>';
+
+  if(!due.length && !late.length){
+    html += '<p class="today-clear">Nothing outstanding. Everything dated today or earlier is ticked off.</p>';
+  }
+  if(due.length){
+    html += '<span class="eyebrow">Due today</span><ul class="items">' + due.map(todayRow).join("") + '</ul>';
+  }
+  if(late.length){
+    /* Capped. After surgery every unticked pre-op task is still technically
+       "open", and a list of sixty things she can no longer act on is noise —
+       it buries the two or three that matter. The full set stays on the
+       timeline; this shows the oldest few and says how many remain. */
+    const CAP = 8, shown = late.slice(0, CAP), rest = late.length - shown.length;
+    html += '<span class="eyebrow' + (due.length?' spaced':'') + '">Still open from earlier</span>' +
+      '<ul class="items">' + shown.map(todayRow).join("") + '</ul>' +
+      (rest > 0 ? '<p class="today-more">and ' + rest + ' older item' + (rest===1?'':'s') + ' still unticked — the full list is on the timeline below.</p>' : '');
+  }
+
+  /* during the tracked fortnight, the two things she is most likely to open the app for */
+  if(t >= TRACK_DAYS[0] && t <= TRACK_DAYS[TRACK_DAYS.length-1]){
+    const meds = TRACK.flatMap(g=>g.rows).filter(r=>r.every && r.id!=="mel" && r.id!=="thin");
+    html += '<span class="eyebrow spaced">Medication</span><div class="today-meds">' +
+      meds.map(r=>'<p class="due" data-row="' + t + ':' + r.id + '">' + esc(dueText(t,r)) + '</p>').join("") +
+      '</div>';
+  }
+  const nextSes = (()=>{
+    for(const g of SESSIONS){ if(!g.dates) continue;
+      for(const d of g.dates){ const off = Math.round((new Date(d+"T00:00:00") - SURGERY)/DAY);
+        if(off >= t && !done[sesKey(g.id,d,"did")]) return {g, d, off}; } }
+    return null;
+  })();
+  if(nextSes){
+    html += '<span class="eyebrow spaced">Next therapy session</span>' +
+      '<p class="today-ses"><b>' + esc(fmt(new Date(nextSes.d+"T00:00:00"))) + '</b> · ' + esc(nextSes.g.g) +
+      (nextSes.off === t ? ' — <b>today</b>' : ' — in ' + (nextSes.off - t) + ' day' + (nextSes.off-t===1?'':'s')) +
+      '<br><span>Take your pain medication 30–60 minutes beforehand.</span></p>';
+  }
+  return html + '</section>';
+}
+function renderToday(){
+  const el = document.getElementById("todaycard");
+  if(el) el.outerHTML = todayHTML();
+}
+
+/* One toggle used by both the Today card and the phase cards, so a tick in
+   either place updates the other rather than the two drifting apart. */
+function toggleItem(key){
+  done[key] = !done[key];
+  if(!done[key]) delete done[key];
+  save();
+  document.querySelectorAll('li.item[data-key="' + key + '"]').forEach(li => {
+    li.classList.toggle("done", !!done[key]);
+    const btn = li.querySelector("button.row");
+    if(btn) btn.setAttribute("aria-checked", !!done[key]);
+  });
+  PHASES.forEach(p => {
+    const ph = document.getElementById("ph-" + p.id); if(!ph) return;
+    const el = ph.querySelector(".tally"); if(!el) return;
+    const [c,n] = tally(p);
+    el.textContent = c + "/" + n; el.classList.toggle("full", n>0 && c===n);
+  });
+  renderToday();
+  renderHead(); renderBanner();
+}
+
+function userTaskHTML(t){
+  const key = "u:" + t.id, isDone = !!done[key];
+  const when = new Date(t.date + "T00:00:00");
+  const stamp = fmt(when) + (t.time ? " · " + new Date("2000-01-01T"+t.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : "");
+  return '<li class="item mine' + (isDone ? ' done' : '') + '" data-key="' + esc(key) + '">' +
+    '<button class="row" role="checkbox" aria-checked="' + isDone + '"><span class="box">' + svgCheck + '</span>' +
+    '<span class="txt"><span class="when-tag mine">' + esc(stamp) + '</span>' + esc(t.text) +
+    '<span class="src mine">yours</span></span></button>' +
+    '<button class="del" data-del="' + esc(t.id) + '" aria-label="Delete this task">Delete</button>' +
+    noteHTML("n:item:" + key, "Anything to remember about this") + '</li>';
+}
+
+function addFormHTML(){
+  const d = new Date();
+  const today = [d.getFullYear(), String(d.getMonth()+1).padStart(2,"0"), String(d.getDate()).padStart(2,"0")].join("-");
+  return '<div class="block addblk"><h2>Your own tasks</h2>' +
+    '<p class="lede">Anything the hospital did not give you — a lift to arrange, a prescription to collect, a question to ask. It drops into the timeline on the date you choose, marked <b>yours</b> so it is never confused with an instruction from the documents.</p>' +
+    '<button class="act prim add-open">Add a task</button>' +
+    '<div class="addform" hidden>' +
+      '<label class="fld"><span>What needs doing</span>' +
+      '<input type="text" class="t-text" maxlength="160" placeholder="e.g. Collect prescription from CVS"></label>' +
+      '<div class="fld2"><label class="fld"><span>Date</span><input type="date" class="t-date" value="' + today + '"></label>' +
+      '<label class="fld"><span>Time (optional)</span><input type="time" class="t-time"></label></div>' +
+      '<p class="addmsg" role="status" aria-live="polite"></p>' +
+      '<div class="acts" style="margin:.2rem 0 0"><button class="act prim add-save">Add it</button>' +
+      '<button class="act add-cancel">Cancel</button></div>' +
+    '</div></div>';
+}
+
+/* ── search ─────────────────────────────────────────────────────────────────
+   Every line transcribed from the three documents, plus her own notes and
+   tasks, in one flat index. Not a chatbot — a published page cannot call a
+   language model — but it answers the same "what did they say about X" question. */
+/* ── the two safety nets ────────────────────────────────────────────────────
+   Changing the pinned version hands this page a brand-new, empty storage box —
+   the previous version's data is still on the device but unreachable. Nothing
+   in code can prevent that. These two just make it survivable: nag her to keep
+   an off-device copy, and, if she ever opens a blank app, say what happened
+   instead of letting it look like everything is lost. */
+const LASTBK = STORE + ".lastbackup";
+function markBackedUp(){
+  try { localStorage.setItem(LASTBK, JSON.stringify({at: Date.now(), n: countEntries()})); } catch(e){}
+  renderBanner();
+}
+function countEntries(){
+  return Object.keys(done).length + Object.keys(notes).length +
+         Object.keys(times).length + tasks.length;
+}
+function renderBanner(){
+  const el = document.getElementById("banner");
+  if(!el) return;
+  const n = countEntries();
+
+  if(n === 0){
+    el.className = "banner empty";
+    el.innerHTML = '<b>Nothing here yet</b>' +
+      '<p>If you have used this before and expected to see your work, it is not lost — a new version of the app gets a fresh, empty page. ' +
+      'Open <b>Save · Restore</b> below, paste your last emailed backup into the box, and press <b>Add to what is here</b>.</p>' +
+      '<div class="acts"><button class="act prim" data-goback="1">Open Save · Restore</button></div>';
+    el.hidden = false;
+    return;
+  }
+
+  let last = null;
+  try { last = JSON.parse(localStorage.getItem(LASTBK) || "null"); } catch(e){}
+  const since = last ? n - last.n : n;
+  const days  = last ? Math.floor((Date.now() - last.at) / 864e5) : null;
+
+  if(!last){
+    el.className = "banner";
+    el.innerHTML = '<b>You have not saved a copy yet</b>' +
+      '<p>Your ' + n + ' entr' + (n===1?"y is":"ies are") + ' stored only on this iPad, and an app update wipes them. ' +
+      'Take one minute now: <b>Save · Restore</b> → <b>Copy backup text</b> → email it to yourself.</p>' +
+      '<div class="acts"><button class="act prim" data-goback="1">Back it up now</button></div>';
+    el.hidden = false; return;
+  }
+  if(since >= 5 || (days !== null && days >= 3)){
+    el.className = "banner";
+    el.innerHTML = '<b>Time to save a fresh copy</b>' +
+      '<p>' + (since > 0 ? since + " new entr" + (since===1?"y":"ies") + " since" : "It has been") +
+      (days !== null ? (since > 0 ? " your last backup " + (days===0 ? "today" : days + " day" + (days===1?"":"s") + " ago") : days + " day" + (days===1?"":"s") + " since your last backup") : "") +
+      '. Emailing yourself a copy takes a minute and is the only thing that survives an app update.</p>' +
+      '<div class="acts"><button class="act prim" data-goback="1">Back it up now</button></div>';
+    el.hidden = false; return;
+  }
+  el.hidden = true;
+}
+document.addEventListener("click", e => {
+  if(e.target.closest("[data-goback]")){ show("backup"); window.scrollTo({top:0,behavior:"instant"}); }
+  if(e.target.closest("[data-gotl]")){ show("timeline"); window.scrollTo({top:0,behavior:"instant"}); }
+});
+
+function buildIndex(){
+  const ix = [];
+  const add = (t, extra, src, where, go) => ix.push({t, x:(extra||""), src, where, go});
+  PHASES.forEach(p => p.items.forEach(it =>
+    add(it.i, (it.n||"") + " " + (it.hw||""), it.s, p.title, {tab:"timeline", phase:p.id})));
+  tasks.forEach(t => add(t.text, notes["n:item:u:"+t.id]||"", "yours", "Your own tasks", {tab:"timeline", phase:taskPhase(t)}));
+  Object.keys(CONFLICTS).forEach(k => { const c = CONFLICTS[k];
+    add(c.q, c.why + " " + c.pick + " " + c.opts.map(o=>o.v+" "+(o.n||"")).join(" "),
+        "sources differ", "Ask team", {tab:"ask"}); });
+  MEDS.forEach(m => add(m.n + " — " + m.d, m.p, m.s, "Medications", {tab:"daily"}));
+  TRACK.forEach(g => g.rows.forEach(r =>
+    add(r.n, typeof r.p === "function" ? r.p(1) : r.p, "tracker", "Each day", {tab:"daily"})));
+  SESSIONS.forEach(g => add(g.g, g.when + " " + g.note, g.s, "Each day", {tab:"daily"}));
+  RED.crit.forEach(x => add(x, "emergency", "call 911", "Watch for", {tab:"alerts"}));
+  RED.call.forEach(x => add(x, "", "call the office", "Watch for", {tab:"alerts"}));
+  RED.normal.forEach(x => add(x, "", "expected, not a problem", "Watch for", {tab:"alerts"}));
+  CONTACTS.forEach(g => g.list.forEach(c => add(c.n + " — " + c.t, c.d, g.g, "Call", {tab:"contacts"})));
+  PACK.yes.forEach(x => add(x, "", "bring to hospital", "Hospital bag", {tab:"timeline", phase:"pack"}));
+  PACK.no.forEach(x => add(x, "", "leave at home", "Hospital bag", {tab:"timeline", phase:"pack"}));
+  Object.keys(notes).forEach(k => { const v = notes[k]; if(v && v.trim())
+    add(v, "", "your note", "Your notes", {tab: k.indexOf("n:ask:")===0 ? "ask" : (k.indexOf("n:day:")===0||k.indexOf("n:ses:")===0 ? "daily" : "timeline")}); });
+  return ix;
+}
+const hl = (text, q) => {
+  const i = text.toLowerCase().indexOf(q);
+  if(i < 0) return esc(text);
+  return esc(text.slice(0,i)) + "<mark>" + esc(text.slice(i,i+q.length)) + "</mark>" + esc(text.slice(i+q.length));
+};
+function runSearch(){
+  const raw = document.getElementById("q").value.trim();
+  const box = document.getElementById("results");
+  document.getElementById("qx").hidden = !raw;
+  if(raw.length < 2){ box.hidden = true; box.innerHTML = ""; return; }
+  const q = raw.toLowerCase();
+  const hits = buildIndex()
+    .map(e => { const inT = e.t.toLowerCase().indexOf(q), inX = (e.x+" "+e.src).toLowerCase().indexOf(q);
+                return (inT>=0 || inX>=0) ? {e, rank: inT>=0 ? 0 : 1} : null; })
+    .filter(Boolean).sort((a,b)=>a.rank-b.rank).slice(0,60);
+
+  const head = document.querySelector("header").getBoundingClientRect();
+  box.style.top = Math.round(head.bottom) + "px";
+  box.style.height = "calc(100vh - " + Math.round(head.bottom) + "px)";
+  box.hidden = false;
+  if(!hits.length){
+    box.innerHTML = '<p class="rnone">Nothing in the documents matches “' + esc(raw) +
+      '”. Try a shorter word — the search looks at every line from all three documents, your handwritten notes, and anything you have written yourself.</p>';
+    return;
+  }
+  box.innerHTML = '<p class="rcount">' + hits.length + (hits.length===60?"+":"") + ' match' + (hits.length===1?"":"es") + '</p>' +
+    hits.map(({e},i) => '<button class="ritem" data-go=\'' + esc(JSON.stringify(e.go)) + '\'>' +
+      '<b>' + hl(e.t, q) + '</b>' +
+      (e.x.trim() ? '<i>' + hl(e.x.trim().slice(0,190), q) + (e.x.trim().length>190?"…":"") + '</i>' : '') +
+      '<span class="rwhere">' + esc(e.where) + ' · ' + esc(e.src) + '</span></button>').join("");
+}
+document.getElementById("q").addEventListener("input", runSearch);
+document.getElementById("qx").addEventListener("click", () => {
+  document.getElementById("q").value = ""; runSearch(); document.getElementById("q").focus();
+});
+document.getElementById("results").addEventListener("click", e => {
+  const b = e.target.closest("[data-go]"); if(!b) return;
+  let go; try { go = JSON.parse(b.dataset.go); } catch(err){ return; }
+  document.getElementById("q").value = ""; runSearch();
+  show(go.tab);
+  if(go.phase){
+    const el = document.getElementById("ph-" + go.phase);
+    if(el){ el.dataset.open = "1"; el.querySelector(".ph-head").setAttribute("aria-expanded","true");
+      requestAnimationFrame(()=>el.scrollIntoView({behavior:"smooth", block:"start"})); }
+  }
+});
+
+let _confirmCb = null;
+function askConfirm(title, body, yesLabel, cb){
+  const m = document.getElementById("modal");
+  document.getElementById("modal-t").textContent = title;
+  document.getElementById("modal-b").textContent = body;
+  document.getElementById("modal-yes").textContent = yesLabel || "Confirm";
+  _confirmCb = cb;
+  m.hidden = false;
+  document.getElementById("modal-no").focus();
+}
+function closeConfirm(run){
+  const cb = _confirmCb; _confirmCb = null;
+  document.getElementById("modal").hidden = true;
+  if(run && cb) cb();
+}
+document.getElementById("modal-yes").addEventListener("click", () => closeConfirm(true));
+document.getElementById("modal-no").addEventListener("click", () => closeConfirm(false));
+document.getElementById("modal").addEventListener("click", e => {
+  if(e.target.id === "modal") closeConfirm(false);        /* tap the backdrop */
+});
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && !document.getElementById("modal").hidden) closeConfirm(false);
+});
+
+const phaseState = p => { const t = offsetToday(); return t > p.to ? "past" : (t >= p.from ? "now" : "future"); };
+const tally = p => {
+  const ck = p.items.filter(i => !i.x).map(i => i.key)
+    .concat(tasks.filter(t => taskPhase(t) === p.id).map(t => "u:" + t.id));
+  return [ck.filter(k => done[k]).length, ck.length];
+};
+
+function renderTimeline(){
+  const t = offsetToday();
+  let html = todayHTML() + addFormHTML() + '<div class="phases">';
+  PHASES.forEach(p => {
+    const st = phaseState(p), [c,n] = tally(p), open = st === "now" ? 1 : 0;
+    const range = p.when ? p.when
+      : (p.from === p.to ? fmtL(at(p.from)) : fmt(at(p.from)) + " – " + fmt(at(p.to)));
+    html += '<article class="phase" id="ph-' + p.id + '" data-state="' + st + '" data-open="' + open + '">' +
+      '<button class="ph-head" aria-expanded="' + (open?"true":"false") + '"><span class="dot"></span>' +
+      '<span class="ph-t"><h2>' + esc(p.title) + '</h2><span class="ph-when">' + esc(range) + '</span></span>' +
+      '<span class="ph-r"><span class="tally' + (n && c===n ? ' full':'') + '">' + c + '/' + n + '</span>' +
+      '<svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></button>' +
+      '<div class="ph-body"><p class="ph-blurb">' + esc(p.blurb) + '</p><ul class="items">' +
+      p.items.map(itemHTML).join("") +
+      tasks.filter(t => taskPhase(t) === p.id)
+           .sort((a,b) => (a.date+(a.time||"")).localeCompare(b.date+(b.time||"")))
+           .map(userTaskHTML).join("") + '</ul></div></article>';
+    if(p.id === "final"){
+      html += '<article class="phase" data-state="' + (t>0?"past":"future") + '" data-open="0" id="ph-pack">' +
+        '<button class="ph-head" aria-expanded="false"><span class="dot"></span>' +
+        '<span class="ph-t"><h2>What goes in the bag</h2><span class="ph-when">Pack the night before</span></span>' +
+        '<span class="ph-r"><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></button>' +
+        '<div class="ph-body"><p class="ph-blurb">From the Sequoia patient checklist.</p>' +
+        '<span class="eyebrow" style="margin-top:.6rem">Bring</span><ul class="plain">' +
+        PACK.yes.map(x=>'<li><span style="color:var(--accent);flex:0 0 auto">✓</span><span>'+esc(x)+'</span></li>').join("") +
+        '</ul><span class="eyebrow" style="margin-top:.9rem">Leave at home</span><ul class="plain">' +
+        PACK.no.map(x=>'<li><span style="color:var(--crit);flex:0 0 auto">✕</span><span>'+esc(x)+'</span></li>').join("") +
+        '</ul></div></article>';
+    }
+  });
+  html += '</div><div class="block" style="margin-top:.9rem"><span class="eyebrow">Where this comes from</span>' +
+    '<p class="prov">Everything here is transcribed from three documents scanned on 15 August 2026, plus the notes you wrote on them by hand. Nothing has been added from any other source. Where the documents disagree, both readings are shown and the PAMF reading is marked as the one to follow.</p>' +
+    '<dl>' + Object.keys(SRC).map(k=>'<dt>'+k+'</dt><dd>'+esc(SRC[k])+'</dd>').join("") + '</dl>' +
+    '<p class="prov" style="margin-top:.8rem">Surgery: <b>' + fmtL(SURGERY) + '</b> — ' + SIDE + ' total knee replacement, Sequoia Hospital. Every date is calculated from that one date, so nothing can drift out of step.</p>' +
+    '</div>';
+  document.getElementById("p-timeline").innerHTML = html;
+}
+
+/* ── daily tracker ──────────────────────────────────────────────────────── */
+const trkKey = (d,id,s) => "trk:" + d + ":" + id + ":" + s;
+function dayTally(d){
+  let c=0,n=0;
+  TRACK.forEach(g=>g.rows.forEach(r=>{ if(r.prn) return; n+=r.slots;
+    for(let s=0;s<r.slots;s++) if(done[trkKey(d,r.id,s)]) c++; }));
+  return [c,n];
+}
+/* ── recorded dose times + when the next one is due ─────────────────────── */
+/* Every ticked dose, whether or not a time was recorded. A dose ticked with no
+   time still counts toward the daily total — it was taken — but it cannot
+   drive the next-due clock, so it is listed with an empty time to fill in. */
+function takenList(d,r){
+  const out=[];
+  for(let s=0;s<r.slots;s++){
+    const k=trkKey(d,r.id,s);
+    if(done[k]) out.push({k, s, t:times[k] || null});
+  }
+  return out.sort((a,b) => (a.t?0:1)-(b.t?0:1) || (a.t||0)-(b.t||0));
+}
+const timedOnly = list => list.filter(x => x.t);
+function doseTimesHTML(d,r){
+  if(!r.every) return "";
+  const taken = takenList(d,r);
+  if(!taken.length) return '<p class="due" data-row="' + d + ':' + r.id + '">No doses recorded yet today.</p>';
+
+  let html = '<div class="dts">' + taken.map(x =>
+    '<label class="dt' + (x.t ? '' : ' unset') + '"><span>' + esc(r.lab(x.s)) + '</span>' +
+    '<input type="time" value="' + (x.t ? hhmm(x.t) : '') + '" data-time="' + x.k + '" data-day="' + d + '" aria-label="Time ' +
+    esc(r.n + " " + r.lab(x.s)) + ' was taken"></label>').join("") + '</div>';
+
+  if(r.capMg && r.mg){
+    const total = taken.length * r.mg;
+    const over = total > r.capMg;
+    html += '<p class="cap' + (over ? ' over' : '') + '">' + total.toLocaleString() + ' mg of the ' +
+      r.capMg.toLocaleString() + ' mg daily ceiling' + (over ? ' — over the limit in your notes' : '') + '.</p>';
+  }
+  html += '<p class="due" data-row="' + d + ':' + r.id + '"></p>';
+  return html;
+}
+/* Rendered separately and refreshed on a timer, so the countdown stays live. */
+function dueText(d,r){
+  const all = takenList(d,r), timed = timedOnly(all);
+  const missing = all.length - timed.length;
+  const nudge = missing ? "  ·  " + missing + " dose" + (missing===1?" has":"s have") + " no time set — tap to add" : "";
+  if(!all.length)  return "No doses recorded yet today.";
+  if(!timed.length) return all.length + " dose" + (all.length===1?"":"s") +
+    " ticked but no times recorded, so the next one cannot be worked out. Tap a time box to set one.";
+  const last = timed[timed.length-1].t;
+  const next = last + r.every*3600000;
+  const now  = Date.now();
+  const lead = "Last at " + clock(last) + " · ";
+  if(r.prn){
+    return (now >= next ? lead + "another may be taken now if needed (earliest was " + clock(next) + ")"
+                        : lead + "not before " + clock(next) + " — " + gap(next-now) + " away") + nudge;
+  }
+  return (now >= next ? lead + "next dose due now (" + clock(next) + ", " + gap(now-next) + " ago)"
+                      : lead + "next due " + clock(next) + " — in " + gap(next-now)) + nudge;
+}
+function refreshDue(){
+  document.querySelectorAll("#p-daily .due[data-row]").forEach(el => {
+    const [ds,rid] = el.dataset.row.split(":");
+    const row = TRACK.flatMap(g=>g.rows).find(x=>x.id===rid);
+    if(row) el.textContent = dueText(+ds, row);
+  });
+}
+
+/* ── therapy session cards ──────────────────────────────────────────────── */
+/* Session keys use the booked date (or the visit number for undated home
+   visits), not the array position — so inserting a session later cannot shift
+   anyone's records onto the wrong appointment. */
+const sesKey = (id,ref,step) => "ses:" + id + ":" + ref + ":" + step;
+const sesRefs = g => g.dates ? g.dates.slice() : Array.from({length:g.n}, (_,i) => "v" + (i+1));
+function sessionsHTML(){
+  let html = '<div class="block"><h2>Every therapy session</h2>' +
+    '<p class="lede"><b>Take the pain medication 30–60 minutes before every session</b> — in hospital and at home. It is the instruction that decides whether a session is useful or cut short, and getting to 90 degrees of bend by the wound check depends on it.</p>' +
+    '<p class="lede">Each session has three boxes in the order they happen. If the first is still empty and the session is soon, that is the prompt.</p>' +
+    '<p class="prov">Pre-medication is quoted from the Sequoia pain-management slide. Icing after a session follows the general icing guidance rather than a session-specific rule — it is here as a habit worth tracking, not as a separate instruction.</p></div>';
+
+  SESSIONS.forEach(g => {
+    const refs = sesRefs(g);
+    const list = g.dates ? g.dates.map(d => ({label: fmt(new Date(d + "T00:00:00")), iso:d, ref:d}))
+                         : refs.map((r,i) => ({label:"Visit " + (i+1), iso:null, ref:r}));
+    const doneN = list.filter(it => done[sesKey(g.id,it.ref,"did")]).length;
+    html += '<section class="day"><div class="day-h"><h3>' + esc(g.g) + '</h3>' +
+      '<span class="dnum"><span class="tally' + (doneN===list.length?' full':'') + '">' + doneN + '/' + list.length + '</span> done</span></div>' +
+      '<div class="grp"><p class="ses-when">' + esc(g.when) + '<span class="src">' + esc(g.s) + '</span></p>';
+    list.forEach((it,i) => {
+      html += '<div class="ses"><div class="ses-h"><b>' + esc(it.label) + '</b>' +
+        (it.iso ? '<span class="dnum">booked</span>' : '') + '</div><div class="steps">';
+      SESSION_STEPS.forEach(st => {
+        const k = sesKey(g.id,it.ref,st.k), on = !!done[k];
+        html += '<button class="step" role="checkbox" aria-checked="' + on + '" data-trk="' + k + '" data-ses="' + g.id + '"' +
+          ' aria-label="' + esc(it.label + " — " + st.n) + '">' +
+          '<span class="stepbox">' + svgCheck + '</span><span class="steptxt">' + esc(st.n) +
+          (st.sub ? '<i>' + esc(st.sub) + '</i>' : '') + '</span></button>';
+      });
+      html += '</div>' + noteHTML("n:ses:" + g.id + ":" + it.ref,
+        "How did it go — range of motion, pain level, what the therapist said, what to work on") + '</div>';
+    });
+    html += '<p class="prov" style="padding:.2rem 0 .8rem">' + esc(g.note) + '</p></div></section>';
+  });
+  return html;
+}
+
+function renderDaily(){
+  const t = offsetToday();
+  let html = '<div class="block"><h2>Dose by dose, surgery day to day 14</h2>' +
+    '<p class="lede">A box for every scheduled dose and every repeated exercise, from the afternoon of surgery through the wound check. Tap a box as you go — it saves on this device. The counts come from your own notes and the Sequoia FAQ; where a schedule is disputed the box row carries the same warning as the timeline.</p>' +
+    '<p class="lede"><b>Oxycodone is marked as-needed and is deliberately left out of the daily count</b>, so a full day never means “take all six.”</p></div>' +
+    sessionsHTML();
+
+  TRACK_DAYS.forEach(d => {
+    const st = t === d ? "now" : (t > d ? "past" : "future");
+    const [c,n] = dayTally(d);
+    html += '<section class="day" data-state="' + st + '"><div class="day-h">' +
+      '<h3>' + esc(fmt(at(d))) + '</h3>' +
+      '<span class="dnum">' + (d === 0 ? 'Surgery day' : 'Day ' + d) + ' · <span class="tally' + (c===n?' full':'') + '">' + c + '/' + n + '</span></span></div>';
+    TRACK.forEach(g => {
+      html += '<div class="grp"><span class="eyebrow">' + esc(g.g) + '</span>';
+      g.rows.forEach(r => {
+        html += '<div class="trow"><div class="trow-h"><b>' + esc(r.n) + '</b>' +
+          (r.prn ? '<span class="prn">as needed</span>' : '') + '</div><p>' +
+          esc(typeof r.p === "function" ? r.p(d) : r.p) + '</p>' +
+          '<div class="slots">';
+        for(let s=0;s<r.slots;s++){
+          const k = trkKey(d,r.id,s), on = !!done[k];
+          html += '<button class="slot' + (r.prn?' prn':'') + '" role="checkbox" aria-checked="' + on +
+            '" data-trk="' + k + '" data-day="' + d + '" aria-label="' + esc(r.n) + ' ' + (s+1) + ' of ' + r.slots +
+            '">' + esc(r.lab(s)) + '</button>';
+        }
+        html += '</div>' + doseTimesHTML(d,r) + (r.c ? conflictHTML(r.c) : '') + '</div>';
+      });
+      html += '</div>';
+    });
+    html += '<div class="grp">' + noteHTML("n:day:" + d,
+      "How the day went — a rough night, an extra dose and when, side effects, anything to tell the team") + '</div>';
+    html += '</section>';
+  });
+
+  html += '<div class="block"><h2>Your medications</h2>' +
+    '<p class="lede">Transcribed from your handwriting on the Discharge Medications slide — from what you were told in the office, not from a printed prescription. Confirm every one against the discharge paperwork before leaving the hospital.</p>' +
+    MEDS.map(m => '<div class="med"><h3>' + esc(m.n) + ' <span class="dose">' + esc(m.d) + '</span>' +
+      '<span class="src">' + esc(m.s) + '</span></h3><p>' + esc(m.p) + '</p>' + (m.c?conflictHTML(m.c):'') + '</div>').join("") +
+    '</div><div class="block"><h2>Getting refills</h2><ul class="plain">' +
+    ["Call your surgeon’s office on a Wednesday, with enough time left on the current prescription to get it filled.",
+     "Give the hospital your pharmacy's name and address on admission.",
+     "Check with the pharmacy before admission that they actually have the medication in stock.",
+     "Check with the pharmacy again before leaving the hospital if anything changed."]
+      .map(x=>'<li><span style="color:var(--accent);flex:0 0 auto">•</span><span>'+esc(x)+'</span></li>').join("") +
+    '</ul><div class="hand"><span class="lbl">Your note</span><q>check oxycodone amount · get refills if available · can cut oxy in half</q></div></div>';
+
+  document.getElementById("p-daily").innerHTML = html;
+  syncBackupUI();
+}
+
+function renderAlerts(){
+  const li = (x,cls) => '<li><span class="bul' + (cls||'') + '">' +
+    (cls === ' ok' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>') +
+    '</span><span>' + esc(x) + '</span></li>';
+  document.getElementById("p-alerts").innerHTML =
+    '<div class="block crit"><h2>Call 911</h2><p class="lede">These two are the emergency. Do not call the office first.</p>' +
+    '<ul class="plain">' + RED.crit.map(x=>li(x)).join("") + '</ul></div>' +
+    '<div class="block"><h2>Call the office</h2><p class="lede">Gloria Kwok on 650-482-6031, or your surgeon’s office. Your note beside the fever threshold reads “after day 5.”</p>' +
+    '<ul class="plain">' + RED.call.map(x=>li(x)).join("") + '</ul></div>' +
+    '<div class="block"><h2>Expected — not a problem</h2><p class="lede">The seminar called this slide “Expect the Unexpected.” Every item here is normal after a knee replacement.</p>' +
+    '<ul class="plain">' + RED.normal.map(x=>li(x,' ok')).join("") + '</ul>' +
+    '<div class="hand"><span class="lbl">Your note</span><q>Knees painful, warm — 3-6 months — take your meds</q></div></div>';
+}
+
+function renderAsk(){
+  const ids = Object.keys(CONFLICTS);
+  const settled = ids.filter(k => CONFLICTS[k].pref !== null && CONFLICTS[k].pref !== undefined).length;
+  document.getElementById("p-ask").innerHTML =
+    '<div class="block"><h2>Twelve things the documents disagree about</h2>' +
+    '<p class="lede">Every one of these is a place where the three documents in your folder give different instructions.</p>' +
+    '<div class="cf-rule"><b>Your rule: follow PAMF, but show both.</b> Where PAMF has a position, it is marked “Follow this” and stated at the top of each item. On ' + (ids.length - settled) + ' of the ' + ids.length + ', PAMF says nothing at all — those stay genuinely open and still need an answer from the team.</div></div>' +
+    ids.map((id,ix) => {
+      const c = CONFLICTS[id], has = c.pref !== null && c.pref !== undefined;
+      return '<div class="ask"><div class="q"><em>' + String(ix+1).padStart(2,"0") + '</em><span>' + esc(c.q) +
+        '<span class="pickline' + (has?'':' open') + '">' + (has?'Follow PAMF: ':'Still open: ') + esc(c.pick) + '</span></span></div>' +
+        '<div class="body"><p class="cf-why">' + esc(c.why) + '</p>' +
+        c.opts.map((o,oi) => '<div class="cf-opt' + (oi===c.pref?' pick':'') + '"><b>' + esc(o.s) +
+          (oi===c.pref?'<span class="follow">Follow this</span>':'') + '</b>' + esc(o.v) +
+          (o.n?'<i>'+esc(o.n)+'</i>':'') + '</div>').join("") +
+        '<div class="answer"><span class="eyebrow">The answer you were given</span>' +
+        noteHTML("n:ask:" + id, "Who you asked, when, and what they said — this is how the question gets closed") +
+        '</div></div></div>';
+    }).join("");
+}
+
+function renderBackup(){
+  document.getElementById("p-backup").innerHTML =
+    backupHTML() +
+    '<div class="acts" style="margin:.2rem 0 .9rem"><button class="act prim" data-gotl="1">← Return to the Timeline</button></div>' +
+    '<div class="block"><span class="eyebrow">Keep it on your home screen</span>' +
+    '<p class="prov">On an iPad or iPhone: open this page in Safari, tap the Share button, then “Add to Home Screen.” It then opens like an app. Always open it from that icon — your ticks, times and notes are saved by this browser on this device, so a different browser or a different device is a separate, empty copy.</p></div>';
+  syncBackupUI();
+}
+
+/* ── the source documents, transcribed ──────────────────────────────────────
+   The scans themselves cannot live in this page — 67 MB across three PDFs,
+   against a 16 MB ceiling, and they are files on a laptop with no web address.
+   What follows is their content transcribed page by page, in the order the
+   pages appear, with her handwriting marked separately from the print. It is a
+   transcription and is labelled as one; the paper originals remain the record. */
+const DOCS = [
+  { id:"pamf", tag:"PAMF",
+    name:"Preoperative Hip & Knee Replacement Seminar",
+    who:"Palo Alto Medical Foundation · 11 scanned pages, 2 slides per page",
+    pages:[
+      {n:"Purpose", t:"Prepare for Total Knee and Total Hip Replacement Hospitalization. Nuts and Bolts."},
+      {n:"Pre-Hospital Preparation — medical", t:"Preoperative Medical Evaluation. Call your PCP to schedule an appointment within 30 days of your surgery. Laboratory exam: Hct, Metabolic Panel, Coags. EKG. Dental visit +/-."},
+      {n:"Pre-Hospital Preparation — arrangements", t:"Arrange Care Takers (Gloria Kwok, RN Sequoia Hospital). Arrange Specialist Visits — “the minute you sign up for surgery”: Cardiology, Pulmonology. Arrange Special Testing: Treadmill, PFTs. Have all testing and consults performed at least 2 weeks before surgery.", hw:"✓ arrange care takers"},
+      {n:"Pre-Hospital Preparation — discharge", t:"Discharge Arrangements. Medications: Narcotics, NSAIDs, Blood Thinners. Care Givers. Transportation. Physical Therapy.", hw:"bag @ pharmacy · Care Givers – Paul · Transportation – Paul · Physical Therapy – done"},
+      {n:"Blood Donation", t:"Risk of Blood Transfusion under 1%. Pre-donations not necessary."},
+      {n:"GLP medications", t:"GLP 1: semaglutide (Ozempic, Wegovy), exenatide (Byetta), liraglutide (Victoza), dulaglutide (Trulicity), tirzepatide (Mounjaro). Hold for one dosing — if daily hold for one day, if weekly hold for 1 week prior. GLP 2 column: dapagliflozin (Farxiga), canagliflozin (Invokana), ertugliflozin (Steglatro), empagliflozin (Jardiance). GLP2 should be held 72-96 hours prior to surgery; ertugliflozin needs to be stopped 96 hours prior.", hw:"aspiration risk", note:"The second column are SGLT2 inhibitors, not GLP-2 — the slide's label is wrong, the hold times are as printed."},
+      {n:"Surgery Times", t:"SEQUOIA SURGERIES. Sequoia will call you with your time the day or two before. If surgery is on a Monday Sequoia will call you on Friday.", hw:"8/28 · 2 hrs before"},
+      {n:"Admission on Day of Surgery", t:"Photographs of the hospital entrance and the Center for Joint Replacement sign.", hw:"Go to admitting then to 2nd floor · clear phone messages — answer the phone"},
+      {n:"Preoperative Holding", t:"Anesthesiologist. IV Placed. Family Allowed. Surgical Site Marked. Chlorahex Wipe Down. Personal Items Collected (Glasses, Dentures, etc.)"},
+      {n:"Anesthesia", t:"Spinal. Nerve Block. Sedation. Discuss with Anaesthesiologist.", hw:"Spinal ✓ risk of blood clot · Nerve Block – take it · Knock me out · No intubation"},
+      {n:"Operation", t:"1-2 hours. Anaesthetic. Positioning. Draping."},
+      {n:"Post-op Recovery", t:"1-2 hour stay. Family members not allowed.", hw:"No"},
+      {n:"Surgical Waiting Room", t:"Call 2 hours after leaving the Preoperative area. Can see the patient 4 hours after leaving the Preoperative area.", hw:"Family can go home – he will call"},
+      {n:"Orthopaedic Surgery Floor", t:"Center for Joint Replacement, 3rd Floor."},
+      {n:"Medicare / Insurance Companies", t:"2022 Removed from inpatient only list. Admitted as an outpatient. Medical Decision not age or Home status dictates Admission. Gloria Kwok can Assist."},
+      {n:"Prepare For Going Home", t:"Designated Driver to and from Hospital. Food Preparation for Return Home. Designated Contact Person. Designated Care Giver for 3 days. Designated Pharmacy. List of Medications.", hw:"Paul · me · Paul · Paul · CVS Address + phone # · don't bring meds · Vit D up to PR day (?)"},
+      {n:"Hospital Stay — length", t:"Same Day / 23 Hour / 2 Midnights. Depends on Age, Health, Size, Complexity of Surgery."},
+      {n:"Hospital Stay — same day / 23 hours", t:"Surgery. PT in the afternoon. Regular Diet. Discharge Once Meet Requirement. Not meet requirements then discharge in morning."},
+      {n:"Hospital Stay — 2 midnights", t:"Hold over due to Pain or Medical Issues. Oral pain medications. Physical Therapy. Occupational Therapy. Discharged home after therapy."},
+      {n:"Hospital Stay — more than 2 midnights", t:"Older. Medical issues. Oral pain medications. Physical Therapy twice a day. Occupational Therapy once a day. Discharged to SNF."},
+      {n:"Discharge Requirement", t:"PT & OT. Discharge Home if: Able to walk, Climb stairs, Pain Controlled.", hw:"Say 4-5. Don't say 2-3 or they will give you tylenol – don't want that"},
+      {n:"Discharge Home", t:"Therapists Arrange Walker. Prescriptions provided preoperatively — changes may be made by Nurse Practitioner. Home Physical Therapy 2 weeks. Home Care Agencies.", hw:"2 wheels on front · Get new walker"},
+      {n:"Discharge Medications", t:"Lovenox Injections: or return to Eliquis, Pradaxa. Pain Medications – Prescriptions. NSAIDs? Meloxicam. Return to Regular Medications. Check Pharmacy before Leaving the Hospital if any changes in medication."},
+      {n:"Discharge to SNF", t:"Medical Issues. Lack of Family members is not a justification for SNF admission. Medication List Sent to SNF. Under SNF Physician Care. 7-10 Days. Return to clinic for suture removal."},
+      {n:"Pain", t:"Spinal. Oral Pain Medications: Narcotic, NSAID. Knee replacements Aggressive Pain Management. Ice Machine.", hw:"always say pain is 4 or 5 · very painful procedure · where to get [ice machine]"},
+      {n:"Narcotic Refills", t:"Oxycodone prescriptions: Please call us on Wednesday with enough time so we can get medications refilled. Give Hospital the name and address of Pharmacy on Admission. Check with Pharmacy before admission about Medication availability.", hw:"Tylenol 2 gms/day · check oxycodone amount · get refills if available · can cut oxy in half"},
+      {n:"Nausea", t:"Anti-emetics. Ask early."},
+      {n:"Fevers", t:"To help prevent fevers use the incentive spirometer at least 5-10 times every hour you are awake. Low grade temperature is normal. Call if temperature is over 101.5 °F. Cough and Deep Breathe after each use."},
+      {n:"Sleeping Pills", t:"Ask nurse for the sleeping pills. Take 45 minutes to work."},
+      {n:"Home Physical Therapy Post op", t:"Arranged by Case Manager. Two Weeks Home Physical Therapy. Call Angel for problems: 650-853-4848."},
+      {n:"Physical Therapy — Knees", t:"Home PT 2 Weeks. Week 3 Begin Out-Patient PT. Arrange Out-Patient PT before Hospitalization. Duration 4-12 Weeks."},
+      {n:"Physical Therapy — Hips", t:"Home PT 2 weeks. 2 Weeks No Formal PT, daily exercises taught by therapist. Week 5 Begin Out-Patient PT.", hw:"Upper body exercises while sitting on a bench"},
+      {n:"Occupational Therapy", t:"Activities of Daily Living. Assistive Devices — buy at Clark Building Physical Therapy Front Desk. alimed.com, medmartusa.com, Amazon.", hw:"Hip Kit (circled) · Leg lifter"},
+      {n:"Abduction Pillow", t:"Hip Replacements. Abduction Pillow discontinued when patient goes home. Regular pillow 2 weeks postoperative."},
+      {n:"Activity", t:"1 week walker. 2 weeks cane.", hw:"minimum · no cheating"},
+      {n:"Walking Distance", t:"One block per day per week. 1000 steps per day per week. Week One = One Block. Week Two = Two Blocks.", hw:"Maximum"},
+      {n:"Blood Clots", t:"Blood Thinner (Arixtra) in the Hospital. Blood Thinner (Lovenox, Coumadin) for 10-20 Days after Surgery. Alternative Oral Eliquis 30 Days, two times a day. 20 Days of 81 mg ASA after Blood Thinner. Severe Injection Site Redness Call Office.", hw:"Don't do it · purple is normal · if you get a red area = reaction"},
+      {n:"Constipation", t:"Fluids. Colace. Milk of Magnesia. MIRALAX. Dulcolax Suppositories. Ambulation.", hw:"need electrolytes"},
+      {n:"Swelling and Bruising", t:"Expected. Lasts up to 6 months. Elevation. ICE. Compression."},
+      {n:"Pre-op Soap Wash", t:"Wash with soap the night before and the morning of surgery. Clean Sheets. Clean Pajamas.", hw:"clean towel"},
+      {n:"Supplements", t:"Vitamin D: 1000 units/day two weeks before surgery. Natural Yogurt: one cup/day two weeks before surgery.", hw:"Stop Saturday 8/29"},
+      {n:"Clean Your Phone Daily", t:"Clean your phone daily.", hw:"a week before surgery · buy phone cleaner"},
+      {n:"Elevated Toilet Seat", t:"Photograph of an elevated toilet seat with arm rails."},
+      {n:"Wound Care", t:"Clean and Dry until 72 hours after. Showers 4 days after Surgery. No bath tubs for 4 weeks. Stitch abscess. Bleeding. Drainage.", hw:"Friday · Press + Seal"},
+      {n:"Wound Check / Suture Removal", t:"10-14 Days. Clinic or at home by home health. SNF — Nurse at SNF will remove or can return to clinic for removal.", hw:"clean stitch with peroxide + call clinic"},
+      {n:"What to Watch Out For", t:"Fevers over 101.5. Sudden bleeding from the wound. Drainage from the wound. Foul smells. Redness. Dislocation of the hip. Leg Swelling — Calf pain. Shortness of Breath or Chest Pain — Call 911.", hw:"after day 5 · ★ leg swelling / calf pain"},
+      {n:"Expect the Unexpected", t:"Click of the knee replacement. Days of greater pain. Spotting of the wound. Stitch appearing from wound. Pustule in the wound. Knee will feel warm for 3-6 months. Leg Lengths — first few months operated hip often feels longer. Swelling in Operative Leg, keep leg elevated.", hw:"3-6 months · call · compressionstocking.com 18-20mm"},
+      {n:"Follow up", t:"Call Angel 650-853-4848. Wound check at 10-14 days. X-rays 4-6 weeks. Clinical evaluation 8-12 weeks. 12 month follow up. At 5, 10, 15 Years. Don't wait until last minute to make appt.", hw:"Karen / Jennifer · Look on MHO"},
+      {n:"Antibiotics — Dental Work", t:"Amoxicillin 2 gms one hour before procedure, OR Erythromycin 1 gm one hour before procedure.", hw:"circled"},
+      {n:"Foot Care", t:"Foot infection can lead to an implant infection. Keep feet well moisturized. Prevent Cracking. Prevent Fungal infections. Regular use of Moisturizing Creams, Antifungal Creams."},
+      {n:"Driving", t:"4-6 Weeks. Off Narcotics. Start in empty parking lot. Does not matter if left or right leg. Reaction time."},
+      {n:"Hip Precautions", t:"Do not cross legs at the knees (externally rotate). Do not bring leg behind you (hyperextend the hip). Do not actively abduct the leg. Do not stand single stance on operative leg. 6 WEEKS.", note:"Hip only — does not apply to a knee replacement."},
+      {n:"Things Not to do Two Weeks Preoperatively", t:"Gardening. Sports. Climbing Ladder. Climbing Roof. Cleaning floors. Kneeling on knees. Wearing short pants. Playing with Cats or Dogs. Clipping Toenails.", hw:"8/17 · don't scrape the skin · 1 week prior [toenails]"},
+      {n:"Patient Tips — comfort", t:"Comfort items – Patient Packet: Ear plugs, Eye shades, Note pad.", hw:"+ pen"},
+      {n:"Patient Tips — household", t:"Household items for return home: Long Handled Shoe Horn. Ice Bag or Ice Machine. DO NOT SHAVE LEGS BEFORE SURGERY!", hw:"from Hospital · Game ready ice machine $300"},
+      {n:"Single Individuals", t:"Home must be prepared before surgery. Assign a coach. Arrange Preoperative and Postoperative Transportation. Not able to return home until safe. Return to Driving 3-4 weeks."},
+      {n:"Hot Line", t:"650-321-4121 (doctors). 650-853-2951 (clinic), 8:30 AM – 5:30 PM. Angel's Secret # (650) 853-4848.", hw:"patients only · Knees painful, warm 3-6 mths — take your meds"}
+    ]},
+
+  { id:"seq", tag:"SEQ",
+    name:"Total Joint Replacement Pre-Operative Education",
+    who:"Sequoia Hospital, Dignity Health · 37 slides",
+    pages:[
+      {n:"Title", t:"Pre-Operative Education: Hip Replacement, Knee Replacement, Mako Robotic Surgery."},
+      {n:"Who should read this", t:"Patients and Family are encouraged to read prior to total hip or knee replacement surgery. Know what to expect before, during, and after your procedure."},
+      {n:"Purpose of education", t:"Prepare you for your hospitalization. Review daily routine & rehabilitation. Discharge planning."},
+      {n:"Pre-Surgery — help at home", t:"Arrange for help at home prior to surgery. Who? Family, Friends, Neighbors. When? For 3-7 days after discharge. Ensure transportation is being arranged to and from surgery (not Uber/Lyft). Pre-cook meals, laundry, housekeeping/cleaning done. Stay hydrated 3 days before surgery to prevent low blood pressure/dizziness. Purchase over the counter meds & equipment recommended by surgeon. Review all educational materials from surgeon office and hospital. Ensure family member or caregiver reads educational materials as well."},
+      {n:"Pre-Surgery — medications and washing", t:"Check with your medical doctor regarding medications prior to surgery. No anti-inflammatories 7 days prior to surgery. No yard work for 2 weeks. No alcohol 3 days prior to surgery. No shaving of your operative leg 5 days prior to surgery. Chlorhexidine shower — night before, clean PJs & sheets, and the morning of your surgery day.", hw:"+ Towel"},
+      {n:"Pre-Surgery — the call and what to bring", t:"Hospital will call with surgery time the evening before (typically between 2-4pm). Nothing to eat after midnight! Your surgeon may encourage you to drink clear fluids (no jello) up to 2 hours prior to arrival to the hospital. Bring comfortable clothes, shoes, insurance card, access to credit card # if needed for prescriptions/equipment, and a long phone charger cord. Please do not bring valuables to the hospital.", hw:"Friday · circled “2-4pm” and “2 hours” · glasses case"},
+      {n:"Hospital Stay — arrival", t:"Arrival 2 1/2 hours prior to surgery. There is a parking garage to the right of the entrance. Free valet service 0530 – 1400 Mon-Fri."},
+      {n:"Day of surgery — where to go", t:"Enter through main hospital entrance. Please go to admitting/registration and continue straight down hallway on the right. Visitors are welcome to stay with you until you go into the operating room."},
+      {n:"Pre-Surgery — Ambulatory Care Unit", t:"Preparation by the nursing staff for surgery: IV started, Wipe/Scrub, Surgical consent reviewed. Surgeon & Anesthesiologist visit, identify surgical site. Leave a contact phone number with nurse in ACU."},
+      {n:"Surgery — the operation", t:"1-2 Hours for the operation only. In the OR 2-3 hours total."},
+      {n:"Mako Robotic Surgery", t:"MAKO technology provides your surgeon with a patient-specific 3-D model to pre-plan your surgery. During surgery your surgeon guides MAKO's robotic-arm based on your specific plan. By selectively targeting just the damaged part of the joint, your surgeon can replace it while helping to spare the healthy bone and ligaments. It will be a discussion between you and the surgeon regarding this option in the office."},
+      {n:"Surgery — Anesthesia", t:"Anesthesia types will be discussed with you by the anesthesiologist in the pre-surgery area: Spinal, “Twilight”, General Anesthetic, Nerve Blocks for Knee Replacements."},
+      {n:"Anesthesia Side Effects", t:"Feeling sick in your stomach. Throwing up. A sore throat. Shaking or Chills. Dizziness. Trouble urinating. Headaches. Groggy. Delirium."},
+      {n:"After Surgery — PACU", t:"Recovery Room: Typically 1 Hour. Wait for Spinal to end. Monitor Vital Signs. Drink fluids with head of bed up."},
+      {n:"Patient Rooms", t:"Total joint center patient room located on the 3rd floor via elevator A."},
+      {n:"Incentive Spirometer", t:"Will be taught and given in the hospital. Reduces Fevers. Prevents Pneumonia. Bring home for continued use."},
+      {n:"Hospital Stay — Same Day Discharge", t:"Some patients have been identified by the surgeon and anesthesiologist to be appropriate for day of surgery discharge. Requirements: Medically stable. Have family/friend(s) to attend PT/OT session after surgery. Pain and Nausea managed. Good support system at home. Cleared by physical therapy and occupational therapy. Established safe discharge home. Medications for discharge confirmed. Transportation for home established once cleared for discharge. Please be patient with discharge nurse to get paperwork ready (might take about an hour)."},
+      {n:"Hospital Stay — Post-Op Day 1", t:"For patients not discharged day of surgery. Regular diet. Drain removed if present. Pain management. Physical therapy 1-2x. Occupational therapy 1x. Total Joint Nurse Navigator visit to discuss discharge plans to home. Discontinue IV fluids. Anticipate discharge to home."},
+      {n:"Hospital Stay — Post-Op Day 2", t:"For patients not discharged on post-op day 1. Pain management. Physical Therapy 1-2x. Occupational Therapy if needed. Verify equipment needs. Discharge Home."},
+      {n:"Preventing Blood Clots", t:"Early Ambulation — out of bed day of surgery. Ankle pump exercises. Sequential Compression Device (SCD). Blood Thinner determined by MD: Arixtra, Lovenox injection (nursing will teach how to administer), Eliquis, Aspirin.", hw:"Compression socks everyday × 30 days. Only during the day. · Lovenox.com · Lovenox circled"},
+      {n:"Constipation", t:"“A healthy colon is the gateway to a happy mind!” Cause: Dehydration, Narcotics, Immobility. Treatment: Increase fluids 3 days before surgery and continue after discharge, Mobility. Medications: Colace. Miralax (may begin 3-5 days before surgery; check with physician). MOM – Milk of Magnesia. Suppositories, Fleet enemas.", hw:"Black coffee · apricots · drink fluids"},
+      {n:"Pain Management", t:"Icing 20 mins on and off with either ice pack (hip) or with ice machine (knee) — Not at night time. Elevate legs 20-30mins 4-5 times day — Not at night time. Take prescribed pain medication as needed every 4-6hrs. Premedicate 30 to 60 mins before PT or OT session in the hospital or at home. Stay hydrated — opioids tend to lower blood pressure."},
+      {n:"Discharge Medications", t:"Narcotics – Discussed with you in MD office prior to surgery and confirmed prior to discharge from the hospital. Common medications for home include: Blood Thinner. Anti-inflammatories and/or narcotics. Bowel Medications. Nausea Medications. Return to Previous Medications — check with primary care physician if any changes should take place. For your education a medication brochure will be given to you while in the hospital which reviews medications purpose and potential side effects.", hw:"Tylenol 500 mg ATC · melox qd c food · Oxy q4° · One dose of anti bx post op"},
+      {n:"Requirements for Discharge", t:"Tolerate regular diet. Maintain stable vital signs. Management of pain and bleeding. Increase independence with activity and mobility. Confirmed safe discharge plan with staff."},
+      {n:"Physical Therapy", t:"Works on mobility such as walking with use of a walker, getting in/out of bed/chair, maneuvering up & down stairs. Therapists will also review cold therapy and elevation techniques which reduce swelling and pain."},
+      {n:"Occupational Therapy", t:"Works with activities of daily living (ADL) such as dressing, grooming, bathing and assist with determining additional needed equipment.", hw:"cut up on the left, per my left side"},
+      {n:"Front Wheeled Walker", t:"A front-wheeled walker is required; the four-wheeled rollator with a seat is crossed out. It will be provided to you after surgery if you don't have one. Please check with your insurance to see if it's covered. Medicare provides one walker every 5 years.", hw:"wrist height"},
+      {n:"How to measure your walker", t:"Diagram showing walker handle height aligned with the wrist when standing with arms relaxed."},
+      {n:"Equipment", t:"Toilet riser. Shower bench. Cryotherapy (ice machine) will be provided after surgery for all knee patients to keep it at home. Hospital provides ice packs to go home. Durable Medical Equipment mostly not covered by insurance.", hw:"fill with a case of 8 oz water bottles"},
+      {n:"Occupational Therapy — optional equipment", t:"Optional equipment may be purchased before surgery: long-handled shoe horn, reacher/grabber, sock aid, long-handled sponge. OT can teach how to use. Not covered by insurance."},
+      {n:"Positioning after Total Hip Replacement", t:"Your leg will be resting in a foam splint right after surgery. This will remind you not to cross your legs while in bed. Always put a pillow or two in between knees if you are a side sleeper or lying on your back.", note:"Hip only."},
+      {n:"Total Hip Replacement — precautions", t:"Hip precautions for approximately 6 weeks post surgery: Don't bend at your hip past 90°. When sitting, ALWAYS keep your knees lower than your hips. Don't let your knee move inward past your navel. Don't turn your feet in or out. Do use pillows between your legs at night.", note:"Hip only."},
+      {n:"Positioning after knee replacement", t:"YES: Keep operated leg straight and elevated when at rest. NO: no pillow under knee."},
+      {n:"Discharge from the Hospital", t:"Discharge planning is coordinated between you, your physician, therapists and other clinical staff with recommendations of resources and needs post discharge. Care coordinator will help arrange for your discharge needs: Verify insurance coverage for services needed at discharge. Order durable medical equipment. Make referrals such as transportation home to assist if needed."},
+      {n:"Home Health and Outpatient Therapy", t:"Agencies, coverage and copay dependent on individual insurance plans. Home health agency name and phone number will be provided before or after discharge to home. You will receive a call from the agency within 24-48 hours after discharge. Home physical therapy (PT) and occupational therapy (OT) will make an in home initial assessment and make a recommendation of treatment plan. PT typically 2-3 times per week for 1-2 weeks depending on assessment of needs and insurance coverage. OT typically one time visit. Outpatient Therapy: Some patients may go directly to outpatient therapy per surgeon recommendation, or participates after home health therapy and you are RESPONSIBLE setting up outpatient physical therapy appointment before surgery.", hw:"wash q hrs · elevate × 20 min × 6/day · ice · exercises · 650-367-5627 preop dept closes at 3:30"},
+      {n:"Skilled Nursing Facility (SNF)", t:"If discharging home is not appropriate due to mobility or slow to progress, then skilled nursing will be an option. “Skilled care” is health care given when you need skilled nursing or rehabilitation staff to treat, manage, observe, and evaluate your care on a daily basis. Transportation to facility may or may not be covered by insurance — out of pocket costs approx $100-$200. Care Coordinator office: 650-367-5683."},
+      {n:"Thank You — contacts", t:"Total Joint Patient Navigator, Gloria Kwok 650-482-6031. Care Coordination/Social Services 650-367-5683. Physical & Occupational therapy 650-367-5517. Main Hospital Operator 650-369-5811. Pre Operative Department 650-367-5545. Admitting Department 650-367-5551. Please ensure our admitting department has your correct phone number and address before coming to the hospital.", hw:"Gloria Kwok circled · closes at 4:30 · 650-367-5627 closes at 3:30"}
+    ]},
+
+  { id:"chk", tag:"CHK",
+    name:"Patient Checklist, Knee FAQs & Pre-Op Timeline",
+    who:"Sequoia Hospital / Dignity Health · 6 scanned pages",
+    pages:[
+      {n:"FAQ — sleeping positions", t:"In what positions can I sleep? We would like you to find a comfortable sleeping position that allows you to maintain your hip precautions. Make sure that when you are positioning yourself in bed that you do so carefully. You can sleep on your back, your stomach or your side (both surgical and nonsurgical). While on your side you should keep a pillow between your legs."},
+      {n:"FAQ — how much to walk", t:"How much should I walk every day? General rule of thumb is at a minimum 1 block per day the first week, 2 blocks the second week, 3 blocks the third week. Each block ~250 feet. Can increase walking distance by 25-50% each week, not to exceed more than 2000 feet (or steps) the first two weeks after surgery. Let pain and swelling be a guide and get back to a desired walking distance at 6-12 weeks after surgery."},
+      {n:"FAQ — bending the knee", t:"Does my knee need to be straight all the time? Can I sit with it bent? Yes, you can bend your knee. We actually encourage you to change the position of your knee frequently in order to decrease swelling and stiffness. You may find that your knee becomes stiff in any position after 20-30 minutes. While sitting we encourage you to perform your seated heel slides. When resting with your leg elevated we encourage you to keep your leg in a “neutral position” with your knee pointing towards the ceiling. Having a rolled towel or blanket on the outside of your leg acting as a barrier helps position it so it does not rotate out to the side. How much should I be bending my knee at home? 90 degrees of flexion by first post op visit with the surgeon — 10-20 days. Work on range of motion consistently (extension and flexion) and ensure adequate pain control, icing, and elevation to make this happen."},
+      {n:"FAQ — exercises and therapists", t:"Should I do my exercises more frequently than prescribed by my PT? No. Please always follow the education and guidance provided by your therapy team. What if I hear conflicting information from different physical therapists? Confirm with your surgeon if you have any questions or concerns."},
+      {n:"FAQ — walker, cane, stairs", t:"How long do I have to use the walker? The typical patient will use the walker for about 10 days post surgery. Home Health Therapy will work with you on when it is appropriate to transition to an alternative walking device (cane, hiking poles, crutches). Home health therapy will work on progressing you safely from the walker to a single point cane or hiking poles. When can I do stairs? If you have stairs at home the therapist in the hospital will practice them with you before you discharge."},
+      {n:"FAQ — outdoors, hills, swimming, biking", t:"Walking outside right away, level surface with assist device. Home PT can support with low grade hills the first 2 weeks after surgery. Hold off on irregular surfaces and high grade hills until being cleared by your surgeon. Swimming once the incision is completely healed, likely 6 weeks, once cleared by the surgeon. Indoor biking right away, outdoor biking earliest 6 weeks once cleared by the surgeon."},
+      {n:"FAQ — recovery time and follow-up", t:"How long does it take for people to recover? For Knee surgery, it usually takes about 6-8 weeks. This varies from patient to patient. What happens at the 10-20 days post op appointment? You will be seen by a physician assistant or nurse practitioner at the clinic in 10-14 days and he or she will assess your incision and remove stitches if indicated. You will see your surgeon about 6 weeks after discharge."},
+      {n:"FAQ — icing and compression", t:"Why do they keep my cryo cuff on overnight at the hospital but I'm supposed to do 20 minutes on and 20 minutes off at home? Aim for 3-4 sessions of icing for knee replacement 30-60 minutes per day. You can do more than this if you desire, but be careful not to create ice burns on the skin. Many people can taper off icing around week 4-6, but this can be continued for 3 months or more if helpful. At the hospital they leave the ice on for convenience to the nursing staff. How long/often do I wear my compression stockings? You will wear your compression stockings for 3-4 weeks after discharge during daytimes only. You can wear your own compression stockings or those provided at the hospital. Remember not all surgeons prefer compression stockings."},
+      {n:"FAQ — showering", t:"When can I shower? If you have an Optifoam (waterproof) dressing placed in the operating room, you may shower in 48 hrs. If you do not have the Optifoam dressing on when you leave the hospital, please change it to Optifoam at home (typically postop day 4), then you can shower after dressing change. It varies from surgeon to surgeon and not all surgeons prefer Optifoam dressing. If your surgeon prefers gauze dressing, please wrap around the dressing with press and seal or saran wrap before showering."},
+      {n:"FAQ — driving", t:"When can I drive? If you have a left knee surgery done, it might take between 3-4 weeks. You need to be completely off narcotics (at least 24 hours) before you can drive. If you have a right knee surgery done, it might take between 4-6 weeks. You need to be completely off narcotics and be able to slam the brakes."},
+      {n:"FAQ — home health visits", t:"How often does home health visit me? Who comes to my house? Home health agencies will contact you within 48 hours after discharge to schedule in-home visits and typically they will visit you 2-3 times a week for 2 weeks. Physical therapist and Occupational therapist are the ones who will visit you, sometimes a nurse will visit if needed or indicated before discharge. Who should I contact if no one calls me about Home therapy? If you don't hear from any home health agencies in 48 hours after discharge from hospital, please call our Care Coordination Office at 650-367-5683."},
+      {n:"FAQ — outpatient PT and refills", t:"When should I start outpatient PT? For Knee surgery, please schedule outpatient physical therapy 3-4 weeks after discharge unless you are told differently by your surgeon. We highly encourage you to book Outpatient PT prior to surgery so the process is less stressful. It can be hard to secure a spot in some of the facilities. Who do I call with questions after I am discharged? You may either contact your surgeon's office or Gloria Kwok the Total Joint Patient Navigator at 650-482-6031. About medication refills, who do I call? Please contact your surgeon's office ahead of time before running low, especially pain medications. What's the average age of patients getting this procedure done? 65-66 years old in recent studies and registry reports (year 2020)."},
+      {n:"Patient Checklist — 14 days before", t:"Anticipate to be discharged on the same day unless there are medical reasons or you are told to stay overnight. Arrange to have help at home for 5-10 days or consider hiring someone to help you until you can care for yourself. Invite to attend Rehab training in the hospital prior to discharge (this can be arranged once you are at Sequoia Hospital). Shop for groceries, have meals prepared and ready to eat. You may need help with groceries, meal prep and housekeeping for several weeks after surgery. Evaluate home for fall and trip hazards (remove loose carpets, throw rugs, cords). Pathways in home should be clear and wide enough for a walker at least 26 inches wide. Purchase equipment such as bedside commode, shower bench, reacher, hip kit (available on Amazon), basket for walker, etc. Arrange for transportation to and from the hospital. You are not allowed to take public transportation such as taxi, Uber or Lyft home alone."},
+      {n:"Patient Checklist — 7 days, 5 days, night before", t:"7 Days Before: Stop taking blood thinners: non-steroidal anti-inflammatories, vitamins, herbal medications, supplements containing Vitamin E or Fish Oil, please consult with MD and/or Cardiologist. Stop shaving legs. 5 Days Before: Start taking a laxative, please consult with MD surgeon. Night Before Surgery: Wash body thoroughly with chlorhexidine soap (avoid scalp). Put on clean pajamas. Put clean sheets on your bed. No pets on bed (until cleared by MD). No food, gum or mints after midnight. Drink liquids to increase hydration (ie Ensure clear, Propel, water with electrolytes). May drink clear liquids up to 2 hours prior to arrival to hospital for surgery."},
+      {n:"Patient Checklist — what to pack", t:"What to Pack For The Hospital: List of medications and which pharmacy you would like to use to refill prescriptions. Have access to credit card # and insurance card (picture in phone is helpful for reference). Toiletries including toothbrush, hearing aids & case, dental implants, eye glasses & case, durable medical equipment such as a CPAP. Wear hospital blue wrist band (given from Lab ONLY if you have blood draw from Sequoia hospital). Comfortable clothing (that allows for mobility), slip-on shoes. Entertainment such as books, magazines, iPad and charger, head phone, cell phone and charging cable and adapter. Copy of Advanced Healthcare Directive. What NOT to Pack: It is best not to bring any of your medications from home to the hospital. Any valuables such as jewelry, money, etc. If any questions or concerns please feel free to contact Gloria Kwok Total Joint Patient Navigator 650-482-6031."},
+      {n:"Commonly Asked Questions", t:"How many days am I in the hospital? We encourage the large majority of our patients to go home the same day that their surgery takes place, and most do! Occasionally, patients need to stay overnight in the hospital. Your surgery is an individualized journey. Your surgeon and care team will decide the best plan for discharge based on your procedure, health and return to safe mobility. Do I need help at home? YES, everyone needs a helper or coach to be with them for the first 3-5 days to help with cleaning, laundry, meals, pain management, ice for surgical site, safety, driving needs etc. Your helper/coach is encouraged to join a PT/OT session while you are here in the hospital to understand your needs at home. This can be arranged once you have arrived. Do I need to arrange Home Health therapy at home? No, the Home Physical & Occupational therapy is arranged by the surgeon's office or the Care Coordination department at Sequoia Hospital if not prearranged by the surgeon's office before surgery. You need to arrange your own appointments for Outpatient Therapy which is your choice of location often close to home. What equipment do I need prior to surgery? If you have a front wheel walker please feel free to bring it in after surgery and the Physical Therapist here can make sure it is the correct height. Otherwise we can provide a walker for home provided at the hospital prior to discharge and we will bill your insurance. Please purchase a bedside commode, elevated toilet seat, long handle grabber, sock aid, etc. if you feel it will be helpful for your recovery. Should I bring anything to the hospital? Copy of insurance prescription card. Copy of credit card or access to credit card #. iPad, laptop, cell phone along with charging cord. Books, adult coloring book. Robe, comfortable shoes to wear during therapy sessions. You are given a toothbrush, toothpaste, notepad, pen, eye mask."},
+      {n:"Pre-Op Patient Timeline / To-Do List", t:"Start as soon as possible: Start taking supplements. Vitamin D: 1000 units/day and Natural Yogurt: one cup/day before surgery. 1 month (30 days) before surgery: Lab work should be done 20-30 days before surgery. Results must be submitted to your Primary Care Physician and your Total Joint Surgery office. Your pre-op appointment with your Primary Care Physician must be within 30 days of your surgery date, after lab work is completed. Please check with your Primary Care Physician what medications can be taken with a small sip of water on the day of surgery. Please remember to bring your “Pre-operative Physical Clearance Request Form” included in this folder to your pre-op appointment. Make sure to schedule outpatient PT. For the knees, schedule 3 weeks after surgery. For the hip, schedule 5 weeks after surgery. Make sure to schedule ahead. 3 weeks before surgery: Call Sequoia Hospital's Pre-Admit Clinic at (650) 367-5545 to schedule your pre-admit appointment. Refer to “Your Passport to Sequoia Hospital” insert in folder. This appointment is to have your blood typed, review paperwork, and receive a special sponge for cleansing prior to surgery. 1 week before surgery: Stop taking all anti-inflammatory medication (Advil, Celebrex, Mobic, Aleve, Aspirin, etc). If you are on Plavix, Coumadin, or Prednisone, please consult with your Primary Care Physician. Tylenol is okay to continue taking. Please start taking Miralax one week before surgery date. If you experience loose stools, stop taking. 3 days before surgery: Stop shaving body hair. Okay to continue shaving facial hair. Night before surgery: Bathe with the chlorhexidine soap provided by Sequoia the night before AND the morning of surgery. Nothing to eat after midnight. Clear liquids (water, clear broth, apple juice, black coffee, Gatorade) may be consumed until 4 hours before your scheduled surgery time. Sequoia Hospital will call you the night before your surgery for the exact surgery time. (If you are scheduled on a Monday, Sequoia will call on Friday). Morning of surgery: Bathe with the chlorhexidine soap. Certain medications may need to be taken with a small sip of water (contact your Primary Care Physician ahead of time to find out if you are taking any of these medications). Stop all food and drink, including water, 4 hours before your scheduled surgery time. Arrive at the hospital 2 hours before your scheduled surgery time.",
+       hw:"started 8/22 · after 8/1/26, redraw between 8/1 and 8/14 · 8/12 · 9/22-24-29 & 10/1 · 8/10/26 · 8/24 ★ · 8/27 · night before 9/30 [should read 8/30] · 8/31 · circled “until 4 hours”, “4 hours before your scheduled surgery time”, “2 hours”"}
+    ]}
+];
+
+function renderDocs(){
+  const host = document.getElementById("p-docs");
+  host.innerHTML =
+    '<div class="block"><h2>The documents you were given</h2>' +
+    '<p class="lede">Everything from the three folders, page by page, in the order the pages come. Printed text and your handwritten notes are kept apart so it is always clear which is which.</p>' +
+    '<p class="prov"><b>These are transcriptions, not the scans.</b> The PDFs are 67 MB across three files and cannot live inside this page. Every word here was read off your scans and typed out; the paper originals remain the record if anything ever looks wrong.</p></div>' +
+    '<div class="searchwrap" style="padding:0 0 .7rem">' +
+      '<input id="dq" class="search" type="search" autocomplete="off" aria-label="Filter the documents" ' +
+      'placeholder="Filter these pages — walker, Miralax, shaving…">' +
+      '<button id="dqx" class="qx" hidden aria-label="Clear the filter" style="right:.45rem">✕</button>' +
+    '</div>' +
+    '<p class="dcount" id="dcount"></p>' +
+    '<div id="doclist"></div>';
+  renderDocList("");
+}
+
+function renderDocList(q){
+  const term = (q || "").trim().toLowerCase();
+  let shown = 0, total = 0;
+  const html = DOCS.map(function(d){
+    const pages = d.pages.filter(function(p){
+      total++;
+      if(!term) return true;
+      return (p.n + " " + p.t + " " + (p.hw||"") + " " + (p.note||"") + " " + d.name + " " + d.tag)
+        .toLowerCase().indexOf(term) > -1;
+    });
+    shown += pages.length;
+    if(!pages.length) return "";
+    return '<section class="doc"><div class="doc-h"><span class="doc-tag">' + esc(d.tag) + '</span>' +
+      '<div><h3>' + esc(d.name) + '</h3><span class="doc-who">' + esc(d.who) + '</span></div></div>' +
+      pages.map(function(p){
+        return '<article class="dpage"><h4>' + hl(p.n, term) + '</h4>' +
+          '<p class="dtext">' + hl(p.t, term) + '</p>' +
+          (p.hw ? '<div class="hand"><span class="lbl">Your handwriting on this page</span><q>' + esc(p.hw) + '</q></div>' : '') +
+          (p.note ? '<p class="dnote">' + esc(p.note) + '</p>' : '') +
+        '</article>';
+      }).join("") + '</section>';
+  }).join("");
+
+  document.getElementById("doclist").innerHTML = html ||
+    '<p class="rnone">No page mentions “' + esc(q) + '”. Try a shorter word — this filter looks at every page of all three documents, including your handwriting.</p>';
+  document.getElementById("dcount").textContent = term
+    ? shown + " of " + total + " pages mention “" + q.trim() + "”"
+    : total + " pages across " + DOCS.length + " documents";
+}
+
+document.addEventListener("input", function(e){
+  if(!e.target.closest("#dq")) return;
+  const v = document.getElementById("dq").value;
+  document.getElementById("dqx").hidden = !v;
+  renderDocList(v);
+});
+document.addEventListener("click", function(e){
+  if(!e.target.closest("#dqx")) return;
+  document.getElementById("dq").value = "";
+  document.getElementById("dqx").hidden = true;
+  renderDocList("");
+  document.getElementById("dq").focus();
+});
+
+function renderContacts(){
+  document.getElementById("p-contacts").innerHTML =
+    CONTACTS.map(g => '<div class="block"><h2>' + esc(g.g) + '</h2><div style="margin-top:.4rem">' +
+      g.list.map(c => '<a class="call" href="tel:' + c.t.replace(/-/g,"") + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.4 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>' +
+        '<span class="who"><b>' + esc(c.n) + '</b>' + (c.d?'<span>'+esc(c.d)+'</span>':'') + '</span>' +
+        '<span class="num">' + esc(c.t) + '</span></a>').join("") + '</div></div>').join("") +
+    '<div class="block"><span class="eyebrow">Add this to your home screen</span>' +
+    '<p class="prov">On an iPhone: open this page in Safari, tap the Share button, then “Add to Home Screen.” It then opens like an app, and your check marks are saved on that device.</p></div>';
+}
+
+function renderHead(){
+  const t = offsetToday();
+  const cEl = document.getElementById("count");
+  if(t < 0) cEl.innerHTML = Math.abs(t) + '<small>' + (Math.abs(t)===1?" day to go":" days to go") + '</small>';
+  else if(t === 0) cEl.innerHTML = 'Today<small> — surgery day</small>';
+  else cEl.innerHTML = t + '<small>' + (t===1?" day after surgery":" days after surgery") + '</small>';
+
+  const all = PHASES.flatMap(p=>p.items).filter(i=>!i.x).map(i=>i.key)
+    .concat(tasks.map(t=>"u:"+t.id));
+  document.getElementById("meta").innerHTML = '<b>' + fmtL(SURGERY) + '</b><br>' + SIDE +
+    ' total knee replacement<br><b>' + all.filter(k=>done[k]).length + ' of ' + all.length + '</b> checked off';
+
+  const lo = PHASES[0].from, hi = PHASES[PHASES.length-1].to;
+  const pct = v => ((Math.min(Math.max(v,lo),hi)-lo)/(hi-lo))*100;
+  document.getElementById("railfill").style.width = pct(t)+"%";
+  document.getElementById("railnow").style.left  = pct(t)+"%";
+  document.getElementById("railpivot").style.left= pct(0)+"%";
+  document.getElementById("chips").innerHTML = PHASES.map(p =>
+    '<button class="chip" data-go="ph-'+p.id+'" data-state="'+phaseState(p)+'">'+esc(p.short)+'</button>').join("");
+}
+
+const TABS = [
+  {id:"timeline", label:"Timeline", icon:'<path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/>'},
+  {id:"daily",    label:"Each day", icon:'<path d="M9 11l2 2 4-4"/><path d="M9 17l2 2 4-4"/><path d="M3 5h4M3 11h2M3 17h2"/><path d="M13 5h8"/>'},
+  {id:"alerts",   label:"Watch for",icon:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>'},
+  {id:"ask",      label:"Ask team", icon:'<path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/>'},
+  {id:"contacts", label:"Call",     icon:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.4 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>'},
+  {id:"docs",     label:"Resources", icon:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h7"/>'},
+  {id:"backup",   label:"Backup/Restore",   icon:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>'}
+];
+document.getElementById("tabs").innerHTML = TABS.map((t,i) =>
+  '<button role="tab" data-tab="'+t.id+'" aria-selected="'+(i===0)+'">' +
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+t.icon+'</svg>' +
+  '<span>'+t.label+'</span>' +
+  (t.id==="ask" ? '<span class="badge">'+Object.keys(CONFLICTS).length+'</span>' : '') + '</button>').join("");
+
+function show(id){
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on", p.id === "p"+"-"+id));
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===id));
+  window.scrollTo({top:0, behavior:"instant"});
+}
+
+document.getElementById("tabs").addEventListener("click", e => {
+  const b = e.target.closest("button[data-tab]"); if(b) show(b.dataset.tab);
+});
+document.getElementById("chips").addEventListener("click", e => {
+  const b = e.target.closest("[data-go]"); if(!b) return;
+  show("timeline");
+  document.querySelectorAll("#chips .chip").forEach(c => c.classList.toggle("sel", c === b));
+  document.getElementById("chips").classList.add("has-sel");
+  const el = document.getElementById(b.dataset.go);
+  if(el){ el.dataset.open="1"; el.querySelector(".ph-head").setAttribute("aria-expanded","true");
+    requestAnimationFrame(()=>el.scrollIntoView({behavior:"smooth",block:"start"})); }
+});
+/* add / delete her own tasks */
+document.getElementById("p-timeline").addEventListener("click", e => {
+  const blk = document.querySelector("#p-timeline .addblk");
+  if(e.target.closest(".add-open")){
+    blk.querySelector(".addform").hidden = false;
+    blk.querySelector(".add-open").hidden = true;
+    blk.querySelector(".t-text").focus(); return;
+  }
+  if(e.target.closest(".add-cancel")){
+    blk.querySelector(".addform").hidden = true;
+    blk.querySelector(".add-open").hidden = false;
+    blk.querySelector(".addmsg").textContent = ""; return;
+  }
+  if(e.target.closest(".add-save")){
+    const text = blk.querySelector(".t-text").value.trim();
+    const date = blk.querySelector(".t-date").value;
+    const time = blk.querySelector(".t-time").value;
+    const msg  = blk.querySelector(".addmsg");
+    if(!text){ msg.textContent = "Give the task a name first."; blk.querySelector(".t-text").focus(); return; }
+    if(!date){ msg.textContent = "Pick a date so it knows where to sit on the timeline."; return; }
+    tasks.push({ id: String(Date.now()) + "-" + Math.floor(Math.random()*1e6), text, date, time: time || "" });
+    saveTasks();
+    const t = tasks[tasks.length-1], ph = taskPhase(t);
+    renderTimeline(); renderHead(); renderBanner();
+    const el = document.getElementById("ph-" + ph);
+    if(el){ el.dataset.open = "1"; el.querySelector(".ph-head").setAttribute("aria-expanded","true");
+      requestAnimationFrame(()=>el.scrollIntoView({behavior:"smooth",block:"start"})); }
+    return;
+  }
+  const del = e.target.closest("[data-del]");
+  if(del){
+    const t = tasks.find(x => x.id === del.dataset.del);
+    if(t) askConfirm("Delete this task?", "“" + t.text + "” will be removed, along with any note on it. Nothing else is affected.",
+      "Delete", () => {
+        tasks = tasks.filter(x => x.id !== del.dataset.del);
+        delete done["u:" + del.dataset.del];
+        delete notes["n:item:u:" + del.dataset.del];
+        saveTasks(); save(); saveNotes(); renderTimeline(); renderHead(); renderBanner();
+      });
+    return;
+  }
+
+  const head = e.target.closest(".ph-head");
+  if(head){ const ph=head.closest(".phase"); const open = ph.dataset.open==="1"?"0":"1";
+    ph.dataset.open=open; head.setAttribute("aria-expanded", open==="1"?"true":"false"); return; }
+  const row = e.target.closest("button.row");
+  if(row){
+    const li = row.closest("li.item");
+    if(li && li.dataset.key) toggleItem(li.dataset.key);
+    return;
+  }
+});
+
+document.getElementById("p-daily").addEventListener("click", e => {
+  const b = e.target.closest("[data-trk]"); if(!b) return;
+  const k = b.dataset.trk;
+  done[k]=!done[k]; if(!done[k]) delete done[k]; save();
+  b.setAttribute("aria-checked", !!done[k]);
+  /* stamp the moment a medication dose is ticked; drop it when un-ticked */
+  if(!b.dataset.ses){
+    const rid = k.split(":")[2];
+    const row = TRACK.flatMap(g=>g.rows).find(x=>x.id===rid);
+    if(row && row.every){
+      if(done[k]) times[k] = Date.now(); else delete times[k];
+      saveTimes();
+      const trow = b.closest(".trow");
+      const d = +b.dataset.day;
+      const holder = trow.querySelector(".dts"), cap = trow.querySelector(".cap"), due = trow.querySelector(".due");
+      const fresh = document.createElement("div");
+      fresh.innerHTML = doseTimesHTML(d,row);
+      if(holder) holder.remove(); if(cap) cap.remove(); if(due) due.remove();
+      const slots = trow.querySelector(".slots");
+      while(fresh.firstChild) slots.after(fresh.firstChild);
+      refreshDue();
+    }
+  }
+  const sec = b.closest(".day"); if(!sec) return;
+  const el = sec.querySelector(".tally"); if(!el) return;
+  if(b.dataset.ses){                                   // a therapy session step
+    const g = SESSIONS.find(x => x.id === b.dataset.ses), refs = sesRefs(g);
+    const c = refs.filter(r => done[sesKey(g.id,r,"did")]).length;
+    el.textContent = c+"/"+refs.length; el.classList.toggle("full", c===refs.length);
+  } else {                                             // a daily dose or exercise
+    const [c,n] = dayTally(+b.dataset.day);
+    el.textContent = c+"/"+n; el.classList.toggle("full", c===n);
+  }
+});
+/* The floating button is the only always-visible route to the task form. */
+document.getElementById("fab").addEventListener("click", () => {
+  show("timeline");
+  const blk = document.querySelector("#p-timeline .addblk");
+  if(!blk) return;
+  blk.querySelector(".addform").hidden = false;
+  blk.querySelector(".add-open").hidden = true;
+  blk.querySelector(".addmsg").textContent = "";
+  requestAnimationFrame(() => {
+    blk.scrollIntoView({behavior:"smooth", block:"start"});
+    blk.querySelector(".t-text").focus();
+  });
+});
+
+document.getElementById("theme").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const dark = cur ? cur==="dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+});
+
+renderTimeline(); renderDaily(); renderAlerts(); renderAsk(); renderContacts(); renderBackup(); renderDocs(); renderHead(); renderBanner(); syncBackupUI();
+refreshDue();
+setInterval(refreshDue, 30000);   // keep "in 2h 10m" honest without a reload
+/* Deliberately no auto-scroll on open. It used to jump to the current phase,
+   which pushed the backup warning and the add-task form off the top of the
+   screen. The app opens at the top so the thing that matters most is the first
+   thing seen; the phase chips and the search box are how she jumps elsewhere. */
+</script>
+
+</body>
+</html>
