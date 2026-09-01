@@ -51,7 +51,8 @@
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --paper:#0F1512; --card:#171F1B; --card-2:#1D2723;
+    --pt:#79C2DC; --pt-soft:#12303A;
+  --paper:#0F1512; --card:#171F1B; --card-2:#1D2723;
     --ink:#E3EAE5; --ink-2:#A3B1AA; --ink-3:#8A9891;
     --rule:#28332D; --rule-2:#37453D;
     --accent:#54C3A3; --accent-soft:#12332A; --accent-ink:#8FE0C5;
@@ -430,6 +431,148 @@ li.trow-today:first-child{border-top:0}
   text-transform:uppercase; font-weight:700; margin-top:.35rem}
 .rnone{padding:0 1rem; font-size:.875rem; color:var(--ink-2); line-height:1.5}
 
+/* ============ POST-OP DAY VIEW ============ */
+.build{font-family:var(--f-data); font-size:.62rem; opacity:.55; letter-spacing:.02em}
+.po-cnt{float:right; font-family:var(--f-data); font-size:.72rem; opacity:.75; text-transform:none;
+  letter-spacing:0}
+section[id^="sec-"]{display:block; scroll-margin-top:.5rem}
+.po-more{display:block; width:100%; text-align:left; font:inherit; color:var(--ink); cursor:pointer;
+  background:var(--card-2); border:1.5px solid var(--rule-2); border-radius:12px;
+  padding:.8rem .9rem; margin-bottom:.55rem; min-height:60px}
+.po-more:hover{border-color:var(--accent)}
+.po-more b{display:block; font-size:1rem; font-weight:700}
+.po-more i{display:block; font-style:normal; font-size:.8rem; color:var(--ink-3); margin-top:.15rem}
+/* Lets the last section reach the top of the viewport when jumped to;
+   without it, Appts clamps to the bottom of the page. */
+.po-tail{height:80vh}
+.po-daybar{padding-top:.8rem}
+.po-dayrow{display:flex; align-items:center; gap:.6rem}
+.po-nav{flex:0 0 auto; width:3rem; height:3rem; border-radius:12px; border:1.5px solid var(--rule-2);
+  background:var(--card-2); color:var(--ink-2); font-size:.95rem; cursor:pointer; line-height:1}
+.po-nav:hover{border-color:var(--accent); color:var(--accent)}
+.po-dayname{flex:1; min-width:0; text-align:center}
+.po-dayname h2{font-size:1.2rem; margin:0; letter-spacing:-.01em}
+.po-back{display:block; margin:.6rem auto 0; font:inherit; font-size:.8rem; font-weight:700;
+  min-height:2.6rem; padding:0 1rem; border-radius:10px; border:0;
+  background:var(--accent); color:var(--on-accent); cursor:pointer}
+.po-cats{display:flex; gap:.4rem; margin:0 0 .9rem}
+.po-cats button{flex:1; font:inherit; padding:.55rem .3rem; border-radius:12px; cursor:pointer;
+  border:1.5px solid var(--rule-2); background:var(--card); color:var(--ink-2); min-height:52px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.1rem}
+.po-cats button b{font-size:.9rem; font-weight:700}
+.po-cats button i{font-style:normal; font-family:var(--f-data); font-size:.68rem; opacity:.85}
+.po-cats button[aria-selected="true"]{background:var(--accent); border-color:var(--accent);
+  color:var(--on-accent)}
+.po-lbl{font-family:var(--f-data); font-size:.72rem; text-transform:uppercase; letter-spacing:.07em;
+  color:var(--ink-2); margin:0 0 .6rem; font-weight:700}
+.po-bar{display:flex; align-items:center; gap:.7rem; margin-top:.6rem}
+.po-track{flex:1; height:9px; background:var(--rule); border-radius:9px; overflow:hidden}
+.po-track i{display:block; height:100%; background:var(--accent)}
+.po-bar b{font-family:var(--f-data); font-size:.95rem}
+
+.po-tray{display:flex; flex-wrap:wrap; gap:.5rem}
+.po-chip{flex:1 1 12rem; min-height:56px; border-radius:12px; border:1.5px solid var(--rule-2);
+  background:var(--card-2); padding:.5rem .65rem; display:flex; align-items:center; gap:.55rem;
+  cursor:pointer; text-align:left; font:inherit; color:var(--ink)}
+.po-chip:hover{border-color:var(--ink-3)}
+.po-nm{flex:1; min-width:0}
+.po-nm b{display:block; font-size:.88rem; font-weight:700}
+.po-nm i{display:block; font-style:normal; font-size:.7rem; color:var(--ink-3); margin-top:.1rem}
+.po-chip.pt.full{background:var(--pt-soft); border-color:var(--pt)}
+.po-chip.care.full{background:var(--warn-soft); border-color:var(--warn-rule)}
+.po-pips{display:flex; gap:.22rem; flex-shrink:0}
+.po-pip{width:.85rem; height:.85rem; border-radius:50%; border:1.6px solid var(--rule-2); display:block}
+.po-chip.pt .po-pip.on{background:var(--pt); border-color:var(--pt)}
+.po-chip.care .po-pip.on{background:var(--warn); border-color:var(--warn)}
+
+.po-hours{position:relative; border-left:2px solid var(--rule); margin-left:3.6rem}
+.po-hr{position:relative; height:3.4rem; border-top:1px dashed var(--rule)}
+.po-hr:last-of-type{border-bottom:1px dashed var(--rule)}
+.po-hr b{position:absolute; left:-3.6rem; top:-.62rem; width:3.2rem; text-align:right;
+  font-family:var(--f-data); font-size:.68rem; color:var(--ink-3)}
+.po-ev{position:absolute; min-height:2.5rem; border-radius:10px; padding:.35rem .55rem; font-size:.82rem;
+  line-height:1.25; cursor:pointer; border:1.5px solid var(--accent); background:var(--accent-soft);
+  color:var(--accent-ink); display:flex; align-items:center; gap:.4rem; z-index:3; overflow:hidden}
+.po-ev b{font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.po-ev small{font-family:var(--f-data); font-size:.66rem; opacity:.85; margin-left:auto; white-space:nowrap}
+.po-ev.narrow{flex-direction:column; align-items:flex-start; gap:0; justify-content:center; padding:.3rem .45rem}
+.po-ev.narrow b{white-space:normal; line-height:1.15; font-size:.78rem}
+.po-ev.narrow small{margin-left:0; font-size:.6rem}
+.po-ev.done{opacity:.6}
+.po-ev.late{box-shadow:0 0 0 2px var(--crit)}
+.po-ev.crit{border-color:var(--crit); background:var(--crit-soft); color:var(--crit)}
+.po-now{position:absolute; left:-3.6rem; right:0; height:0; border-top:2px solid var(--crit); z-index:5}
+.po-now b{position:absolute; left:0; top:-.62rem; background:var(--crit); color:#fff;
+  font-family:var(--f-data); font-size:.58rem; font-weight:700; padding:.05rem .3rem; border-radius:4px}
+
+.po-prn{display:flex; align-items:center; gap:.7rem; padding:.6rem 0; border-top:1px solid var(--rule)}
+.po-prn:first-of-type{border-top:0}
+.po-prn.early .po-nm i:nth-of-type(2){color:var(--warn); font-weight:700}
+.po-take{flex:0 0 auto; font:inherit; font-size:.85rem; font-weight:700; min-width:4.6rem; min-height:2.9rem;
+  border-radius:10px; border:0; background:var(--accent); color:var(--on-accent); cursor:pointer}
+.po-take:hover{opacity:.9}
+.po-appt{border-radius:10px; padding:.5rem .7rem; margin-bottom:.4rem; font-size:.85rem;
+  line-height:1.45; background:var(--pen-soft); color:var(--pen)}
+.po-appt b{font-weight:700; margin-right:.35rem}
+.po-by{display:block; font-style:normal; font-family:var(--f-data); font-size:.68rem;
+  opacity:.8; margin-top:.2rem}
+.po-stop{border-radius:10px; padding:.5rem .7rem; margin-bottom:.4rem; font-size:.85rem;
+  line-height:1.45; background:var(--crit-soft); color:var(--crit)}
+.po-empty{font-size:.85rem; color:var(--ink-3); font-style:italic; margin:0}
+
+/* ============ POST-OP TRACKER ============ */
+.po-next{border-color:var(--accent); box-shadow:var(--shadow-lift)}
+.po-h{display:flex; align-items:baseline; gap:.6rem; flex-wrap:wrap; margin-bottom:.5rem}
+.po-h h2{font-size:1.15rem}
+.po-when{font-family:var(--f-data); font-size:.68rem; letter-spacing:.03em; text-transform:uppercase;
+  color:var(--accent-ink); font-weight:700}
+.po-clear{font-size:.9rem; color:var(--accent-ink); background:var(--accent-soft); border-radius:9px; padding:.65rem .75rem}
+.eyebrow.crit{color:var(--crit)}
+.porow{display:flex; align-items:center; gap:.7rem; padding:.65rem 0; border-top:1px solid var(--rule)}
+.porow:first-of-type{border-top:0}
+.porow.crit .poinfo b{color:var(--crit)}
+.poinfo{flex:1; min-width:0}
+.poinfo b{font-size:.95rem; font-weight:700; margin-right:.4rem}
+.podose{font-family:var(--f-data); font-size:.72rem; color:var(--accent-ink); background:var(--accent-soft);
+  border-radius:5px; padding:.1rem .35rem; font-weight:600; white-space:nowrap}
+.poprn{font-family:var(--f-data); font-size:.6rem; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--warn); background:var(--warn-soft); border-radius:4px; padding:.08rem .3rem; font-weight:700; margin-left:.3rem}
+.poinfo i{display:block; font-style:normal; font-size:.79rem; color:var(--ink-2); margin-top:.2rem; line-height:1.4}
+.polog{flex:0 0 auto; font:inherit; font-size:.85rem; font-weight:700; min-width:4.4rem; min-height:2.9rem;
+  border-radius:10px; border:0; background:var(--accent); color:var(--on-accent); cursor:pointer}
+.polog:hover{opacity:.9}
+.pogrid{padding:.35rem 0 .6rem; border-top:1px solid var(--rule)}
+.pogrid:first-of-type{border-top:0}
+.pogrid.stopped{opacity:.7}
+.potimes{display:flex; flex-wrap:wrap; gap:.3rem; margin:.1rem 0 .3rem}
+.potime{font-family:var(--f-data); font-size:.7rem; background:var(--accent-soft); color:var(--accent-ink);
+  border-radius:5px; padding:.12rem .4rem; font-weight:600}
+.potime em{font-style:normal; color:var(--warn)}
+.dots{display:flex; gap:.35rem; margin:.15rem 0 .35rem}
+.dot{flex:1; text-align:center; font-family:var(--f-data); font-size:.68rem; font-weight:700;
+  padding:.35rem .2rem; border-radius:7px; border:1.5px dashed var(--rule-2); color:var(--ink-3)}
+.dot.on{border-style:solid; border-color:var(--accent); background:var(--accent-soft); color:var(--accent-ink)}
+.ponote{font-size:.78rem; color:var(--ink-2); line-height:1.45}
+.powarn{font-size:.78rem; color:var(--warn); background:var(--warn-soft); border-radius:7px;
+  padding:.35rem .5rem; margin-top:.3rem; line-height:1.4}
+.sheet-card{max-width:24rem}
+.sheet-sub{font-size:.82rem; color:var(--ink-2); margin-bottom:.8rem}
+#sheet-body{display:flex; flex-direction:column; gap:.85rem}
+.stepper{display:flex; align-items:center; gap:.6rem}
+.stepper button{width:3.2rem; height:3.2rem; border-radius:12px; border:1.8px solid var(--rule-2);
+  background:var(--card-2); color:var(--ink); font:inherit; font-size:1.5rem; font-weight:700; cursor:pointer}
+.stepper button:hover{border-color:var(--accent)}
+.stepper output{font-family:var(--f-data); font-size:1.5rem; font-weight:700; min-width:3rem; text-align:center}
+.fldnote{font-size:.75rem; color:var(--ink-3); margin-top:.15rem}
+.painrow{display:flex; gap:.35rem}
+.pain{flex:1; min-height:3.6rem; border-radius:10px; border:1.8px solid var(--rule-2); background:var(--card-2);
+  cursor:pointer; font:inherit; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.1rem; padding:.2rem}
+.pain b{font-size:1.1rem; font-weight:800; color:var(--ink)}
+.pain i{font-style:normal; font-size:.55rem; color:var(--ink-3); text-align:center; line-height:1.2}
+.pain.on{background:var(--warn); border-color:var(--warn)}
+.pain.on b, .pain.on i{color:var(--on-warn)}
+.sheetwarn{font-size:.8rem; color:var(--warn); background:var(--warn-soft); border-radius:8px; padding:.5rem .6rem; line-height:1.45}
+
 /* ============ CONFIRMATION DIALOG ============
    Built in the page rather than window.confirm(), which a sandboxed iframe can
    suppress — a destructive action must never proceed on a dialog nobody saw. */
@@ -483,6 +626,8 @@ nav.tabs .badge{position:absolute; top:.35rem; left:calc(50% + .42rem); min-widt
   <section class="panel" id="p-alerts" role="tabpanel" aria-label="What to watch for"></section>
   <section class="panel" id="p-ask" role="tabpanel" aria-label="Ask the team"></section>
   <section class="panel" id="p-contacts" role="tabpanel" aria-label="Contacts"></section>
+  <section class="panel" id="p-more" role="tabpanel" aria-label="More"></section>
+  <section class="panel" id="p-grid" role="tabpanel" aria-label="Day by day"></section>
   <section class="panel" id="p-backup" role="tabpanel" aria-label="Backup"></section>
   <section class="panel" id="p-docs" role="tabpanel" aria-label="Resources"></section>
 </main>
@@ -493,6 +638,18 @@ nav.tabs .badge{position:absolute; top:.35rem; left:calc(50% + .42rem); min-widt
 </button>
 
 <nav class="tabs" id="tabs" role="tablist"></nav>
+
+<div class="modal" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheet-t">
+  <div class="modal-card sheet-card">
+    <h2 id="sheet-t"></h2>
+    <p id="sheet-sub" class="sheet-sub"></p>
+    <div id="sheet-body"></div>
+    <div class="acts" style="margin:1rem 0 0">
+      <button class="act prim" id="sheet-save">Save</button>
+      <button class="act" id="sheet-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-t">
   <div class="modal-card">
@@ -511,6 +668,7 @@ nav.tabs .badge{position:absolute; top:.35rem; left:calc(50% + .42rem); min-widt
 /* ══════════════════════════════════════════════════════════════════════════
    ONE PARAMETER. Every date on this page is computed from it at render time.
    ══════════════════════════════════════════════════════════════════════════ */
+const BUILD = "2026-09-01 · day view";
 const SURGERY = new Date(2026, 7, 31);   // Monday, August 31, 2026 — right TKR
 const SIDE    = "right";
 const STORE   = "tkr-2026-08-31.v1";
@@ -779,7 +937,7 @@ const PHASES = [
     blurb:"The hardest stretch. Someone stays with you, the home health agency makes contact, and the day settles into a rhythm of medication, ice, elevation and short walks. The Each day tab has a dose-by-dose tracker for exactly these five days.",
     items:[
       {k:"home1-caregiver-present-window", i:"Caregiver present. This is the window every document agrees is non-negotiable, even where they disagree on how long it runs.", s:"CHK,SEQ,PAMF", d:1, hw:"Paul", c:"helper", f:"crit"},
-      {k:"home1-home-health-agency", i:"The home health agency calls within 24–48 hours of discharge to schedule visits. If nobody has called by 48 hours, call Care Coordination on 650-367-5683.", s:"SEQ,CHK", d:2, f:"crit"},
+      {k:"home1-home-health-agency", i:"The home health agency calls within 24–48 hours of discharge to schedule visits. If nobody has called by 48 hours, call Care Coordination on 650-367-5683.", s:"SEQ,CHK", d:2, from:1, f:"crit"},
       {k:"home1-take-pain-medication", i:"Take your pain medication 30–60 minutes before every physical or occupational therapy session, at home as well as in hospital.", s:"SEQ", d:1, f:"crit"},
       {k:"home1-rest-keep-operated", i:"At rest, keep the operated leg straight and elevated. Never a pillow under the knee — it sets the knee into a bend that is very hard to undo.", s:"SEQ", d:1, f:"crit"},
       {k:"home1-but-change-knee", i:"But change the knee's position often. It stiffens after 20–30 minutes in any one position. Seated heel slides are the exercise for this; your therapist will teach them.", s:"CHK", d:1},
@@ -1366,7 +1524,7 @@ function bkCommit(root, data, mode){
     data.tasks.forEach(t => { if(t && t.id && t.text && t.date && !tasks.some(x=>x.id===t.id)){ tasks.push(t); tasksAdded++; } });
   }
   save(); saveNotes(); saveTimes(); if(tasksAdded) saveTasks();
-  renderTimeline(); renderDaily(); renderAsk(); renderHead(); refreshDue(); renderBanner();
+  renderTimeline(); renderPostop(); renderGrid(); renderMore(); renderAsk(); renderHead(); refreshDue(); renderBanner();
   const root2 = document.querySelector("#p-timeline .bk") || root;
   const bits = [];
   if(added)      bits.push(added + " check mark" + (added===1?"":"s"));
@@ -1670,6 +1828,28 @@ function closeConfirm(run){
   document.getElementById("modal").hidden = true;
   if(run && cb) cb();
 }
+document.getElementById("sheet-cancel").addEventListener("click", closeLog);
+document.getElementById("sheet-save").addEventListener("click", commitLog);
+document.getElementById("sheet").addEventListener("click", e => {
+  if(e.target.id === "sheet") return closeLog();
+  const st = e.target.closest("[data-step]");
+  if(st){ const o=document.getElementById("sh-dose");
+    o.textContent = Math.max(0.5, (+o.textContent) + (+st.dataset.step)*0.5); return; }
+  const pn = e.target.closest("[data-pain]");
+  if(pn){ document.querySelectorAll("#sheet .pain").forEach(x=>x.classList.toggle("on", x===pn)); }
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-log]"); if(b) return openLog(b.dataset.log);
+  const d = e.target.closest("[data-poday]");
+  if(d){
+    const step = +d.dataset.poday;
+    poDayShown = step === 0 ? null : poDayNum() + step;
+    if(poDayShown === offsetToday()) poDayShown = null;   /* snap back to live */
+    return renderPostop();
+  }
+  const m = e.target.closest("[data-more]");
+  if(m) return show(m.dataset.more, true);
+});
 document.getElementById("modal-yes").addEventListener("click", () => closeConfirm(true));
 document.getElementById("modal-no").addEventListener("click", () => closeConfirm(false));
 document.getElementById("modal").addEventListener("click", e => {
@@ -1829,7 +2009,10 @@ function sessionsHTML(){
   return html;
 }
 
-function renderDaily(){
+/* The original dose-by-dose grid and medication reference. Kept and shown
+   BELOW the day view rather than removed, because its tick boxes hold
+   entries she may already have made. */
+function dailyLegacyHTML(){
   const t = offsetToday();
   let html = '<div class="block"><h2>Dose by dose, surgery day to day 14</h2>' +
     '<p class="lede">A box for every scheduled dose and every repeated exercise, from the afternoon of surgery through the wound check. Tap a box as you go — it saves on this device. The counts come from your own notes and the Sequoia FAQ; where a schedule is disputed the box row carries the same warning as the timeline.</p>' +
@@ -1876,8 +2059,7 @@ function renderDaily(){
       .map(x=>'<li><span style="color:var(--accent);flex:0 0 auto">•</span><span>'+esc(x)+'</span></li>').join("") +
     '</ul><div class="hand"><span class="lbl">Your note</span><q>check oxycodone amount · get refills if available · can cut oxy in half</q></div></div>';
 
-  document.getElementById("p-daily").innerHTML = html;
-  syncBackupUI();
+  return html;
 }
 
 function renderAlerts(){
@@ -2063,6 +2245,418 @@ const DOCS = [
     ]}
 ];
 
+/* ── post-op regimen, transcribed from the 8/31/2026 discharge document and the
+   Dignity Health Home Exercise Program of the same date ─────────────────────
+   Times and intervals are exactly as printed. Where the sheet gives a "next
+   dose" it is used as the anchor so the schedule lines up with what the
+   hospital set, rather than with when the app was first opened.            */
+
+const SURG = new Date(2026, 7, 31);          // Mon 31 Aug 2026, surgery day
+
+/* every medication on the discharge sheet, in the order it appears there */
+const MEDS_PO = [
+  { id:"tyl",  n:"Tylenol",        sub:"acetaminophen 500 mg caplets",
+    dose:"2 tabs (1000 mg)", everyH:6*0+8, sched:true, doseEntry:true, unit:"tabs", defDose:2,
+    anchor:"2026-08-31T20:00", days:7,
+    note:"Every 8 hours for 7 days, then as needed every 8 hours. Last hospital dose 8/31 at noon.",
+    warn:"2 tabs three times a day is 3000 mg — do not add any other paracetamol/acetaminophen." },
+  { id:"oxy",  n:"Oxycodone",      sub:"5 mg tablets",
+    dose:"1–2 tabs", everyH:4, prn:true, doseEntry:true, unit:"tabs", defDose:1, days:5,
+    anchor:"2026-08-31T19:00",
+    note:"Every 4 hours AS NEEDED. 1 tab mild · 1½ moderate · 2 severe. Last hospital dose 8/31 3pm, 1 tab." },
+  { id:"melox",n:"Meloxicam",      sub:"15 mg tablet", dose:"1 tab", everyH:24, sched:true,
+    anchor:"2026-09-01T09:00", note:"Once daily." },
+  { id:"lov",  n:"Lovenox",        sub:"enoxaparin 30 mg / 0.3 mL, subcutaneous injection",
+    dose:"30 mg subQ", everyH:12, sched:true, days:10, anchor:"2026-09-02T09:00", critical:true,
+    note:"Every 12 hours for 10 days, then aspirin 81 mg daily for 20 days. The sheet marks the next doses as 9/2 9am & 9pm.",
+    warn:"Confirm with the office when her first dose at home is due — the sheet's 9/2 start is later than a strict 12-hourly count would give." },
+  { id:"asa",  n:"Aspirin 81 mg",  sub:"enteric coated", dose:"1 tab", everyH:24, sched:true,
+    startsAfter:"lov", days:20, note:"Starts only when the Lovenox course is finished. 20 days, for clot prevention." },
+  { id:"keflex",n:"Cephalexin",    sub:"Keflex 500 mg capsule", dose:"1 capsule", everyH:6, sched:true,
+    anchor:"2026-08-31T21:00", days:1,
+    note:"Four times daily, 1 day only.", warn:"Short course — check with the office how many doses remain." },
+  { id:"omep", n:"Omeprazole",     sub:"20 mg", dose:"1 dose", everyH:24, sched:true,
+    anchor:"2026-09-01T06:00", note:"Once daily, stomach protection while on the anti-inflammatory." },
+  { id:"vitd", n:"Vitamin D3",     sub:"cholecalciferol 2000 mcg", dose:"1 dose", everyH:24, sched:true,
+    anchor:"2026-09-01T09:00", note:"Once daily." },
+  { id:"mira", n:"MiraLax",        sub:"polyethylene glycol 3350, 17 g", dose:"1 scoop in 8 oz water",
+    everyH:24, sched:true, anchor:"2026-09-01T09:00", days:7,
+    note:"Once daily for 7 days to prevent constipation from the opioid. Stop if she gets diarrhoea." },
+  { id:"zof",  n:"Zofran",         sub:"ondansetron 4 mg", dose:"1 tab", everyH:8, prn:true, days:30,
+    note:"Every 8 hours AS NEEDED for nausea or vomiting." },
+  { id:"narcan",n:"Narcan",        sub:"naloxone 4 mg nasal spray", dose:"1 spray", onHand:true, days:30,
+    note:"Emergency only, for opioid overdose. May repeat every 2–3 minutes until she responds. Call 911 first." }
+];
+
+const STOPPED = [{ n:"Naproxen (Aleve)", why:"Stop taking — it is on the discharge sheet's stop list, and other NSAIDs are out while she is on meloxicam." }];
+
+/* the nine exercises, all three times a day, 1 set of 10 unless stated */
+const EX = [
+  { id:"ankle",  n:"Ankle pumps",              d:"Lying or sitting. Pump both ankles up and down, keeping the legs relaxed.", reps:"10 reps" },
+  { id:"quad",   n:"Quad sets",                d:"Lying with the operated leg straight. Tighten the thigh, pressing the back of the knee down.", reps:"10 reps · hold 2 sec" },
+  { id:"glute",  n:"Gluteal sets",             d:"Lying or sitting. Squeeze the buttocks together, then release.", reps:"10 reps · hold 2 sec" },
+  { id:"heel",   n:"Heel slides",              d:"Lying with the leg straight. Slide the heel toward the buttocks until a stretch, then back.", reps:"10 reps · use the leg lifter loop if needed" },
+  { id:"slr",    n:"Straight leg raise",       d:"Squeeze the thigh, flex the foot, lift the leg until level with the other thigh, lower slowly.", reps:"10 reps · keep the leg straight" },
+  { id:"abd",    n:"Hip abduction",            d:"Lying with the leg straight. Move the operated leg out to the side, knee and toes to the ceiling.", reps:"10 reps" },
+  { id:"saq",    n:"Short arc quad",           d:"Towel roll or ball under the knee. Straighten the knee without lifting the leg off the roll.", reps:"10 reps" },
+  { id:"seated", n:"Seated knee flexion slide",d:"Sitting, foot on a towel. Slide the heel backwards as far as tolerable, then return.", reps:"10 reps · hold 5 sec" },
+  { id:"ext",    n:"Knee extension stretch",   d:"Towel roll under the ankle, leg relaxed and knee straight. Start at 5 minutes if painful and build up.", reps:"hold 15 min", long:true }
+];
+
+/* the other timed things the discharge paperwork asks for */
+const CARE = [
+  { id:"ice",  n:"Ice + elevate",  perDay:5, everyH:3,
+    d:"20 minutes, leg above the heart, knee STRAIGHT — do not bend at the knee. 4–5 times a day.",
+    warn:"Not overnight while she sleeps." },
+  { id:"walk", n:"Walk",           perDay:1, steps:true,
+    d:"Weight bearing as tolerated with the front-wheeled walker. Record steps or blocks.",
+    warn:"No driving." },
+  { id:"stock",n:"Compression stockings", perDay:1,
+    d:"Both legs, daytime only, for 2–4 weeks.", warn:"Remove before sleeping." },
+  { id:"spiro",n:"Incentive spirometer", perDay:10, everyH:1,
+    d:"5–10 breaths every waking hour. Cough and deep breathe after each use." }
+];
+
+const PAIN_SCALE = [
+  {v:1, l:"None to mild"}, {v:2, l:"Mild"}, {v:3, l:"Moderate"},
+  {v:4, l:"Bad"},          {v:5, l:"Severe"}
+];
+
+/* ── the log ────────────────────────────────────────────────────────────────
+   One append-only list of events rather than fixed slots, because most of this
+   is as-needed and does not land on a grid. Each entry: what, when, and the
+   dose / pain / steps that go with it.                                      */
+/* ── POST-OP DAY VIEW ──────────────────────────────────────────────────────
+   One day at a time, in two parts: the things that happen at a set time on a
+   real clock column, and the things that happen N times "whenever" as counters.
+   Only 9 of the day's ~54 ticks have a real time, so a pure hour grid would be
+   mostly empty — hence the split.
+
+   Scheduling rules, all confirmed with the user on 1 Sep 2026:
+     · every dose is timed from the one ACTUALLY taken before it, so a late dose
+       pushes the rest of the day back rather than bunching up behind it;
+     · nothing is scheduled into the night — anything landing before 6am moves
+       to 7am (this is why Cephalexin reads 7am/1pm/7pm, not 3am/9am/3pm);
+     · Lovenox starts 2 Sep; aspirin starts the morning after it finishes.      */
+
+const POSTORE = STORE + ".polog";
+let poLog = [];
+try { poLog = JSON.parse(localStorage.getItem(POSTORE) || "[]"); } catch(e){ poLog = []; }
+if(!Array.isArray(poLog)) poLog = [];
+const poSave = () => { try { localStorage.setItem(POSTORE, JSON.stringify(poLog)); } catch(e){} };
+
+const PO_DAY_START = 6, PO_DAY_END = 24;   /* hours drawn on the column */
+const PO_NIGHT_UNTIL = 6, PO_WAKE_AT = 7;  /* a dose before 6am moves to 7am   */
+const PO_ROW = 3.4;                        /* rem per hour — must match .po-hr */
+
+/* Which day is on screen, and which category. `null` means "follow today", so
+   the view rolls over on its own overnight instead of sticking on a date.
+   Declared here, above poNow(), because poNow() runs at load: a `let` further
+   down the file is in the temporal dead zone and throws. */
+let poDayShown = null;
+const poDayNum = () => poDayShown === null ? offsetToday() : poDayShown;
+
+/* ?today=N already shifts the day for testing; ?now=HH:MM shifts the clock. */
+const PO_Q = new URLSearchParams(location.search);
+function poNow(){
+  const real = new Date();
+  const q = PO_Q.get("now");
+  if(q && /^\d{1,2}:\d{2}$/.test(q)) real.setHours(+q.split(":")[0], +q.split(":")[1], 0, 0);
+  const off = poDayNum();
+  const d = new Date(SURGERY.getTime() + off*DAY);
+  /* On today, the real clock. On a past day, the end of it, so a dose that was
+     never recorded reads as missed rather than still to come. On a future day,
+     the start of it, so nothing is marked late before it has happened. */
+  if(off === offsetToday()) d.setHours(real.getHours(), real.getMinutes(), 0, 0);
+  else if(off < offsetToday()) d.setHours(23, 59, 0, 0);
+  else d.setHours(0, 0, 0, 0);
+  return d;
+}
+let PONOW = poNow();
+const poT0    = () => midnight(PONOW).getTime();
+const poDayOf = ms => Math.round((midnight(new Date(ms)) - SURGERY)/DAY);
+const poSame  = (a,b) => midnight(new Date(a)).getTime() === midnight(new Date(b)).getTime();
+const poDone  = id => poLog.filter(e => e.i===id && poSame(e.t, PONOW)).sort((a,b)=>a.t-b.t);
+
+function poClampWake(ms){
+  const d = new Date(ms);
+  if(d.getHours() < PO_NIGHT_UNTIL){ d.setHours(PO_WAKE_AT, 0, 0, 0); return d.getTime(); }
+  return ms;
+}
+const poRawAnchor = m => m.anchor ? new Date(m.anchor).getTime() : null;
+function poCourseEnd(m){
+  const a = poRawAnchor(m);
+  return (a == null || m.days == null) ? null : poDayOf(a) + m.days;
+}
+/* "start after the X course" resolves to the morning after X finishes */
+function poEffAnchor(m){
+  const a = poRawAnchor(m);
+  if(a != null) return a;
+  if(m.startsAfter){
+    const base = MEDS_PO.find(x => x.id === m.startsAfter);
+    const end  = base ? poCourseEnd(base) : null;
+    if(end != null){
+      const d = new Date(SURGERY.getTime() + (end + 1)*DAY);
+      d.setHours(9, 0, 0, 0);
+      return d.getTime();
+    }
+  }
+  return null;
+}
+function poActive(m){
+  if(m.onHand) return false;                                  /* kept, not taken */
+  const off = poDayOf(PONOW.getTime()), a = poEffAnchor(m);
+  if(a == null) return true;                                  /* as-needed */
+  if(poDayOf(a) > off) return false;                          /* not started */
+  if(m.days != null && off > poDayOf(a) + m.days) return false;   /* finished */
+  return true;
+}
+function poSchedule(m){
+  if(!m.everyH || m.prn) return [];
+  const step = m.everyH*3600000, start = poT0(), end = start + DAY, out = [];
+  const acts  = poLog.filter(e => e.i===m.id && e.t >= start && e.t < end).sort((x,y)=>x.t-y.t);
+  const prior = poLog.filter(e => e.i===m.id && e.t <  start).sort((x,y)=>y.t-x.t)[0];
+  let cur = prior ? poClampWake(prior.t + step)
+                  : (poEffAnchor(m) != null ? poClampWake(poEffAnchor(m)) : start);
+  let g = 0;
+  while(cur < start && g++ < 400) cur = poClampWake(cur + step);
+  acts.forEach(a => { out.push({plan:cur, actual:a}); cur = poClampWake(a.t + step); });
+  let g2 = 0;
+  while(cur < end && g2++ < 60){ out.push({plan:cur, actual:null}); cur = poClampWake(cur + step); }
+  return out;
+}
+function poAgenda(){
+  const rows = [];
+  MEDS_PO.filter(poActive).forEach(m => {
+    const sched = poSchedule(m);
+    rows.push({cat:"med", id:m.id, n:m.n, sub:m.sub||"", dose:m.dose||"", prn:!!m.prn,
+      doseEntry:!!m.doseEntry, unit:m.unit, defDose:m.defDose, pain:!!m.prn, warn:m.warn,
+      crit:!!m.critical, sched, perDay:m.prn ? 0 : sched.length});
+  });
+  EX.forEach(x   => rows.push({cat:"pt",   id:x.id, n:x.n, sub:x.d||"", perDay:3, sched:[]}));
+  CARE.forEach(c => rows.push({cat:"care", id:c.id, n:c.n, sub:c.d||"", warn:c.warn,
+    perDay:c.perDay||1, steps:!!c.steps, sched:[]}));
+  return rows;
+}
+const poItem = id => poAgenda().find(r => r.id === id);
+
+/* Appointments: only genuinely booked or bookable events. Deliberately narrow —
+   a looser rule matched "call the office" inside standing advice and showed it
+   as an appointment for today, which is worse than an empty lane. */
+const PO_APPT  = /\b(appointment|wound check|x-?ray|home health agency|surgeon visit|follow-?up visit)\b/i;
+const PO_GUIDE = /^(if |ask |keep |take |expect |no |but )|\bif the\b|\bas prescribed\b/i;
+function poAppts(){
+  const off = poDayOf(PONOW.getTime()), out = [];
+  const ok    = it => PO_APPT.test(it.i) && !PO_GUIDE.test(it.i);
+  /* Some of these are a window, not a moment — the home health agency calls
+     "within 24–48 hours of discharge", so it is live from the day after
+     surgery and only overdue on the second. `from` is the first live day,
+     `d` stays the deadline. */
+  const first = it => (typeof it.from === "number" ? it.from : it.d);
+  PHASES.forEach(ph => (ph.items||[]).forEach(it => {
+    if(!ok(it) || typeof it.d !== "number") return;
+    if(off >= first(it) && off <= it.d)
+      out.push({when:"today", i:it.i, s:it.s||"", by:(first(it) !== it.d ? it.d : null)});
+  }));
+  if(out.length) return out;
+  let next = null;
+  PHASES.forEach(ph => (ph.items||[]).forEach(it => {
+    if(typeof it.d === "number" && ok(it) && first(it) > off && (!next || first(it) < first(next)))
+      next = it; }));
+  return next ? [{when:"next", d:first(next), i:next.i, s:next.s||""}] : [];
+}
+
+/* geometry */
+const PO_SPAN = (PO_DAY_END - PO_DAY_START) * 60;
+const poPct = ms => { const d = new Date(ms);
+  return Math.max(0, Math.min(100, ((d.getHours()*60 + d.getMinutes()) - PO_DAY_START*60) / PO_SPAN * 100)); };
+const poIn    = ms => { const h = new Date(ms).getHours(); return h >= PO_DAY_START && h < PO_DAY_END; };
+const poPlace = frac => (frac/100) * (PO_DAY_END - PO_DAY_START) * PO_ROW;
+
+/* ── render ─────────────────────────────────────────────────────────────── */
+function poChip(r){
+  const n = poDone(r.id).length;
+  let pips = "";
+  for(let i=0;i<r.perDay;i++) pips += '<span class="po-pip'+(i<n?" on":"")+'"></span>';
+  return '<button class="po-chip '+r.cat+(n>=r.perDay?" full":"")+'" data-log="'+r.id+'">'
+    + '<span class="po-nm"><b>'+esc(r.n)+'</b><i>'
+    + (n > r.perDay ? n+' done · '+r.perDay+' was the target' : n+' of '+r.perDay)
+    + (r.steps?" · steps":"")+'</i></span><span class="po-pips">'+pips+'</span></button>';
+}
+
+function renderGrid(){ document.getElementById("p-grid").innerHTML = dailyLegacyHTML(); }
+function renderMore(){
+  const items = [
+    ["ask",  "Ask team",   "Questions worth raising, and where the documents disagree"],
+    ["docs", "Resources",  "Every page you scanned, searchable"],
+    ["grid", "Day by day", "The original dose-by-dose grid, surgery day to day 14"]
+  ];
+  document.getElementById("p-more").innerHTML =
+    '<div class="block"><h2 class="po-lbl">More</h2>' + items.map(([id,n,d]) =>
+      '<button class="po-more" data-more="'+id+'"><b>'+esc(n)+'</b><i>'+esc(d)+'</i></button>'
+    ).join("") + '</div>';
+}
+
+function renderPostop(){
+  PONOW = poNow();
+  const rows = poAgenda(), host = document.getElementById("p-daily");
+  const off = poDayNum(), isToday = off === offsetToday();
+
+  const tally = cat => { let d = 0, w = 0;
+    rows.filter(r => r.cat === cat && !r.prn).forEach(r => {
+      d += Math.min(poDone(r.id).length, r.perDay); w += r.perDay; });
+    return [d, w]; };
+  const [md,mw] = tally("med"), [ad,aw] = tally("care"), [pd,pw] = tally("pt");
+  const done = md+ad+pd, want = mw+aw+pw;
+  const cnt = (d,w) => '<span class="po-cnt">'+d+' / '+w+'</span>';
+
+  const bar =
+      '<div class="block po-daybar"><div class="po-dayrow">'
+    +   '<button class="po-nav" data-poday="-1" aria-label="Previous day">&#9664;</button>'
+    +   '<div class="po-dayname"><h2>'
+    +     esc(PONOW.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}))
+    +     '</h2><span class="po-when">'
+    +     (off === 0 ? "Surgery day" : "Day " + off + " after surgery")
+    +     (isToday ? " · today" : "") + '</span></div>'
+    +   '<button class="po-nav" data-poday="1" aria-label="Next day">&#9654;</button>'
+    + '</div>'
+    + (isToday ? "" : '<button class="po-back" data-poday="0">Back to today</button>')
+    + '<div class="po-bar"><div class="po-track"><i style="width:'
+    +   (want ? done/want*100 : 0)+'%"></i></div><b>'+done+' / '+want+'</b></div></div>';
+
+  /* ── meds: the clock column ─────────────────────────────────────────────── */
+  let hrs = "";
+  for(let k=PO_DAY_START;k<PO_DAY_END;k++)
+    hrs += '<div class="po-hr"><b>'
+        +  new Date(2000,0,1,k).toLocaleTimeString("en-US",{hour:"numeric"})+'</b></div>';
+  const evs = [];
+  rows.filter(r => r.cat==="med" && !r.prn).forEach(r => r.sched.forEach(sl => {
+    const at_ = sl.actual ? sl.actual.t : sl.plan;
+    if(!poIn(at_)) return;
+    const late = !sl.actual && sl.plan < PONOW.getTime();
+    evs.push({at:at_, id:r.id, crit:r.crit,
+      cls:"po-ev"+(sl.actual?" done":"")+(late?" late":""), label:esc(r.n),
+      meta:(sl.actual ? "done "+clock(sl.actual.t)+(sl.actual.d?" · "+sl.actual.d:"")
+                      : clock(sl.plan)+(late?" · late":""))});
+  }));
+  rows.filter(r => r.cat==="med" && r.prn).forEach(r => poDone(r.id).forEach(e => {
+    if(!poIn(e.t)) return;
+    evs.push({at:e.t, id:r.id, cls:"po-ev done", label:esc(r.n),
+      meta:clock(e.t)+(e.d?" · "+e.d:"")+(e.p?" · pain "+e.p:"")});
+  }));
+  evs.sort((x,y) => x.at - y.at);
+  const EVH = 2.9;
+  let i0 = 0, placed = "";
+  while(i0 < evs.length){
+    let i1 = i0 + 1, endTop = poPlace(poPct(evs[i0].at)) + EVH;
+    while(i1 < evs.length && poPlace(poPct(evs[i1].at)) < endTop){
+      endTop = Math.max(endTop, poPlace(poPct(evs[i1].at)) + EVH); i1++;
+    }
+    const n = i1 - i0, w = 100/n, narrow = n >= 3 ? " narrow" : "";
+    for(let k = i0; k < i1; k++)
+      placed += '<div class="'+evs[k].cls+narrow+(evs[k].crit?" crit":"")+'" data-log="'+evs[k].id
+             +  '" style="top:'+poPlace(poPct(evs[k].at)).toFixed(2)+'rem;right:auto;left:calc('
+             +  ((k-i0)*w)+'% + .4rem);width:calc('+w+'% - .8rem)"><b>'+evs[k].label
+             +  '</b> <small>'+evs[k].meta+'</small></div>';
+    i0 = i1;
+  }
+  if(isToday && poIn(PONOW.getTime()))
+    placed += '<div class="po-now" style="top:'+poPlace(poPct(PONOW.getTime())).toFixed(2)
+           +  'rem"><b>NOW</b></div>';
+
+  const prnHTML = rows.filter(r => r.cat==="med" && r.prn).map(r => {
+    const m    = MEDS_PO.find(x => x.id === r.id) || {};
+    const all  = poLog.filter(e => e.i===r.id).sort((a,b)=>b.t-a.t);
+    const last = all[0] || null;
+    const nextOK = (last && m.everyH) ? last.t + m.everyH*3600000 : null;
+    const early  = nextOK != null && PONOW.getTime() < nextOK;
+    const state  = !last ? "None taken yet" : (early ? "Not before " + clock(nextOK) : "May take now");
+    return '<div class="po-prn'+(early?" early":"")+'">'
+      + '<div class="po-nm"><b>'+esc(r.n)+'</b><i>'+esc(r.dose||"")
+      +   (m.everyH ? " · no more often than every "+m.everyH+" h" : "")+'</i>'
+      + '<i>'+esc(state)+(last ? " · last "+clock(last.t) : "")
+      +   " · "+poDone(r.id).length+" today</i></div>"
+      + '<button class="po-take" data-log="'+r.id+'">Take</button></div>';
+  }).join("");
+  const onHand = MEDS_PO.filter(m => m.onHand).map(m =>
+    '<p class="po-empty">'+esc(m.n)+' — '+esc(m.sub||m.dose||"keep on hand")+'</p>').join("");
+  const stopHTML = (STOPPED||[]).map(x =>
+    '<div class="po-stop"><b>'+esc(x.n)+'</b> '+esc(x.why)+'</div>').join("");
+
+  const chips = list => '<div class="po-tray">' + list.map(poChip).join("") + '</div>';
+  const A = poAppts();
+
+  /* One continuous page. The bar's first four buttons scroll to these anchors
+     rather than hiding the rest of the day behind a tap. */
+  host.innerHTML = bar
+    + '<section id="sec-meds"><div class="block"><h2 class="po-lbl">Meds · at a set time'
+    +   cnt(md,mw)+'</h2><div class="po-hours">'+hrs+placed+'</div></div>'
+    +   '<div class="block"><h2 class="po-lbl">As needed — only if you need it</h2>'
+    +   prnHTML + onHand + '</div>'
+    +   (stopHTML ? '<div class="block"><h2 class="po-lbl">Stopped</h2>'+stopHTML+'</div>' : '')
+    + '</section>'
+    + '<section id="sec-act"><div class="block"><h2 class="po-lbl">Activity · movement, ice, breathing'
+    +   cnt(ad,aw)+'</h2>' + chips(rows.filter(r => r.cat==="care")) + '</div></section>'
+    + '<section id="sec-pt"><div class="block"><h2 class="po-lbl">PT · exercises, three times each'
+    +   cnt(pd,pw)+'</h2>' + chips(rows.filter(r => r.cat==="pt")) + '</div></section>'
+    + '<section id="sec-appt"><div class="block"><h2 class="po-lbl">Appointments &amp; calls</h2>'
+    +   (A.length
+        ? A.map(a => '<div class="po-appt"><b>'
+            + (a.when==="today" ? "Today" : fmt(new Date(SURGERY.getTime()+a.d*DAY)))
+            + '</b> ' + esc(a.i)
+            + (a.by != null ? '<i class="po-by">Expected by '
+                + esc(fmt(new Date(SURGERY.getTime()+a.by*DAY))) + '</i>' : '')
+            + '</div>').join("")
+        : '<p class="po-empty">Nothing booked for today.</p>')
+    + '</div></section>'
+    + '<div class="po-tail" aria-hidden="true"></div>';
+  syncBackupUI();
+}
+
+/* ── logging sheet ──────────────────────────────────────────────────────── */
+let poSheetFor = null;
+function openLog(id){
+  const r = poItem(id); if(!r) return;
+  poSheetFor = id;
+  PONOW = poNow();
+  const rn = new Date();
+  const hh = String(rn.getHours()).padStart(2,"0")+":"+String(rn.getMinutes()).padStart(2,"0");
+  document.getElementById("sheet-t").textContent   = r.n;
+  document.getElementById("sheet-sub").textContent = r.sub || r.dose || "";
+  document.getElementById("sheet-body").innerHTML =
+      '<label class="fld"><span>Time</span><input type="time" id="sh-time" value="'+hh+'"></label>'
+    + (r.doseEntry ? '<div class="fld"><span>How many '+esc(r.unit||"")+'</span>'
+        + '<div class="stepper"><button type="button" data-step="-1">−</button>'
+        + '<output id="sh-dose">'+(r.defDose||1)+'</output>'
+        + '<button type="button" data-step="1">+</button></div>'
+        + '<span class="fldnote">'+esc(r.dose||"")+'</span></div>' : "")
+    + (r.steps ? '<label class="fld"><span>Steps (or blocks)</span>'
+        + '<input type="number" id="sh-steps" inputmode="numeric" placeholder="e.g. 250"></label>' : "")
+    + (r.pain ? '<div class="fld"><span>Pain right now</span><div class="painrow">'
+        + PAIN_SCALE.map(p => '<button type="button" class="pain" data-pain="'+p.v+'"><b>'
+            + p.v+'</b><i>'+esc(p.l)+'</i></button>').join("")+'</div></div>' : "")
+    + (r.warn ? '<p class="sheetwarn">'+esc(r.warn)+'</p>' : "");
+  document.getElementById("sheet").hidden = false;
+}
+function closeLog(){ document.getElementById("sheet").hidden = true; poSheetFor = null; }
+function commitLog(){
+  const r = poItem(poSheetFor); if(!r) return closeLog();
+  const tv = document.getElementById("sh-time").value;
+  const shown = new Date(SURGERY.getTime() + poDayNum()*DAY);
+  let when = poNow().getTime();
+  if(/^\d{1,2}:\d{2}$/.test(tv)){
+    const d = new Date(shown); d.setHours(+tv.split(":")[0], +tv.split(":")[1], 0, 0);
+    /* only on today does a time later than now mean last night's dose */
+    if(poDayNum() === offsetToday() && d.getTime() > Date.now() + 60000) d.setDate(d.getDate()-1);
+    when = d.getTime();
+  }
+  const e = {i:r.id, t:when};
+  const dd = document.getElementById("sh-dose");  if(dd) e.d = +dd.textContent;
+  const ss = document.getElementById("sh-steps"); if(ss && ss.value) e.s = +ss.value;
+  const pp = document.querySelector("#sheet .pain.on"); if(pp) e.p = +pp.dataset.pain;
+  poLog.push(e); poSave(); closeLog(); renderPostop();
+}
+
 function renderDocs(){
   const host = document.getElementById("p-docs");
   host.innerHTML =
@@ -2143,8 +2737,13 @@ function renderHead(){
 
   const all = PHASES.flatMap(p=>p.items).filter(i=>!i.x).map(i=>i.key)
     .concat(tasks.map(t=>"u:"+t.id));
-  document.getElementById("meta").innerHTML = '<b>' + fmtL(SURGERY) + '</b><br>' + SIDE +
-    ' total knee replacement<br><b>' + all.filter(k=>done[k]).length + ' of ' + all.length + '</b> checked off';
+  /* The surgery date sat unlabelled directly under the big day count, so it
+     read as today's date. Both dates are now named. */
+  const todayShown = new Date(SURGERY.getTime() + t*DAY);
+  document.getElementById("meta").innerHTML =
+    'Today <b>' + fmtL(todayShown) + '</b><br>Surgery <b>' + fmtL(SURGERY) + '</b><br>' + SIDE +
+    ' total knee replacement<br><b>' + all.filter(k=>done[k]).length + ' of ' + all.length +
+    '</b> checked off<br><span class="build">' + esc(BUILD) + '</span>';
 
   const lo = PHASES[0].from, hi = PHASES[PHASES.length-1].to;
   const pct = v => ((Math.min(Math.max(v,lo),hi)-lo)/(hi-lo))*100;
@@ -2156,13 +2755,15 @@ function renderHead(){
 }
 
 const TABS = [
-  {id:"timeline", label:"Timeline", icon:'<path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/>'},
-  {id:"daily",    label:"Each day", icon:'<path d="M9 11l2 2 4-4"/><path d="M9 17l2 2 4-4"/><path d="M3 5h4M3 11h2M3 17h2"/><path d="M13 5h8"/>'},
-  {id:"alerts",   label:"Watch for",icon:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>'},
-  {id:"ask",      label:"Ask team", icon:'<path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/>'},
-  {id:"contacts", label:"Call",     icon:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.4 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>'},
-  {id:"docs",     label:"Resources", icon:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h7"/>'},
-  {id:"backup",   label:"Backup/Restore",   icon:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>'}
+  {id:"meds", label:"Meds",     jump:"sec-meds", icon:'<path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7z"/><path d="M8.5 8.5l7 7"/>'},
+  {id:"act",  label:"Activity", jump:"sec-act",  icon:'<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>'},
+  {id:"pt",   label:"PT",       jump:"sec-pt",   icon:'<path d="M4 7v10M20 7v10M7 9v6M17 9v6M7 12h10"/>'},
+  {id:"appt", label:"Appts",    jump:"sec-appt", icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M9 16l2 2 4-4"/>'},
+  {id:"alerts",   label:"Watch for", icon:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>'},
+  {id:"contacts", label:"Call",      icon:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.4 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>'},
+  {id:"timeline", label:"Timeline",  icon:'<path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/>'},
+  {id:"more",     label:"More",      icon:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'},
+  {id:"backup",   label:"Backup/Restore", icon:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>'}
 ];
 document.getElementById("tabs").innerHTML = TABS.map((t,i) =>
   '<button role="tab" data-tab="'+t.id+'" aria-selected="'+(i===0)+'">' +
@@ -2179,12 +2780,30 @@ function show(id, toTop){
   scrollPos[currentTab] = window.scrollY;
   currentTab = id;
   document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on", p.id === "p"+"-"+id));
-  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===id));
+  /* ask / docs / grid have no button of their own — they live inside More,
+     so More is what lights up while they are open. */
+  const barId = ["ask","docs","grid"].indexOf(id) >= 0 ? "more"
+              : (id === "daily" ? "meds" : id);
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===barId));
   window.scrollTo({top: toTop ? 0 : (scrollPos[id] || 0), behavior:"instant"});
 }
 
 document.getElementById("tabs").addEventListener("click", e => {
-  const b = e.target.closest("button[data-tab]"); if(b) show(b.dataset.tab);
+  const b = e.target.closest("button[data-tab]"); if(!b) return;
+  const t = TABS.find(x => x.id === b.dataset.tab);
+  if(t && t.jump){
+    /* The schedule is one continuous page; these four scroll to a section
+       rather than hiding the rest of the day behind a tap. */
+    if(currentTab !== "daily") show("daily", true);
+    const el = document.getElementById(t.jump);
+    /* NOT behavior:"smooth" — it does not scroll at all in some engines and
+       the jump silently did nothing. The rest of the app uses instant too. */
+    if(el) el.scrollIntoView({block:"start", behavior:"instant"});
+    document.querySelectorAll("#tabs button").forEach(x =>
+      x.setAttribute("aria-selected", x.dataset.tab === t.id));
+    return;
+  }
+  show(b.dataset.tab);
 });
 document.getElementById("chips").addEventListener("click", e => {
   const b = e.target.closest("[data-go]"); if(!b) return;
@@ -2302,13 +2921,24 @@ document.getElementById("theme").addEventListener("click", () => {
   document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
 });
 
-renderTimeline(); renderDaily(); renderAlerts(); renderAsk(); renderContacts(); renderBackup(); renderDocs(); renderHead(); renderBanner(); syncBackupUI();
+renderTimeline(); renderPostop(); renderGrid(); renderMore(); renderAlerts(); renderAsk(); renderContacts(); renderBackup(); renderDocs(); renderHead(); renderBanner(); syncBackupUI();
 refreshDue();
 setInterval(refreshDue, 30000);   // keep "in 2h 10m" honest without a reload
 /* Deliberately no auto-scroll on open. It used to jump to the current phase,
    which pushed the backup warning and the add-task form off the top of the
    screen. The app opens at the top so the thing that matters most is the first
    thing seen; the phase chips and the search box are how she jumps elsewhere. */
+
+/* ?tab=<id> opens straight onto a tab. Runs at the very END of the script: show() reads `scrollPos` and
+   `currentTab`, which are declared late, so calling it any earlier throws. */
+(function(){
+  /* Post-op, the schedule is what she opens the app to do, so that is where it
+     lands. ?tab=<id> overrides it. Runs at the very END of the script: show()
+     reads `scrollPos` and `currentTab`, declared late, so calling it earlier throws. */
+  const want = new URLSearchParams(location.search).get("tab");
+  const tab  = (want && TABS.some(t => t.id === want)) ? want : "daily";
+  show(tab, true);
+})();
 </script>
 
 </body>
