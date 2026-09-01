@@ -26,6 +26,8 @@
   --rule:#D8DFD8;
   --rule-2:#C3CDC4;
   --accent:#0E5C4A;       /* deep surgical teal */
+  --pt:#1F6F8B; --pt-soft:#DEEDF3;      /* exercises */
+  --done:#1E8E3E; --done-soft:#DFF3E6;  /* a ticked-off dot */
   --accent-soft:#DCEAE3;
   --accent-ink:#0A4739;
   --on-accent:#F4F8F5;
@@ -54,6 +56,7 @@
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --pt:#79C2DC; --pt-soft:#12303A;
+  --done:#4ADE80; --done-soft:#14331F;
   --paper:#0F1512; --card:#171F1B; --card-2:#1D2723;
     --ink:#E3EAE5; --ink-2:#A3B1AA; --ink-3:#8A9891;
     --rule:#28332D; --rule-2:#37453D;
@@ -488,12 +491,14 @@ section[id^="sec-"]{display:block; scroll-margin-top:.5rem}
 .po-nm{flex:1; min-width:0}
 .po-nm b{display:block; font-size:.88rem; font-weight:700}
 .po-nm i{display:block; font-style:normal; font-size:.7rem; color:var(--ink-3); margin-top:.1rem}
-.po-chip.pt.full{background:var(--pt-soft); border-color:var(--pt)}
-.po-chip.care.full{background:var(--warn-soft); border-color:var(--warn-rule)}
 .po-pips{display:flex; gap:.22rem; flex-shrink:0}
 .po-pip{width:.85rem; height:.85rem; border-radius:50%; border:1.6px solid var(--rule-2); display:block}
-.po-chip.pt .po-pip.on{background:var(--pt); border-color:var(--pt)}
-.po-chip.care .po-pip.on{background:var(--warn); border-color:var(--warn)}
+/* Green, and NOT dependent on a per-category token: --pt was defined only in
+   the dark-mode block, so `background: var(--pt,#1F6F8B)` was invalid in light mode,
+   the declaration was dropped, and the dot silently rendered transparent.
+   Every var() here carries a literal fallback so that cannot happen again. */
+.po-pip.on{background:var(--done,#1E8E3E); border-color:var(--done,#1E8E3E)}
+.po-chip.full{background:var(--done-soft,#DFF3E6); border-color:var(--done,#1E8E3E)}
 
 .po-hours{position:relative; border-left:2px solid var(--rule); margin-left:3.6rem}
 .po-hr{position:relative; height:3.4rem; border-top:1px dashed var(--rule)}
