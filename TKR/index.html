@@ -477,9 +477,14 @@ section[id^="sec-"]{display:block; scroll-margin-top:.5rem}
 
 .po-tray{display:flex; flex-wrap:wrap; gap:.5rem}
 .po-chip{flex:1 1 12rem; min-height:56px; border-radius:12px; border:1.5px solid var(--rule-2);
-  background:var(--card-2); padding:.5rem .65rem; display:flex; align-items:center; gap:.55rem;
-  cursor:pointer; text-align:left; font:inherit; color:var(--ink)}
+  background:var(--card-2); display:flex; align-items:stretch; font:inherit; color:var(--ink);
+  overflow:hidden}
 .po-chip:hover{border-color:var(--ink-3)}
+.po-hit{flex:1; min-width:0; display:flex; align-items:center; gap:.55rem; padding:.5rem .65rem;
+  background:none; border:0; font:inherit; color:inherit; text-align:left; cursor:pointer}
+.po-undo{flex:0 0 auto; width:2.9rem; border:0; border-left:1.5px solid var(--rule-2);
+  background:transparent; color:var(--ink-3); font-size:1.15rem; cursor:pointer; line-height:1}
+.po-undo:hover{color:var(--crit); background:var(--crit-soft)}
 .po-nm{flex:1; min-width:0}
 .po-nm b{display:block; font-size:.88rem; font-weight:700}
 .po-nm i{display:block; font-style:normal; font-size:.7rem; color:var(--ink-3); margin-top:.1rem}
@@ -1864,7 +1869,26 @@ document.getElementById("sheet").addEventListener("click", e => {
   if(pn){ document.querySelectorAll("#sheet .pain").forEach(x=>x.classList.toggle("on", x===pn)); }
 });
 document.addEventListener("click", e => {
-  const b = e.target.closest("[data-log]"); if(b) return openLog(b.dataset.log);
+  const u = e.target.closest("[data-undo]");
+  if(u) return poUndo(u.dataset.undo);
+  /* A dose is one tap away now, so a mistaken tap has to be reversible — and it
+     also moves every later dose, since each is timed from the last one taken. */
+  const ua = e.target.closest("[data-undoat]");
+  if(ua){
+    const id = ua.dataset.log, t = +ua.dataset.undoat, r = poItem(id);
+    askConfirm("Take this back?",
+      (r ? r.n : "This dose") + " is recorded at " + clock(t) +
+      ". Removing it also moves the next dose time, which is worked out from the last one taken.",
+      "Remove it",
+      () => { const i = poLog.findIndex(x => x.i === id && x.t === t);
+              if(i >= 0){ poLog.splice(i,1); poSave(); renderPostop(); } });
+    return;
+  }
+  const b = e.target.closest("[data-log]");
+  if(b){
+    const r = poItem(b.dataset.log);
+    return (r && !poNeedsSheet(r)) ? poQuickLog(b.dataset.log) : openLog(b.dataset.log);
+  }
   const d = e.target.closest("[data-poday]");
   if(d){
     const step = +d.dataset.poday;
@@ -2499,14 +2523,35 @@ const poIn    = ms => { const h = new Date(ms).getHours(); return h >= PO_DAY_ST
 const poPlace = frac => (frac/100) * (PO_DAY_END - PO_DAY_START) * PO_ROW;
 
 /* ── render ─────────────────────────────────────────────────────────────── */
+/* A tap should tick the thing off. The logging sheet only earns its place when
+   there is something to type — a dose, a step count, a pain score. For the nine
+   exercises and for ice/stockings/spirometer it asked only for a time that was
+   already filled in, so a tap appeared to do nothing until Save was pressed. */
+const poNeedsSheet = r => !!(r.doseEntry || r.steps || r.pain);
+function poQuickLog(id){
+  const r = poItem(id); if(!r) return;
+  poLog.push({i:r.id, t:poNow().getTime()});
+  poSave(); renderPostop();
+}
+function poUndo(id){
+  const mine = poLog.map((e,i)=>({e,i})).filter(x => x.e.i===id && poSame(x.e.t, PONOW));
+  if(!mine.length) return;
+  poLog.splice(mine[mine.length-1].i, 1);        /* most recent one today */
+  poSave(); renderPostop();
+}
 function poChip(r){
   const n = poDone(r.id).length;
   let pips = "";
   for(let i=0;i<r.perDay;i++) pips += '<span class="po-pip'+(i<n?" on":"")+'"></span>';
-  return '<button class="po-chip '+r.cat+(n>=r.perDay?" full":"")+'" data-log="'+r.id+'">'
-    + '<span class="po-nm"><b>'+esc(r.n)+'</b><i>'
-    + (n > r.perDay ? n+' done · '+r.perDay+' was the target' : n+' of '+r.perDay)
-    + (r.steps?" · steps":"")+'</i></span><span class="po-pips">'+pips+'</span></button>';
+  return '<div class="po-chip '+r.cat+(n>=r.perDay?" full":"")+'">'
+    + '<button class="po-hit" data-log="'+r.id+'">'
+    +   '<span class="po-nm"><b>'+esc(r.n)+'</b><i>'
+    +   (n > r.perDay ? n+' done · '+r.perDay+' was the target' : n+' of '+r.perDay)
+    +   (r.steps?" · tap to add steps":"")+'</i></span>'
+    +   '<span class="po-pips">'+pips+'</span></button>'
+    + (n ? '<button class="po-undo" data-undo="'+r.id+'" aria-label="Undo the last '
+         + esc(r.n)+'">&#8630;</button>' : '')
+    + '</div>';
 }
 
 function renderGrid(){ document.getElementById("p-grid").innerHTML = dailyLegacyHTML(); }
@@ -2559,14 +2604,14 @@ function renderPostop(){
     const at_ = sl.actual ? sl.actual.t : sl.plan;
     if(!poIn(at_)) return;
     const late = !sl.actual && sl.plan < PONOW.getTime();
-    evs.push({at:at_, id:r.id, crit:r.crit,
+    evs.push({at:at_, id:r.id, crit:r.crit, undoAt:(sl.actual ? sl.actual.t : null),
       cls:"po-ev"+(sl.actual?" done":"")+(late?" late":""), label:esc(r.n),
       meta:(sl.actual ? "done "+clock(sl.actual.t)+(sl.actual.d?" · "+sl.actual.d:"")
                       : clock(sl.plan)+(late?" · late":""))});
   }));
   rows.filter(r => r.cat==="med" && r.prn).forEach(r => poDone(r.id).forEach(e => {
     if(!poIn(e.t)) return;
-    evs.push({at:e.t, id:r.id, cls:"po-ev done", label:esc(r.n),
+    evs.push({at:e.t, id:r.id, cls:"po-ev done", label:esc(r.n), undoAt:e.t,
       meta:clock(e.t)+(e.d?" · "+e.d:"")+(e.p?" · pain "+e.p:"")});
   }));
   evs.sort((x,y) => x.at - y.at);
@@ -2579,7 +2624,9 @@ function renderPostop(){
     }
     const n = i1 - i0, w = 100/n, narrow = n >= 3 ? " narrow" : "";
     for(let k = i0; k < i1; k++)
-      placed += '<div class="'+evs[k].cls+narrow+(evs[k].crit?" crit":"")+'" data-log="'+evs[k].id
+      placed += '<div class="'+evs[k].cls+narrow+(evs[k].crit?" crit":"")+'"'
+             +  (evs[k].undoAt != null ? ' data-undoat="'+evs[k].undoAt+'"' : '')
+             +  ' data-log="'+evs[k].id
              +  '" style="top:'+poPlace(poPct(evs[k].at)).toFixed(2)+'rem;right:auto;left:calc('
              +  ((k-i0)*w)+'% + .4rem);width:calc('+w+'% - .8rem)"><b>'+evs[k].label
              +  '</b> <small>'+evs[k].meta+'</small></div>';
