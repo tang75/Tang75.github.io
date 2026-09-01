@@ -1358,13 +1358,16 @@ function getDownloads(){
   return _dlPromise;
 }
 const backupPayload = () => JSON.stringify({
-  app: BACKUP_TAG, version: 3,
+  app: BACKUP_TAG, version: 4,
   surgery: [SURGERY.getFullYear(), String(SURGERY.getMonth()+1).padStart(2,"0"), String(SURGERY.getDate()).padStart(2,"0")].join("-"),
   savedAt: new Date().toISOString(),
   marks: done,
   notes: notes,
   times: times,
-  tasks: tasks
+  tasks: tasks,
+  /* Every recorded dose, pain score, step count and exercise tick. Omitted
+     until 1 Sep 2026, which meant a restore silently discarded all of it. */
+  polog: poLog
 }, null, 2);
 const backupName = () => { const n = new Date();
   return BACKUP_TAG + "-backup-" + [n.getFullYear(), String(n.getMonth()+1).padStart(2,"0"), String(n.getDate()).padStart(2,"0")].join("-") + ".json"; };
@@ -1487,9 +1490,11 @@ function bkApply(root, mode){
     askConfirm("Replace everything?",
       "This device holds " + n + " check mark" + (n===1?"":"s") +
       (tn ? ", " + tn + " task" + (tn===1?"":"s") + " you added" : "") +
+      (poLog.length ? ", " + poLog.length + " recorded dose" + (poLog.length===1?"":"s") + " and activity" : "") +
       ", plus any notes and dose times. All of it will be discarded and replaced with what this backup contains. There is no undo.",
       "Replace everything",
-      () => { done = {}; notes = {}; times = {}; tasks = []; bkCommit(root, data, mode); });
+      () => { done = {}; notes = {}; times = {}; tasks = []; poLog = []; poSave();
+             bkCommit(root, data, mode); });
     return;
   }
   bkCommit(root, data, mode);
@@ -1519,6 +1524,19 @@ function bkCommit(root, data, mode){
     Object.keys(data.times).forEach(k0 => { const k = fwd(k0);
       if(done[k] && !times[k]) times[k] = data.times[k0]; });
   }
+  /* Doses are merged on item+timestamp, so restoring the same backup twice
+     cannot double-count a dose. */
+  let dosesAdded = 0;
+  if(Array.isArray(data.polog)){
+    const seen = new Set(poLog.map(e => e.i + "@" + e.t));
+    data.polog.forEach(e => {
+      if(!e || !e.i || typeof e.t !== "number") return;
+      const k = e.i + "@" + e.t;
+      if(seen.has(k)) return;
+      seen.add(k); poLog.push(e); dosesAdded++;
+    });
+    if(dosesAdded) poSave();
+  }
   let tasksAdded = 0;
   if(Array.isArray(data.tasks)){
     data.tasks.forEach(t => { if(t && t.id && t.text && t.date && !tasks.some(x=>x.id===t.id)){ tasks.push(t); tasksAdded++; } });
@@ -1530,6 +1548,7 @@ function bkCommit(root, data, mode){
   if(added)      bits.push(added + " check mark" + (added===1?"":"s"));
   if(notesAdded) bits.push(notesAdded + " note" + (notesAdded===1?"":"s"));
   if(tasksAdded) bits.push(tasksAdded + " task" + (tasksAdded===1?"":"s") + " of your own");
+  if(dosesAdded) bits.push(dosesAdded + " recorded dose" + (dosesAdded===1?"":"s") + " and activity");
   const joined = bits.length > 1 ? bits.slice(0,-1).join(", ") + " and " + bits[bits.length-1] : bits[0];
   let msg = mode === "replace"
       ? "Replaced — this device now holds exactly what the backup contained: " + (joined || "nothing") + "."
