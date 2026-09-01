@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-title" content="Knee Passport">
 <meta name="theme-color" content="#EFF2EE">
 <meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 </head>
 <body>
 <meta charset="utf-8">
@@ -444,6 +446,9 @@ section[id^="sec-"]{display:block; scroll-margin-top:.5rem}
 .po-more i{display:block; font-style:normal; font-size:.8rem; color:var(--ink-3); margin-top:.15rem}
 /* Lets the last section reach the top of the viewport when jumped to;
    without it, Appts clamps to the bottom of the page. */
+.upd{background:var(--warn-soft); border:1.5px solid var(--warn-rule); color:var(--warn);
+  border-radius:12px; padding:.7rem .85rem; margin:.8rem 0 0; font-size:.88rem; line-height:1.5}
+.upd a{color:var(--warn); font-weight:800}
 .po-tail{height:80vh}
 .po-daybar{padding-top:.8rem}
 .po-dayrow{display:flex; align-items:center; gap:.6rem}
@@ -618,6 +623,7 @@ nav.tabs .badge{position:absolute; top:.35rem; left:calc(50% + .42rem); min-widt
 </header>
 <div class="results" id="results" hidden></div>
 
+<div class="wrap"><div id="upd" class="upd" hidden></div></div>
 <div class="wrap"><div id="banner" class="banner" hidden></div></div>
 
 <main class="wrap">
@@ -2957,6 +2963,28 @@ setInterval(refreshDue, 30000);   // keep "in 2h 10m" honest without a reload
   const want = new URLSearchParams(location.search).get("tab");
   const tab  = (want && TABS.some(t => t.id === want)) ? want : "daily";
   show(tab, true);
+})();
+
+/* An iPad home-screen app can keep serving a cached copy of this file for a
+   long time — hers was weeks stale while the server had the new build. The
+   page asks the server what the current build is and offers a one-tap update.
+   It never reloads by itself, and it fails silently when offline. */
+(function(){
+  const el = document.getElementById("upd");
+  if(!el || !window.fetch) return;
+  fetch(location.pathname + "?cb=" + Date.now(), {cache: "no-store"})
+    .then(function(r){ return r.ok ? r.text() : null; })
+    .then(function(t){
+      if(!t) return;
+      const m = t.match(/const BUILD = "([^"]*)"/);
+      if(!m || m[1] === BUILD) return;
+      el.innerHTML = "This page is an old copy. A newer version (" + esc(m[1])
+        + ") is on the server. <a href=\"" + location.pathname + "?v=" + Date.now()
+        + "\">Tap here to update</a> — everything you have "
+        + "entered is kept.";
+      el.hidden = false;
+    })
+    .catch(function(){});
 })();
 </script>
 
