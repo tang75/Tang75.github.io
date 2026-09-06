@@ -523,6 +523,8 @@ section[id^="sec-"]{display:block; scroll-margin-top:.5rem}
 .po-prn{display:flex; align-items:center; gap:.7rem; padding:.6rem 0; border-top:1px solid var(--rule)}
 .po-prn:first-of-type{border-top:0}
 .po-prn.early .po-nm i:nth-of-type(2){color:var(--warn); font-weight:700}
+.po-done-course{opacity:.85}
+.po-done-course .po-nm b{color:var(--ink-2)}
 .po-take{flex:0 0 auto; font:inherit; font-size:.85rem; font-weight:700; min-width:4.6rem; min-height:2.9rem;
   border-radius:10px; border:0; background:var(--accent); color:var(--on-accent); cursor:pointer}
 .po-take:hover{opacity:.9}
@@ -684,7 +686,7 @@ nav.tabs .badge{position:absolute; top:.35rem; left:calc(50% + .42rem); min-widt
 /* ══════════════════════════════════════════════════════════════════════════
    ONE PARAMETER. Every date on this page is computed from it at render time.
    ══════════════════════════════════════════════════════════════════════════ */
-const BUILD = "2026-09-06 · meds to 2 weeks";
+const BUILD = "2026-09-06b · finished courses stay recordable";
 const SURGERY = new Date(2026, 7, 31);   // Monday, August 31, 2026 — right TKR
 const SIDE    = "right";
 const STORE   = "tkr-2026-08-31.v1";
@@ -2457,6 +2459,24 @@ function poEffAnchor(m){
   }
   return null;
 }
+/* A finished course must NOT vanish. Hiding it removed the record AND the
+   minimum-interval guard for a medicine she was still taking — on 6 Sep her
+   oxycodone disappeared mid-course and there was nowhere to record a dose.
+   "The prescription ended" and "you may no longer record this" are different
+   statements; only the first is true. */
+function poStarted(m){
+  if(m.onHand) return false;
+  const a = poEffAnchor(m);
+  return a != null && poDayOf(a) <= poDayOf(PONOW.getTime());
+}
+function poEndedDay(m){
+  const a = poEffAnchor(m);
+  return (a != null && m.days != null) ? poDayOf(a) + m.days : null;
+}
+function poEnded(m){
+  const e = poEndedDay(m);
+  return e != null && poDayOf(PONOW.getTime()) > e;
+}
 function poActive(m){
   if(m.onHand) return false;                                  /* kept, not taken */
   const off = poDayOf(PONOW.getTime()), a = poEffAnchor(m);
@@ -2481,11 +2501,15 @@ function poSchedule(m){
 }
 function poAgenda(){
   const rows = [];
-  MEDS_PO.filter(poActive).forEach(m => {
-    const sched = poSchedule(m);
+  MEDS_PO.forEach(m => {
+    const ended = poStarted(m) && poEnded(m);
+    if(!poActive(m) && !ended) return;          /* not started, or never a course */
+    /* An ended course proposes no further doses, and counts toward nothing. */
+    const sched = ended ? [] : poSchedule(m);
     rows.push({cat:"med", id:m.id, n:m.n, sub:m.sub||"", dose:m.dose||"", prn:!!m.prn,
       doseEntry:!!m.doseEntry, unit:m.unit, defDose:m.defDose, pain:!!m.prn, warn:m.warn,
-      crit:!!m.critical, sched, perDay:m.prn ? 0 : sched.length});
+      crit:!!m.critical, sched, ended, endedDay: ended ? poEndedDay(m) : null,
+      perDay: (ended || m.prn) ? 0 : sched.length});
   });
   EX.forEach(x   => rows.push({cat:"pt",   id:x.id, n:x.n, sub:x.d||"", perDay:3, sched:[]}));
   CARE.forEach(c => rows.push({cat:"care", id:c.id, n:c.n, sub:c.d||"", warn:c.warn,
@@ -2605,7 +2629,7 @@ function renderPostop(){
     hrs += '<div class="po-hr"><b>'
         +  new Date(2000,0,1,k).toLocaleTimeString("en-US",{hour:"numeric"})+'</b></div>';
   const evs = [];
-  rows.filter(r => r.cat==="med" && !r.prn).forEach(r => r.sched.forEach(sl => {
+  rows.filter(r => r.cat==="med" && !r.prn && !r.ended).forEach(r => r.sched.forEach(sl => {
     const at_ = sl.actual ? sl.actual.t : sl.plan;
     if(!poIn(at_)) return;
     const late = !sl.actual && sl.plan < PONOW.getTime();
@@ -2614,7 +2638,7 @@ function renderPostop(){
       meta:(sl.actual ? "done "+clock(sl.actual.t)+(sl.actual.d?" · "+sl.actual.d:"")
                       : clock(sl.plan)+(late?" · late":""))});
   }));
-  rows.filter(r => r.cat==="med" && r.prn).forEach(r => poDone(r.id).forEach(e => {
+  rows.filter(r => r.cat==="med" && (r.prn || r.ended)).forEach(r => poDone(r.id).forEach(e => {
     if(!poIn(e.t)) return;
     evs.push({at:e.t, id:r.id, cls:"po-ev done", label:esc(r.n), undoAt:e.t,
       meta:clock(e.t)+(e.d?" · "+e.d:"")+(e.p?" · pain "+e.p:"")});
@@ -2641,7 +2665,7 @@ function renderPostop(){
     placed += '<div class="po-now" style="top:'+poPlace(poPct(PONOW.getTime())).toFixed(2)
            +  'rem"><b>NOW</b></div>';
 
-  const prnHTML = rows.filter(r => r.cat==="med" && r.prn).map(r => {
+  const prnHTML = rows.filter(r => r.cat==="med" && r.prn && !r.ended).map(r => {
     const m    = MEDS_PO.find(x => x.id === r.id) || {};
     const all  = poLog.filter(e => e.i===r.id).sort((a,b)=>b.t-a.t);
     const last = all[0] || null;
@@ -2655,6 +2679,26 @@ function renderPostop(){
       +   " · "+poDone(r.id).length+" today</i></div>"
       + '<button class="po-take" data-log="'+r.id+'">Take</button></div>';
   }).join("");
+  /* Ended courses: no proposed doses, but still recordable, with the interval
+     guard intact. Never hidden — that is what broke on 6 Sep. */
+  const endedHTML = rows.filter(r => r.ended).map(r => {
+    const m      = MEDS_PO.find(x => x.id === r.id) || {};
+    const all    = poLog.filter(e => e.i === r.id).sort((a,b) => b.t - a.t);
+    const last   = all[0] || null;
+    const nextOK = (last && m.everyH) ? last.t + m.everyH*3600000 : null;
+    const early  = nextOK != null && PONOW.getTime() < nextOK;
+    const when   = r.endedDay != null
+                 ? fmt(new Date(SURGERY.getTime() + r.endedDay*DAY)) : "";
+    return '<div class="po-prn po-done-course'+(early?" early":"")+'">'
+      + '<div class="po-nm"><b>'+esc(r.n)+'</b><i>'+esc(r.dose||"")
+      +   (m.everyH ? " · no more often than every "+m.everyH+" h" : "")+'</i>'
+      + '<i>Prescribed course ended '+esc(when)
+      +   (last ? " · last taken "+clock(last.t) : " · none recorded")
+      +   (early ? " · not before "+clock(nextOK) : "")
+      +   " · "+poDone(r.id).length+" today</i></div>"
+      + '<button class="po-take" data-log="'+r.id+'">Take</button></div>';
+  }).join("");
+
   const onHand = MEDS_PO.filter(m => m.onHand).map(m =>
     '<p class="po-empty">'+esc(m.n)+' — '+esc(m.sub||m.dose||"keep on hand")+'</p>').join("");
   const stopHTML = (STOPPED||[]).map(x =>
@@ -2670,6 +2714,8 @@ function renderPostop(){
     +   cnt(md,mw)+'</h2><div class="po-hours">'+hrs+placed+'</div></div>'
     +   '<div class="block"><h2 class="po-lbl">As needed — only if you need it</h2>'
     +   prnHTML + onHand + '</div>'
+    +   (endedHTML ? '<div class="block"><h2 class="po-lbl">Course finished — record it'
+        + ' here if you still take one</h2>' + endedHTML + '</div>' : '')
     +   (stopHTML ? '<div class="block"><h2 class="po-lbl">Stopped</h2>'+stopHTML+'</div>' : '')
     + '</section>'
     + '<section id="sec-act"><div class="block"><h2 class="po-lbl">Activity · movement, ice, breathing'
