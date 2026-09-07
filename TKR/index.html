@@ -686,7 +686,7 @@ nav.tabs .badge{position:absolute; top:.35rem; left:calc(50% + .42rem); min-widt
 /* ══════════════════════════════════════════════════════════════════════════
    ONE PARAMETER. Every date on this page is computed from it at render time.
    ══════════════════════════════════════════════════════════════════════════ */
-const BUILD = "2026-09-06b · finished courses stay recordable";
+const BUILD = "2026-09-06c · finished courses, no button";
 const SURGERY = new Date(2026, 7, 31);   // Monday, August 31, 2026 — right TKR
 const SIDE    = "right";
 const STORE   = "tkr-2026-08-31.v1";
@@ -2692,11 +2692,16 @@ function renderPostop(){
     return '<div class="po-prn po-done-course'+(early?" early":"")+'">'
       + '<div class="po-nm"><b>'+esc(r.n)+'</b><i>'+esc(r.dose||"")
       +   (m.everyH ? " · no more often than every "+m.everyH+" h" : "")+'</i>'
-      + '<i>Prescribed course ended '+esc(when)
+      + '<i>'+(r.prn ? "Prescribed course ended " : "Course complete ")+esc(when)
       +   (last ? " · last taken "+clock(last.t) : " · none recorded")
-      +   (early ? " · not before "+clock(nextOK) : "")
+      +   (r.prn && early ? " · not before "+clock(nextOK) : "")
       +   " · "+poDone(r.id).length+" today</i></div>"
-      + '<button class="po-take" data-log="'+r.id+'">Take</button></div>';
+      /* A finished COURSE — an antibiotic, an anticoagulant — is meant to be
+         complete, so it gets no button: offering one reads as permission to
+         take more. As-needed medicines keep theirs, because she may legitimately
+         still take one and the record and interval guard both matter. */
+      + (r.prn ? '<button class="po-take" data-log="'+r.id+'">Take</button>' : '')
+      + '</div>';
   }).join("");
 
   const onHand = MEDS_PO.filter(m => m.onHand).map(m =>
