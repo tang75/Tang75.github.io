@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Phototherapy">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111417" media="(prefers-color-scheme: dark)">
+<title>Phototherapy Log</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1d21; --muted: #5f6771; --line: #e3e6ea; --card: #f6f7f9;
+    --accent: #2a6fdb; --accent-fg: #ffffff; --ok: #1f8a4c; --warn: #b7791f; --bad: #c0392b;
+    --pink: #f4a7b9;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #111417; --fg: #e8eaed; --muted: #9aa3ad; --line: #2a2f36; --card: #1a1f25;
+    --accent: #6ea0ff; --accent-fg: #0b1020; --ok: #4cc27a; --warn: #e0a94a; --bad: #ef6b5b;
+  } }
+  :root[data-theme="dark"] {
+    --bg: #111417; --fg: #e8eaed; --muted: #9aa3ad; --line: #2a2f36; --card: #1a1f25;
+    --accent: #6ea0ff; --accent-fg: #0b1020; --ok: #4cc27a; --warn: #e0a94a; --bad: #ef6b5b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); }
+  body { font: 17px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+         padding: 0 16px calc(84px + env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 18px 0 4px; }
+  h2 { font-size: 17px; margin: 18px 0 8px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .sub { color: var(--muted); margin: 0 0 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin: 10px 0; }
+  .big { font-size: 56px; font-weight: 700; letter-spacing: -.02em; line-height: 1; margin: 6px 0; font-variant-numeric: tabular-nums; }
+  .pct { font-weight: 600; }
+  .pct.up { color: var(--ok); } .pct.down { color: var(--bad); } .pct.flat { color: var(--muted); }
+  .reasons { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 15px; }
+  .reasons li { margin: 3px 0; }
+  button { font: inherit; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--fg); padding: 12px 16px; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; width: 100%; font-size: 18px; padding: 14px; }
+  button.danger { color: var(--bad); }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .grow { flex: 1; }
+  input[type=text], input[type=date], input[type=number], textarea { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; }
+  input.dose { font-size: 28px; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+  .opt { display: flex; gap: 12px; align-items: flex-start; padding: 12px 10px; border: 1px solid var(--line); border-radius: 12px; margin: 8px 0; background: var(--bg); cursor: pointer; }
+  .opt input { margin-top: 4px; width: 20px; height: 20px; flex: none; }
+  .opt.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+  .opt .lbl { font-weight: 600; }
+  .opt .doc { color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .banner { border-radius: 12px; padding: 10px 12px; margin: 10px 0; font-size: 15px; }
+  .banner.warn { background: color-mix(in srgb, var(--warn) 16%, var(--bg)); border: 1px solid var(--warn); }
+  .banner.bad { background: color-mix(in srgb, var(--bad) 14%, var(--bg)); border: 1px solid var(--bad); }
+  .banner.ok { background: color-mix(in srgb, var(--ok) 14%, var(--bg)); border: 1px solid var(--ok); }
+  nav { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line);
+        display: flex; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+  nav button { flex: 1; border: 0; background: none; color: var(--muted); padding: 8px 4px; font-size: 14px; border-radius: 10px; }
+  nav button.on { color: var(--accent); font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.cur td { background: color-mix(in srgb, var(--accent) 14%, var(--bg)); font-weight: 700; }
+  .small { font-size: 14px; color: var(--muted); }
+  .hidden { display: none !important; }
+  label.chk { display: inline-flex; gap: 6px; align-items: center; margin: 4px 10px 4px 0; }
+  textarea { min-height: 70px; }
+  details summary { cursor: pointer; color: var(--muted); }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav>
+  <button data-view="today">Today</button>
+  <button data-view="log">Log</button>
+  <button data-view="chart">Chart</button>
+  <button data-view="settings">Settings</button>
+</nav>
+<script>
+/* Home Phototherapy Log — dosing rules.
+ *
+ * Every rule here is traceable to "Home Phototherapy Dosing Chart and Treatment
+ * Log – Vitiligo" + "Instructions for the use of home narrow-band UVB therapy"
+ * (Amit G. Pandya, MD), scanned 20 Sep 2026, or to a decision Paul made in
+ * conversation on 21 Sep 2026. Provenance is written next to each rule.
+ * The page (index.html) and the tests (test_rules.mjs) both load this file.
+ */
+(function (root) {
+  'use strict';
+
+  // ---- The prescribed chart column -----------------------------------------
+  // Transcribed from page 1, boxed column "15% increase in minutes:seconds,
+  // Skin types 4-6". Steps 1..21. Values are seconds. The column ends at 5:25.
+  const CHART = {
+    id: 'time15_skin4to6',
+    label: 'Dose using time — 15% increase per treatment, skin types 4–6',
+    factor: 1.15,
+    seconds: [20, 23, 26, 30, 35, 40, 46, 53, 61, 70, 81, 93, 107, 123, 141,
+              162, 186, 214, 246, 283, 325],
+  };
+  CHART.maxStep = CHART.seconds.length;
+
+  // Reconciliation: the printed column reproduces exactly when each step is
+  // the previous *printed* step × 1.15, rounded to the nearest second.
+  function chartFromFormula() {
+    const out = [CHART.seconds[0]];
+    for (let i = 1; i < CHART.maxStep; i++) out.push(Math.round(out[i - 1] * CHART.factor));
+    return out;
+  }
+
+  function secondsForStep(step) {
+    const s = clampStep(step);
+    return CHART.seconds[s - 1];
+  }
+  function clampStep(step) {
+    return Math.max(1, Math.min(CHART.maxStep, Math.round(step)));
+  }
+  // Highest chart step whose seconds <= the given seconds (min 1).
+  function stepAtOrBelowSeconds(seconds) {
+    let best = 1;
+    for (let i = 0; i < CHART.maxStep; i++) if (CHART.seconds[i] <= seconds) best = i + 1;
+    return best;
+  }
+  function fmt(seconds) {
+    const m = Math.floor(seconds / 60), s = seconds % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
+  function parseMmSs(text) {
+    const t = String(text || '').trim();
+    let m = t.match(/^(\d+):(\d{1,2})$/);
+    if (m) return Number(m[1]) * 60 + Number(m[2]);
+    m = t.match(/^(\d+)$/);
+    if (m) return Number(m[1]);
+    return null;
+  }
+
+  // ---- Reaction choices asked BEFORE each treatment ------------------------
+  // Decision 21 Sep 2026: the question is asked at the start of the next
+  // treatment (not the day after), because the document's test for "slight
+  // pink" is whether it persisted until the next treatment.
+  const REACTIONS = [
+    { id: 'none', label: 'No pinkness at all', effect: 'advance',
+      doc: 'Item 15: "increase the dose until your vitiligo lesions are slightly pink".' },
+    { id: 'pink_faded', label: 'Pink appeared, but has faded', effect: 'advance',
+      doc: 'Item 15: "If the pink color disappears before your next treatment, continue to increase the dose."' },
+    { id: 'pink_persists', label: 'Carnation pink, still present', effect: 'hold',
+      doc: 'Item 15: "Once you have achieved a pink color, similar to a pink carnation flower, do not increase the dose further."' },
+    { id: 'red', label: 'Dark pink or red', effect: 'back1',
+      doc: 'FAQ (tapering): "more than light pink (dark pink or red) … reduce the dose to the previous dose according to the dosing chart."' },
+    { id: 'burn', label: 'Burning, painful, or blistered', effect: 'back1_skip',
+      doc: 'Item 16 (written for psoriasis/eczema): reduce to the previous level and hold. Skipping today was agreed with Paul on 21 Sep 2026 — not in the document. Call the clinic (item 22).' },
+  ];
+  // Asked instead of REACTIONS when the last entry was a burn-skip.
+  const SKIP_FOLLOWUP = [
+    { id: 'settled', label: 'Redness / burning has settled', effect: 'treat_at_base' },
+    { id: 'not_settled', label: 'Still red or sore', effect: 'skip_again' },
+  ];
+
+  // ---- Dates (local, 'YYYY-MM-DD') ------------------------------------------
+  function toISO(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function fromISO(s) {
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d, 12, 0, 0, 0); // noon: immune to DST edges
+  }
+  function daysBetween(aISO, bISO) {
+    return Math.round((fromISO(bISO) - fromISO(aISO)) / 86400000);
+  }
+  function addDays(iso, n) {
+    const d = fromISO(iso); d.setDate(d.getDate() + n); return toISO(d);
+  }
+  function dow(iso) { return fromISO(iso).getDay(); } // 0=Sun..6=Sat
+
+  // Scheduled days strictly between two dates.
+  function scheduledDaysBetween(aISO, bISO, scheduleDays) {
+    let n = 0;
+    for (let d = addDays(aISO, 1); d < bISO; d = addDays(d, 1)) if (scheduleDays.includes(dow(d))) n++;
+    return n;
+  }
+  function nextScheduledOnOrAfter(iso, scheduleDays) {
+    for (let d = iso, i = 0; i < 8; d = addDays(d, 1), i++) if (scheduleDays.includes(dow(d))) return d;
+    return null;
+  }
+
+  // ---- Gap rules (FAQ "What if I miss one or more treatments?") -------------
+  // missed 1  -> hold at previous dose
+  // missed >1 -> 50% of previous dose, then climb again per chart
+  //              (Paul confirmed 21 Sep 2026: highest chart step at or below
+  //              half the last dose, then climb)
+  // month+    -> return to starting dose. "A month" = 30 days and the
+  //              medication hold = 14 days (Paul accepted 21 Sep 2026).
+  function gapAssessment(lastTreatment, todayISO, settings) {
+    if (!lastTreatment) return { rule: 'none', daysSince: null, missed: 0 };
+    const daysSince = daysBetween(lastTreatment.date, todayISO);
+    const missed = scheduledDaysBetween(lastTreatment.date, todayISO, settings.scheduleDays);
+    if (daysSince >= settings.restartAfterDays) return { rule: 'restart', daysSince, missed };
+    if (missed >= 2) return { rule: 'halve', daysSince, missed };
+    if (missed === 1) return { rule: 'hold', daysSince, missed };
+    return { rule: 'none', daysSince, missed };
+  }
+
+  // ---- Entries --------------------------------------------------------------
+  // kind: 'treatment' | 'skip' | 'adjust'
+  //   treatment: {date, step, seconds, planned, overridden, reaction, note}
+  //   skip:      {date, step (reduced base pending), reason:'burn'|'not_settled'}
+  //   adjust:    {date, step, reason:'medication'|'tan'|'manual'}
+  // Every entry carries `step` = the base step in force after that entry.
+  function lastEntry(entries) { return entries.length ? entries[entries.length - 1] : null; }
+  function lastOfKind(entries, kind) {
+    for (let i = entries.length - 1; i >= 0; i--) if (entries[i].kind === kind) return entries[i];
+    return null;
+  }
+  function baseStep(entries) {
+    const e = lastEntry(entries);
+    return e ? clampStep(e.step) : 0; // 0 = no history yet
+  }
+  // Latest medication flag still within its hold window.
+  function activeMedicationHold(entries, todayISO, settings) {
+    const e = lastOfKind(entries, 'adjust');
+    if (!e || e.reason !== 'medication') return null;
+    const days = daysBetween(e.date, todayISO);
+    if (days >= settings.medicationHoldDays) return null;
+    return { since: e.date, step: e.step, daysLeft: settings.medicationHoldDays - days };
+  }
+
+  // ---- The plan for today ---------------------------------------------------
+  // Returns what the app should show before treatment. `answer` is the id of
+  // the reaction (or skip-followup) the user picked, or null if not yet.
+  function planToday(state, todayISO, answer) {
+    const s = state.settings, entries = state.entries;
+    const last = lastEntry(entries);
+    const lastT = lastOfKind(entries, 'treatment');
+    const reasons = [];
+    const plan = { kind: 'treat', reasons, question: null, answered: !!answer,
+                   prevSeconds: lastT ? lastT.seconds : null, prevStep: lastT ? lastT.step : null };
+
+    // Already treated today?
+    if (lastT && lastT.date === todayISO) {
+      return Object.assign(plan, { kind: 'done', step: lastT.step, seconds: lastT.seconds, entry: lastT });
+    }
+    // Skipped today already?
+    if (last && last.kind === 'skip' && last.date === todayISO) {
+      return Object.assign(plan, { kind: 'done_skip', step: last.step, seconds: secondsForStep(last.step), entry: last });
+    }
+    // Never two days in a row (instructions item 2).
+    if (lastT && daysBetween(lastT.date, todayISO) === 1) {
+      reasons.push('Treated yesterday — the instructions say never treat two days in a row (item 2).');
+      return Object.assign(plan, { kind: 'blocked', step: baseStep(entries), seconds: secondsForStep(baseStep(entries)) });
+    }
+    // First ever treatment.
+    if (!last) {
+      reasons.push('First treatment: chart step 1.');
+      return Object.assign(plan, { kind: 'first', step: 1, seconds: secondsForStep(1), pct: null });
+    }
+
+    const base = baseStep(entries);
+    const gap = gapAssessment(lastT, todayISO, s);
+    plan.gap = gap;
+
+    // Which question to ask.
+    if (last.kind === 'skip') {
+      plan.question = { kind: 'skip_followup', options: SKIP_FOLLOWUP };
+    } else {
+      plan.question = { kind: 'reaction', options: REACTIONS };
+    }
+
+    // An answer that does not belong to the current question (stale after an
+    // import, a deletion, or a date change) is ignored, not applied.
+    if (answer && !plan.question.options.some(o => o.id === answer)) { answer = null; plan.answered = false; plan.staleAnswer = true; }
+
+    // Provisional (unanswered) step: base with gap rules only, no increase.
+    let step = base;
+    let skipToday = false;
+
+    if (answer) {
+      if (plan.question.kind === 'skip_followup') {
+        if (answer === 'not_settled') { skipToday = true; reasons.push('Still red or sore: skip today, stay at the reduced level.'); }
+        else reasons.push('Settled: treat at the reduced level set when you skipped.');
+      } else {
+        const r = REACTIONS.find(x => x.id === answer);
+        // How many steps have already been taken back since the last treatment
+        // (e.g. a tanning adjustment) — do not double-apply a step-back.
+        const alreadyBack = lastT ? Math.max(0, lastT.step - base) : 0;
+        if (r.effect === 'advance') { step = base + 1; reasons.push(r.label + ': advance one chart step.'); }
+        else if (r.effect === 'hold') { step = base; reasons.push(r.label + ': hold at this dose.'); }
+        else if (r.effect === 'back1' || r.effect === 'back1_skip') {
+          const back = Math.max(0, 1 - alreadyBack);
+          step = base - back;
+          reasons.push(r.label + ': ' + (back ? 'step back one chart level.' : 'already stepped back since last treatment; hold.'));
+          if (r.effect === 'back1_skip') { skipToday = true; reasons.push('Skip today; resume at the reduced level next scheduled day. Consider calling the clinic.'); }
+        }
+      }
+    } else {
+      reasons.push('Provisional — answer the question below to set today\'s dose.');
+    }
+
+    // Gap rules cap the result (take the more conservative of reaction vs gap).
+    if (gap.rule === 'restart') { step = Math.min(step, 1); reasons.push(gap.daysSince + ' days since last treatment (a month or more): return to the starting dose.'); }
+    else if (gap.rule === 'halve') {
+      const half = stepAtOrBelowSeconds(lastT.seconds * 0.5);
+      step = Math.min(step, half);
+      reasons.push('Missed ' + gap.missed + ' scheduled treatments: drop to 50% of the last dose (chart step ' + half + ', ' + fmt(secondsForStep(half)) + '), then climb again.');
+    } else if (gap.rule === 'hold') { step = Math.min(step, base); reasons.push('Missed one scheduled treatment: no increase this time.'); }
+
+    // Medication hold caps too.
+    const med = activeMedicationHold(entries, todayISO, s);
+    if (med) { step = Math.min(step, med.step); reasons.push('New-medication hold: no increase for ' + med.daysLeft + ' more day(s).'); }
+
+    // Chart ends at step 21 — hold there (decision 21 Sep 2026).
+    if (step > CHART.maxStep) { step = CHART.maxStep; reasons.push('Chart ends at ' + fmt(CHART.seconds[CHART.maxStep - 1]) + ' — holding at the top of the chart. Ask the clinic what comes next.'); }
+    step = clampStep(step);
+
+    plan.step = step;
+    plan.seconds = secondsForStep(step);
+    plan.pct = lastT ? Math.round(((plan.seconds - lastT.seconds) / lastT.seconds) * 100) : null;
+    plan.kind = skipToday ? 'skip' : 'treat';
+    return plan;
+  }
+
+  // Build the entry to append after the user confirms.
+  function makeEntry(plan, todayISO, opts) {
+    opts = opts || {};
+    if (plan.kind === 'skip') {
+      return { kind: 'skip', date: todayISO, step: plan.step, reason: opts.answer === 'not_settled' ? 'not_settled' : 'burn', reaction: opts.answer || null, ts: Date.now() };
+    }
+    const seconds = opts.seconds != null ? opts.seconds : plan.seconds;
+    const overridden = seconds !== plan.seconds;
+    // An off-chart dose maps to the highest chart step at or below it, so the
+    // next step is computed from a chart value.
+    const step = overridden ? stepAtOrBelowSeconds(seconds) : plan.step;
+    return { kind: 'treatment', date: todayISO, step, seconds, planned: plan.seconds, overridden,
+             reaction: opts.answer || null, note: opts.note || '', ts: Date.now() };
+  }
+
+  // Ancillary flags (FAQ "change in my medications"; "Will phototherapy give me a tan?").
+  function medicationAdjust(entries, todayISO) {
+    const base = baseStep(entries) || 1;
+    const half = stepAtOrBelowSeconds(secondsForStep(base) * 0.5);
+    return { kind: 'adjust', date: todayISO, step: half, reason: 'medication', ts: Date.now() };
+  }
+  function tanAdjust(entries, todayISO) {
+    const base = baseStep(entries) || 1;
+    return { kind: 'adjust', date: todayISO, step: clampStep(base - 1), reason: 'tan', ts: Date.now() };
+  }
+
+  const DEFAULT_SETTINGS = {
+    scheduleDays: [1, 3, 5],   // Mon Wed Fri (Paul, 20 Sep 2026)
+    restartAfterDays: 30,      // "a month or more" — assumption
+    medicationHoldDays: 14,    // "a couple weeks" — assumption
+    startDate: null,
+  };
+
+  const api = { CHART, REACTIONS, SKIP_FOLLOWUP, DEFAULT_SETTINGS, chartFromFormula, secondsForStep, clampStep,
+                stepAtOrBelowSeconds, fmt, parseMmSs, toISO, fromISO, daysBetween, addDays, dow,
+                scheduledDaysBetween, nextScheduledOnOrAfter, gapAssessment, planToday, makeEntry,
+                medicationAdjust, tanAdjust, baseStep, lastEntry, lastOfKind, activeMedicationHold };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.PhotoRules = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+</script>
+<script>
+(function () {
+  'use strict';
+  const R = window.PhotoRules;
+  const KEY = 'phototherapy-log-v1';
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // ---- storage (localStorage may be absent/blocked; the app must still render)
+  function load() {
+    let raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) { /* blocked */ }
+    const fresh = { settings: Object.assign({}, R.DEFAULT_SETTINGS), entries: [], lastBackup: null, ui: {} };
+    if (!raw) return fresh;
+    try {
+      const s = normalize(JSON.parse(raw));
+      if (!s) return fresh;
+      delete s.dropped;
+      return s;
+    } catch (e) { return fresh; }
+  }
+  // Accept only a sane shape; returns null if unusable.
+  function normalize(s) {
+    if (!s || typeof s !== 'object' || !Array.isArray(s.entries)) return null;
+    let dropped = 0;
+    const out = { settings: Object.assign({}, R.DEFAULT_SETTINGS, s.settings || {}), entries: [], lastBackup: s.lastBackup || null, ui: s.ui || {} };
+    if (!Array.isArray(out.settings.scheduleDays) || !out.settings.scheduleDays.every(d => Number.isInteger(d) && d >= 0 && d <= 6)) out.settings.scheduleDays = R.DEFAULT_SETTINGS.scheduleDays.slice();
+    for (const e of s.entries) {
+      if (!e || typeof e !== 'object') { dropped++; continue; }
+      if (!['treatment', 'skip', 'adjust'].includes(e.kind)) { dropped++; continue; }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(e.date || '')) { dropped++; continue; }
+      // Out-of-range values are dropped, not clamped: a corrupt record must
+      // not turn into a plausible-looking dose.
+      if (!Number.isInteger(e.step) || e.step < 1 || e.step > R.CHART.maxStep) { dropped++; continue; }
+      if (e.kind === 'treatment' && (!Number.isFinite(e.seconds) || e.seconds < 1 || e.seconds > 3600)) { dropped++; continue; }
+      out.entries.push(Object.assign({}, e));
+    }
+    out.entries.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (a.ts || 0) - (b.ts || 0));
+    out.dropped = dropped;
+    return out;
+  }
+  let state = load();
+  let storageOK = true;
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); storageOK = true; }
+    catch (e) { storageOK = false; }
+  }
+
+  // ---- helpers
+  const today = () => R.toISO(new Date());
+  function nice(iso) { const d = R.fromISO(iso); return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()]; }
+  function niceLong(iso) { const d = R.fromISO(iso); return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function el(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+  function pctHtml(p) {
+    if (p == null) return '';
+    const cls = p > 0 ? 'up' : p < 0 ? 'down' : 'flat';
+    return '<span class="pct ' + cls + '">' + (p > 0 ? '+' : '') + p + '% vs last</span>';
+  }
+  const app = document.getElementById('app');
+  let view = 'today';
+  let answer = null;       // pending reaction answer on the Today view
+  let doseText = null;     // user-edited dose text
+
+  // ---- Today ---------------------------------------------------------------
+  function renderToday() {
+    const tISO = today();
+    const s = state.settings;
+    const plan = R.planToday(state, tISO, answer);
+    const isSched = s.scheduleDays.includes(R.dow(tISO));
+    const nextSched = R.nextScheduledOnOrAfter(tISO, s.scheduleDays);
+    const lastT = R.lastOfKind(state.entries, 'treatment');
+    const frag = document.createDocumentFragment();
+
+    frag.appendChild(el('<h1>' + niceLong(tISO) + '</h1>'));
+    frag.appendChild(el('<p class="sub">' + (isSched ? 'Scheduled treatment day.' : 'Not a scheduled day — next is ' + (nextSched ? nice(nextSched) : '—') + '.') +
+      (s.startDate && s.startDate > tISO ? ' Course starts ' + nice(s.startDate) + '.' : '') + '</p>'));
+
+    if (!storageOK) frag.appendChild(el('<div class="banner bad">Saving is blocked in this browser (private mode or storage disabled). Entries will be lost when you close the page.</div>'));
+    backupBanner(frag);
+
+    // Last treatment
+    if (lastT) {
+      frag.appendChild(el('<div class="card"><div class="small">Last treatment</div><div><b>' + nice(lastT.date) + '</b> — step ' + lastT.step + ' of ' + R.CHART.maxStep + ', <b>' + R.fmt(lastT.seconds) + '</b>' +
+        (lastT.overridden ? ' <span class="small">(edited from ' + R.fmt(lastT.planned) + ')</span>' : '') + '</div></div>'));
+    }
+
+    if (plan.kind === 'done') {
+      frag.appendChild(el('<div class="banner ok">Treated today: step ' + plan.step + ', <b>' + R.fmt(plan.seconds) + '</b>. Next scheduled: ' + nice(R.nextScheduledOnOrAfter(R.addDays(tISO, 1), s.scheduleDays)) + '.</div>'));
+      const undo = el('<button class="danger">Undo today\'s entry</button>');
+      undo.onclick = () => { if (confirm('Remove today\'s treatment entry?')) { state.entries = state.entries.filter(e => e !== plan.entry); answer = null; save(); render(); } };
+      frag.appendChild(undo);
+    } else if (plan.kind === 'done_skip') {
+      frag.appendChild(el('<div class="banner warn">Skipped today. The next treatment starts at step ' + plan.step + ', <b>' + R.fmt(plan.seconds) + '</b>. Next scheduled: ' + nice(R.nextScheduledOnOrAfter(R.addDays(tISO, 1), s.scheduleDays)) + '.</div>'));
+      const undo = el('<button class="danger">Undo today\'s skip</button>');
+      undo.onclick = () => { if (confirm('Remove today\'s skip entry?')) { state.entries = state.entries.filter(e => e !== plan.entry); answer = null; save(); render(); } };
+      frag.appendChild(undo);
+    } else if (plan.kind === 'blocked') {
+      frag.appendChild(el('<div class="banner bad">' + esc(plan.reasons[0]) + '</div>'));
+    } else {
+      // Question (if there is history)
+      if (plan.question) {
+        const q = plan.question;
+        const card = el('<div class="card"></div>');
+        card.appendChild(el('<h2 style="margin-top:0">Before you treat</h2>'));
+        card.appendChild(el('<div>' + (q.kind === 'reaction'
+          ? 'How did your skin respond to the last treatment (' + nice(lastT.date) + ')?'
+          : 'You skipped on ' + nice(R.lastEntry(state.entries).date) + '. How is the skin now?') + '</div>'));
+        for (const o of q.options) {
+          const opt = el('<label class="opt' + (answer === o.id ? ' sel' : '') + '"><input type="radio" name="rx" value="' + o.id + '"' + (answer === o.id ? ' checked' : '') + '><div><div class="lbl">' + esc(o.label) + '</div>' + (o.doc ? '<div class="doc">' + esc(o.doc) + '</div>' : '') + '</div></label>');
+          opt.querySelector('input').onchange = () => { answer = o.id; doseText = null; render(); };
+          card.appendChild(opt);
+        }
+        frag.appendChild(card);
+      }
+
+      // Dose
+      const card = el('<div class="card"></div>');
+      card.appendChild(el('<h2 style="margin-top:0">' + (plan.kind === 'skip' ? 'Today: skip' : plan.answered || plan.kind === 'first' ? 'Today\'s dose' : 'Provisional dose') + '</h2>'));
+      if (plan.kind === 'skip') {
+        card.appendChild(el('<div class="banner warn">No treatment today. The next treatment will start at step ' + plan.step + ' (' + R.fmt(plan.seconds) + ').</div>'));
+      } else {
+        card.appendChild(el('<div class="big">' + R.fmt(plan.seconds) + '</div>'));
+        card.appendChild(el('<div>Step ' + plan.step + ' of ' + R.CHART.maxStep + ' &nbsp; ' + pctHtml(plan.pct) + '</div>'));
+      }
+      const ul = el('<ul class="reasons"></ul>');
+      for (const r of plan.reasons) ul.appendChild(el('<li>' + esc(r) + '</li>'));
+      card.appendChild(ul);
+
+      const canRecord = plan.kind === 'first' || plan.answered;
+      if (plan.kind !== 'skip') {
+        const doseRow = el('<div class="row" style="margin-top:12px"><div class="grow"><input class="dose" type="text" inputmode="numeric" placeholder="m:ss" aria-label="Dose in minutes:seconds"></div></div>');
+        const inp = doseRow.querySelector('input');
+        inp.value = doseText != null ? doseText : R.fmt(plan.seconds);
+        inp.oninput = () => { doseText = inp.value; updateRecordBtn(); };
+        card.appendChild(doseRow);
+        card.appendChild(el('<div class="small" style="margin:4px 0 8px">Enter this on the Phothera 200 timer (9-inch setting). You can change it before recording.</div>'));
+        const noteRow = el('<textarea placeholder="Note (optional)"></textarea>');
+        card.appendChild(noteRow);
+        const btn = el('<button class="primary" style="margin-top:10px">Record treatment</button>');
+        function updateRecordBtn() {
+          const secs = R.parseMmSs(inp.value);
+          btn.disabled = !canRecord || secs == null || secs <= 0 || secs > 3600;
+          btn.textContent = !canRecord ? 'Answer the question above first' : secs == null ? 'Enter a time as m:ss' : 'Record treatment — ' + R.fmt(secs) + (secs !== plan.seconds ? ' (edited)' : '');
+        }
+        updateRecordBtn();
+        btn.onclick = () => {
+          const secs = R.parseMmSs(inp.value);
+          if (secs !== plan.seconds && !confirm('You changed the dose from ' + R.fmt(plan.seconds) + ' to ' + R.fmt(secs) + '. Record ' + R.fmt(secs) + '?')) return;
+          state.entries.push(R.makeEntry(plan, tISO, { answer, seconds: secs, note: noteRow.value }));
+          save(); answer = null; doseText = null; render();
+        };
+        card.appendChild(btn);
+        if (!isSched && canRecord) card.appendChild(el('<div class="small" style="margin-top:8px">Today is not a scheduled day; recording is allowed but keep two days of rest between treatments.</div>'));
+      } else {
+        const btn = el('<button class="primary" style="margin-top:10px">Record skip</button>');
+        btn.onclick = () => { state.entries.push(R.makeEntry(plan, tISO, { answer })); save(); answer = null; render(); };
+        card.appendChild(btn);
+      }
+      frag.appendChild(card);
+    }
+
+    // Ancillary flags
+    if (state.entries.length) {
+      const card = el('<div class="card"><h2 style="margin-top:0">Other events</h2></div>');
+      const row = el('<div class="row"></div>');
+      const med = el('<button class="grow">New medication started</button>');
+      med.onclick = () => {
+        const a = R.medicationAdjust(state.entries, tISO);
+        if (confirm('Instructions: a new oral or injectable medication means decrease the dose by 50% and hold for a couple of weeks, and tell the clinic.\n\nSet the next dose to step ' + a.step + ' (' + R.fmt(R.secondsForStep(a.step)) + ') and hold ' + s.medicationHoldDays + ' days?')) { state.entries.push(a); answer = null; save(); render(); }
+      };
+      const tan = el('<button class="grow">Tanning too dark</button>');
+      tan.onclick = () => {
+        const a = R.tanAdjust(state.entries, tISO);
+        if (confirm('Instructions: if tanning is unacceptable, reduce to the previous chart level and hold; if still unacceptable after 2 weeks, reduce again.\n\nStep back to step ' + a.step + ' (' + R.fmt(R.secondsForStep(a.step)) + ')?')) { state.entries.push(a); answer = null; save(); render(); }
+      };
+      row.appendChild(med); row.appendChild(tan);
+      card.appendChild(row);
+      frag.appendChild(card);
+    }
+    app.replaceChildren(frag);
+  }
+
+  function backupBanner(frag) {
+    const n = state.entries.length;
+    if (!n) return;
+    const last = state.lastBackup ? Math.round((Date.now() - state.lastBackup) / 86400000) : null;
+    if (last == null || last >= 7) {
+      const b = el('<div class="banner warn">' + (last == null ? 'No backup yet' : 'Last backup ' + last + ' days ago') + ' — ' + n + (n === 1 ? ' entry lives' : ' entries live') + ' only on this phone. <a href="#" id="bk">Back up now</a></div>');
+      b.querySelector('#bk').onclick = (e) => { e.preventDefault(); exportBackup(); };
+      frag.appendChild(b);
+    }
+  }
+
+  // ---- Log -----------------------------------------------------------------
+  function renderLog() {
+    const frag = document.createDocumentFragment();
+    frag.appendChild(el('<h1>Log</h1>'));
+    frag.appendChild(el('<p class="sub">' + state.entries.length + ' entries. Bring this to clinic visits (instruction 14).</p>'));
+    if (!state.entries.length) { frag.appendChild(el('<div class="card">No entries yet.</div>')); app.replaceChildren(frag); return; }
+    const tbl = el('<table><thead><tr><th>Date</th><th>Step</th><th>Dose</th><th>Reaction / event</th><th></th></tr></thead><tbody></tbody></table>');
+    const tb = tbl.querySelector('tbody');
+    const rxLabel = id => { const o = R.REACTIONS.concat(R.SKIP_FOLLOWUP).find(x => x.id === id); return o ? o.label : ''; };
+    for (const e of state.entries.slice().reverse()) {
+      let what = '';
+      if (e.kind === 'treatment') what = (e.reaction ? rxLabel(e.reaction) : 'First treatment') + (e.overridden ? ' · edited from ' + R.fmt(e.planned) : '') + (e.note ? '<div class="small">' + esc(e.note) + '</div>' : '');
+      else if (e.kind === 'skip') what = 'Skipped — ' + (e.reason === 'burn' ? 'burning/red' : 'still red or sore');
+      else what = e.reason === 'medication' ? 'New medication: −50% and hold' : e.reason === 'tan' ? 'Tanning: step back' : 'Adjusted';
+      const tr = el('<tr><td class="num">' + nice(e.date) + '</td><td class="num">' + e.step + '</td><td class="num">' + (e.kind === 'treatment' ? '<b>' + R.fmt(e.seconds) + '</b>' : '<span class="small">' + R.fmt(R.secondsForStep(e.step)) + ' next</span>') + '</td><td>' + what + '</td><td></td></tr>');
+      const del = el('<button class="danger" style="padding:6px 10px;font-size:13px">Delete</button>');
+      del.onclick = () => { if (confirm('Delete the entry for ' + nice(e.date) + '? This changes the next suggested dose.')) { state.entries = state.entries.filter(x => x !== e); answer = null; save(); render(); } };
+      tr.lastElementChild.appendChild(del);
+      tb.appendChild(tr);
+    }
+    frag.appendChild(tbl);
+    app.replaceChildren(frag);
+  }
+
+  // ---- Chart ---------------------------------------------------------------
+  function renderChart() {
+    const frag = document.createDocumentFragment();
+    const base = R.baseStep(state.entries);
+    frag.appendChild(el('<h1>Dosing chart</h1>'));
+    frag.appendChild(el('<p class="sub">' + esc(R.CHART.label) + '. Transcribed from Dr. Pandya\'s chart (page 1, boxed column). Each step is the previous step × 1.15, rounded.</p>'));
+    const tbl = el('<table><thead><tr><th>Step</th><th>Dose</th><th>Δ</th></tr></thead><tbody></tbody></table>');
+    const tb = tbl.querySelector('tbody');
+    R.CHART.seconds.forEach((sec, i) => {
+      const prev = i ? R.CHART.seconds[i - 1] : null;
+      tb.appendChild(el('<tr' + (i + 1 === base ? ' class="cur"' : '') + '><td class="num">' + (i + 1) + '</td><td class="num">' + R.fmt(sec) + '</td><td class="num small">' + (prev ? '+' + (sec - prev) + ' s' : '') + '</td></tr>'));
+    });
+    frag.appendChild(tbl);
+    frag.appendChild(el('<div class="card small">Rules in use (all from the instruction sheet unless noted):<ul class="reasons">' +
+      '<li>3×/week, never two days in a row; 9 inches from the panel; goggles on.</li>' +
+      '<li>Increase until slightly pink. Pink that fades before the next treatment → keep increasing. Carnation pink that persists → hold.</li>' +
+      '<li>Dark pink or red → previous chart level. Burning → previous level and skip that day (skip agreed with Paul, 21 Sep 2026).</li>' +
+      '<li>Missed one → hold. Missed more than one → 50% of last dose (highest chart step at or below), then climb. A month or more → start over.</li>' +
+      '<li>New medication → 50% and hold ' + state.settings.medicationHoldDays + ' days. Tanning too dark → previous level.</li>' +
+      '<li>Chart ends at 5:25 — the app holds there (Paul, 21 Sep 2026).</li></ul></div>'));
+    app.replaceChildren(frag);
+  }
+
+  // ---- Settings --------------------------------------------------------------
+  function renderSettings() {
+    const s = state.settings;
+    const frag = document.createDocumentFragment();
+    frag.appendChild(el('<h1>Settings</h1>'));
+    const card = el('<div class="card"></div>');
+    card.appendChild(el('<h2 style="margin-top:0">Schedule</h2>'));
+    const days = el('<div></div>');
+    DAYS.forEach((d, i) => {
+      const l = el('<label class="chk"><input type="checkbox" value="' + i + '"' + (s.scheduleDays.includes(i) ? ' checked' : '') + '> ' + d + '</label>');
+      l.querySelector('input').onchange = (e) => {
+        const set = new Set(s.scheduleDays); e.target.checked ? set.add(i) : set.delete(i);
+        s.scheduleDays = [...set].sort(); save(); render();
+      };
+      days.appendChild(l);
+    });
+    card.appendChild(days);
+    const sd = el('<div style="margin-top:10px"><label class="small">Course start date (optional)</label><input type="date" value="' + (s.startDate || '') + '"></div>');
+    sd.querySelector('input').onchange = (e) => { s.startDate = e.target.value || null; save(); };
+    card.appendChild(sd);
+    const rd = el('<div style="margin-top:10px"><label class="small">"A month or more" without treatment = restart after (days)</label><input type="number" min="14" max="90" value="' + s.restartAfterDays + '"></div>');
+    rd.querySelector('input').onchange = (e) => { const v = Number(e.target.value); if (v >= 14 && v <= 90) { s.restartAfterDays = v; save(); } };
+    card.appendChild(rd);
+    const md = el('<div style="margin-top:10px"><label class="small">New-medication hold (days)</label><input type="number" min="7" max="60" value="' + s.medicationHoldDays + '"></div>');
+    md.querySelector('input').onchange = (e) => { const v = Number(e.target.value); if (v >= 7 && v <= 60) { s.medicationHoldDays = v; save(); } };
+    card.appendChild(md);
+    frag.appendChild(card);
+
+    const bk = el('<div class="card"><h2 style="margin-top:0">Backup</h2><p class="small">Entries live only in this browser on this phone. Export a copy regularly; import restores it on any device.</p></div>');
+    bk.appendChild(el('<div class="small">Last backup: ' + (state.lastBackup ? new Date(state.lastBackup).toLocaleString() : 'never') + '</div>'));
+    const row = el('<div class="row" style="margin-top:8px"></div>');
+    const ex = el('<button class="grow">Export backup</button>'); ex.onclick = exportBackup;
+    const cp = el('<button class="grow">Copy to clipboard</button>');
+    cp.onclick = async () => { try { await navigator.clipboard.writeText(JSON.stringify(state, null, 1)); state.lastBackup = Date.now(); save(); render(); alert('Copied. Paste it somewhere safe (Notes, email to yourself).'); } catch (e) { alert('Clipboard not available here — use Export.'); } };
+    const im = el('<button class="grow">Import backup</button>');
+    const file = el('<input type="file" accept="application/json,.json" class="hidden">');
+    im.onclick = () => file.click();
+    file.onchange = () => {
+      const f = file.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => importText(rd.result);
+      rd.readAsText(f);
+    };
+    row.appendChild(ex); row.appendChild(cp); row.appendChild(im); row.appendChild(file);
+    bk.appendChild(row);
+    const ta = el('<details style="margin-top:10px"><summary>Paste a backup instead</summary><textarea placeholder="Paste backup JSON here"></textarea><button style="margin-top:6px">Import pasted text</button></details>');
+    ta.querySelector('button').onclick = () => importText(ta.querySelector('textarea').value);
+    bk.appendChild(ta);
+    frag.appendChild(bk);
+
+    const dz = el('<div class="card"><h2 style="margin-top:0">Danger zone</h2></div>');
+    const reset = el('<button class="danger">Erase all entries on this phone</button>');
+    reset.onclick = () => {
+      if (!state.entries.length) return alert('Nothing to erase.');
+      if (confirm('Erase all ' + state.entries.length + ' entries? Export a backup first if you have not.') && confirm('Really erase? This cannot be undone.')) { state.entries = []; answer = null; save(); render(); }
+    };
+    dz.appendChild(reset);
+    frag.appendChild(dz);
+
+    const th = el('<div class="card small">Appearance: <button data-t="">System</button> <button data-t="light">Light</button> <button data-t="dark">Dark</button></div>');
+    th.querySelectorAll('button').forEach(b => b.onclick = () => { const t = b.dataset.t; if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; try { localStorage.setItem(KEY + '-theme', t); } catch (e) {} });
+    frag.appendChild(th);
+    frag.appendChild(el('<p class="small">Phototherapy Log · rules from Dr. Pandya\'s instruction sheet (scanned 20 Sep 2026). This app suggests; you decide. Call the clinic for any burn or concern.</p>'));
+    app.replaceChildren(frag);
+  }
+
+  function exportBackup() {
+    const blob = new Blob([JSON.stringify(state, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'phototherapy-log-' + today() + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    state.lastBackup = Date.now(); save(); render();
+  }
+  function importText(text) {
+    let parsed;
+    try { parsed = JSON.parse(text); } catch (e) { return alert('That is not a valid backup file (could not parse it).'); }
+    const s = normalize(parsed);
+    if (!s) return alert('That file is not a phototherapy backup (no entries list found). Nothing was changed.');
+    if (!confirm('Import ' + s.entries.length + ' entries' + (s.dropped ? ' (' + s.dropped + ' unreadable entries will be ignored)' : '') + '? This replaces the ' + state.entries.length + ' entries currently on this phone.')) return;
+    const dropped = s.dropped; delete s.dropped;
+    state = s; save(); answer = null; render(); alert('Imported ' + s.entries.length + ' entries.' + (dropped ? ' ' + dropped + ' unreadable entries were ignored.' : ''));
+  }
+
+  // ---- nav / render ----------------------------------------------------------
+  function render() {
+    document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
+    ({ today: renderToday, log: renderLog, chart: renderChart, settings: renderSettings })[view]();
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll('nav button').forEach(b => b.onclick = () => { view = b.dataset.view; render(); });
+  try { const t = localStorage.getItem(KEY + '-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  // Re-render when the app is brought back to the foreground (date may have changed).
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+  window.__pt = { get state() { return state; }, set state(v) { state = v; answer = null; doseText = null; save(); render(); }, render, R };
+  render();
+})();
+</script>
+</body>
+</html>
