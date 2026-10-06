@@ -664,7 +664,9 @@
     const th = el('<div class="card small">Appearance: <button data-t="">System</button> <button data-t="light">Light</button> <button data-t="dark">Dark</button></div>');
     th.querySelectorAll('button').forEach(b => b.onclick = () => { const t = b.dataset.t; if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; try { localStorage.setItem(KEY + '-theme', t); } catch (e) {} });
     frag.appendChild(th);
-    frag.appendChild(el('<p class="small">Phototherapy Log · rules from Dr. Pandya\'s instruction sheet (scanned 20 Sep 2026). This app suggests; you decide. Call the clinic for any burn or concern.</p>'));
+    const m = backupMethod();
+    frag.appendChild(el('<p class="small">Phototherapy Log · build <b>2026-10-06-5d4693c</b><br>Backup method on this device: <b>' + (m.kind === 'share' ? 'share sheet' : 'file download') + '</b> — ' + esc(m.why) + '</p>'));
+    frag.appendChild(el('<p class="small">Rules from Dr. Pandya\'s instruction sheet (scanned 20 Sep 2026). This app suggests; you decide. Call the clinic for any burn or concern.</p>'));
     app.replaceChildren(frag);
   }
 
@@ -675,16 +677,35 @@
   // was "Open in WeChat" (5 Oct 2026). The system share sheet, asked for
   // directly, offers Save to Files instead, so prefer it and keep the download
   // as the fallback for desktop and anywhere share-with-files is unsupported.
+  const CANDIDATES = [
+    { type: 'application/json', name: () => 'phototherapy-log-' + today() + '.json' },
+    { type: 'text/plain', name: () => 'phototherapy-log-' + today() + '.txt' },
+  ];
+  // What this browser will actually do when Export is tapped. Reported in
+  // Settings so the behaviour on a phone can be identified without guessing.
+  function backupMethod() {
+    if (!navigator.share || !navigator.canShare) return { kind: 'download', why: 'this browser has no share function' };
+    for (const cand of CANDIDATES) {
+      try {
+        if (navigator.canShare({ files: [new File(['{}'], cand.name(), { type: cand.type })] })) {
+          return { kind: 'share', why: 'system share sheet, as ' + cand.type };
+        }
+      } catch (e) { /* File unsupported: fall through */ }
+    }
+    return { kind: 'download', why: 'this browser refuses to share files' };
+  }
+
   async function exportBackup() {
     const text = JSON.stringify(state, null, 1);
-    const name = 'phototherapy-log-' + today() + '.json';
+    const name = CANDIDATES[0].name();
     try {
       if (navigator.share && navigator.canShare) {
         let file = null;
-        // Some iOS versions refuse application/json; text/plain is accepted and
-        // the name still carries .json, which the importer accepts either way.
-        for (const type of ['application/json', 'text/plain']) {
-          const f = new File([text], name, { type });
+        // Some iOS versions refuse application/json. text/plain is accepted, but
+        // only when the filename matches the type, so offer it as .txt — the
+        // importer accepts .txt as well.
+        for (const cand of CANDIDATES) {
+          const f = new File([text], cand.name(), { type: cand.type });
           if (navigator.canShare({ files: [f] })) { file = f; break; }
         }
         if (file) {
