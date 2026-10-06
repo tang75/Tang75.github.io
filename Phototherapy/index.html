@@ -637,7 +637,7 @@
     const cp = el('<button class="grow">Copy to clipboard</button>');
     cp.onclick = async () => { try { await navigator.clipboard.writeText(JSON.stringify(state, null, 1)); state.lastBackup = Date.now(); save(); render(); alert('Copied. Paste it somewhere safe (Notes, email to yourself).'); } catch (e) { alert('Clipboard not available here — use Export.'); } };
     const im = el('<button class="grow">Import backup</button>');
-    const file = el('<input type="file" accept="application/json,.json" class="hidden">');
+    const file = el('<input type="file" accept="application/json,text/plain,.json,.txt" class="hidden">');
     im.onclick = () => file.click();
     file.onchange = () => {
       const f = file.files[0]; if (!f) return;
@@ -668,14 +668,47 @@
     app.replaceChildren(frag);
   }
 
-  function exportBackup() {
-    const blob = new Blob([JSON.stringify(state, null, 1)], { type: 'application/json' });
+  function markBackedUp() { state.lastBackup = Date.now(); save(); render(); }
+
+  // On iOS a Home Screen web app answers an ordinary download with a preview
+  // screen whose headline option is whatever app claims .json — for Paul that
+  // was "Open in WeChat" (5 Oct 2026). The system share sheet, asked for
+  // directly, offers Save to Files instead, so prefer it and keep the download
+  // as the fallback for desktop and anywhere share-with-files is unsupported.
+  async function exportBackup() {
+    const text = JSON.stringify(state, null, 1);
+    const name = 'phototherapy-log-' + today() + '.json';
+    try {
+      if (navigator.share && navigator.canShare) {
+        let file = null;
+        // Some iOS versions refuse application/json; text/plain is accepted and
+        // the name still carries .json, which the importer accepts either way.
+        for (const type of ['application/json', 'text/plain']) {
+          const f = new File([text], name, { type });
+          if (navigator.canShare({ files: [f] })) { file = f; break; }
+        }
+        if (file) {
+          await navigator.share({ files: [file], title: 'Phototherapy log backup' });
+          markBackedUp();
+          return;
+        }
+      }
+    } catch (e) {
+      // Cancelling the share sheet is not a backup — leave lastBackup alone so
+      // the reminder keeps nagging.
+      if (e && (e.name === 'AbortError' || e.name === 'NotAllowedError')) return;
+      // Anything else: fall through to the download below.
+    }
+    downloadBackup(text, name);
+  }
+  function downloadBackup(text, name) {
+    const blob = new Blob([text], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'phototherapy-log-' + today() + '.json';
+    a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    state.lastBackup = Date.now(); save(); render();
+    markBackedUp();
   }
   function importText(text) {
     let parsed;
