@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#111417" media="(prefers-color-scheme: dark)">
 <title>Phototherapy Log</title>
+<meta name="build" content="2026-10-07-a453ac7">
 <style>
   :root {
     --bg: #ffffff; --fg: #1a1d21; --muted: #5f6771; --line: #e3e6ea; --card: #f6f7f9;
@@ -67,9 +68,14 @@
   label.chk { display: inline-flex; gap: 6px; align-items: center; margin: 4px 10px 4px 0; }
   textarea { min-height: 70px; }
   details summary { cursor: pointer; color: var(--muted); }
+  #updatebar { margin: 10px 0 0; padding: 12px 14px; border-radius: 12px; font-size: 15px;
+               background: color-mix(in srgb, var(--accent) 14%, var(--bg)); border: 1px solid var(--accent); }
+  #updatebar button { margin-top: 8px; width: 100%; background: var(--accent); color: var(--accent-fg);
+                      border-color: var(--accent); font-weight: 600; }
 </style>
 </head>
 <body>
+<div id="updatebar" class="hidden"></div>
 <main id="app"></main>
 <nav>
   <button data-view="today">Today</button>
@@ -665,7 +671,7 @@
     th.querySelectorAll('button').forEach(b => b.onclick = () => { const t = b.dataset.t; if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; try { localStorage.setItem(KEY + '-theme', t); } catch (e) {} });
     frag.appendChild(th);
     const m = backupMethod();
-    frag.appendChild(el('<p class="small">Phototherapy Log · build <b>2026-10-06-5d4693c</b><br>Backup method on this device: <b>' + (m.kind === 'share' ? 'share sheet' : 'file download') + '</b> — ' + esc(m.why) + '</p>'));
+    frag.appendChild(el('<p class="small">Phototherapy Log · build <b>2026-10-07-a453ac7</b><br>Backup method on this device: <b>' + (m.kind === 'share' ? 'share sheet' : 'file download') + '</b> — ' + esc(m.why) + '</p>'));
     frag.appendChild(el('<p class="small">Rules from Dr. Pandya\'s instruction sheet (scanned 20 Sep 2026). This app suggests; you decide. Call the clinic for any burn or concern.</p>'));
     app.replaceChildren(frag);
   }
@@ -741,6 +747,61 @@
     state = s; save(); answer = null; render(); alert('Imported ' + s.entries.length + ' entries.' + (dropped ? ' ' + dropped + ' unreadable entries were ignored.' : ''));
   }
 
+  // ---- self-update -----------------------------------------------------------
+  // iOS keeps serving a Home Screen web app its cached page for hours, so a
+  // deployed fix can sit unseen on the phone (5-6 Oct 2026: two fixes were
+  // tested against a stale build). On launch, and when the app is brought back
+  // to the foreground, re-fetch this page and compare the build marker. The
+  // fetched HTML is kept, so applying the update never depends on the cache.
+  const BUILD = (document.querySelector('meta[name="build"]') || {}).content || '';
+  let pendingUpdate = null, lastCheck = 0, checking = false;
+
+  async function checkForUpdate() {
+    if (checking || pendingUpdate || !BUILD) return;
+    if (Date.now() - lastCheck < 5 * 60 * 1000) return;
+    checking = true;
+    try {
+      const url = location.href.split('?')[0].split('#')[0];
+      // cache: 'reload' bypasses the cache AND refreshes the stored entry.
+      const res = await fetch(url + '?v=' + Date.now(), { cache: 'reload' });
+      if (!res.ok) return;
+      const html = await res.text();
+      const m = html.match(/<meta name="build" content="([^"]+)">/);
+      if (!m || !m[1] || m[1] === BUILD) return;
+      // Only trust a fetched page that is actually this app.
+      if (!/id="app"/.test(html) || !/PhotoRules/.test(html)) return;
+      pendingUpdate = { stamp: m[1], html };
+      lastCheck = Date.now();
+      showUpdateBar();
+    } catch (e) {
+      // Offline or blocked: stay on the current version, say nothing.
+    } finally {
+      checking = false;
+      lastCheck = Date.now();
+    }
+  }
+
+  function showUpdateBar() {
+    const bar = document.getElementById('updatebar');
+    if (!pendingUpdate) { bar.replaceChildren(); bar.classList.add('hidden'); return; }
+    bar.replaceChildren();
+    bar.appendChild(el('<div>A newer version of this app is available (build ' + esc(pendingUpdate.stamp) + '). Your log is not affected.</div>'));
+    const b = el('<button>Update now</button>');
+    b.onclick = applyUpdate;
+    bar.appendChild(b);
+    bar.classList.remove('hidden');
+  }
+
+  function applyUpdate() {
+    const html = pendingUpdate && pendingUpdate.html;
+    if (!html) return;
+    try {
+      document.open(); document.write(html); document.close();
+    } catch (e) {
+      location.replace(location.href.split('?')[0] + '?v=' + pendingUpdate.stamp);
+    }
+  }
+
   // ---- nav / render ----------------------------------------------------------
   function render() {
     document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
@@ -750,9 +811,12 @@
   document.querySelectorAll('nav button').forEach(b => b.onclick = () => { view = b.dataset.view; render(); });
   try { const t = localStorage.getItem(KEY + '-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
   // Re-render when the app is brought back to the foreground (date may have changed).
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
-  window.__pt = { get state() { return state; }, set state(v) { state = v; answer = null; doseText = null; save(); render(); }, render, R };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); checkForUpdate(); } });
+  window.__pt = { get state() { return state; }, set state(v) { state = v; answer = null; doseText = null; save(); render(); }, render, R,
+                  BUILD, checkForUpdate, get pendingUpdate() { return pendingUpdate; }, applyUpdate,
+                  _resetCheck() { lastCheck = 0; pendingUpdate = null; showUpdateBar(); } };
   render();
+  checkForUpdate();
 })();
 </script>
 </body>
