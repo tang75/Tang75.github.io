@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#111417" media="(prefers-color-scheme: dark)">
 <title>Phototherapy Log</title>
-<meta name="build" content="2026-10-07-a453ac7">
+<meta name="build" content="2026-10-09-fc46734">
 <style>
   :root {
     --bg: #ffffff; --fg: #1a1d21; --muted: #5f6771; --line: #e3e6ea; --card: #f6f7f9;
@@ -358,7 +358,61 @@
     startDate: null,
   };
 
+  // ---- Back-dated entries ----------------------------------------------------
+  // A treatment that happened but was not recorded on the day. It is a record of
+  // fact, so it is accepted even where a live entry would be refused (e.g. two
+  // days in a row); the caller warns instead of blocking. Entries are kept in
+  // date order because baseStep() reads the last one.
+  function sortEntries(entries) {
+    return entries.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (a.ts || 0) - (b.ts || 0));
+  }
+  function hasEntryOn(entries, dateISO) {
+    return entries.some(e => e.date === dateISO);
+  }
+  function lastTreatmentBefore(entries, dateISO) {
+    let found = null;
+    for (const e of entries) if (e.kind === 'treatment' && e.date < dateISO) found = e;
+    return found;
+  }
+  // The dose the app would most likely have offered on that day: one chart step
+  // above the preceding treatment (the "no pinkness / pink faded" case, which is
+  // the common one). A suggestion only — the user states what they actually did.
+  function suggestedSecondsFor(entries, dateISO) {
+    const prev = lastTreatmentBefore(entries, dateISO);
+    if (!prev) return secondsForStep(1);
+    return secondsForStep(clampStep(prev.step + 1));
+  }
+  // The most recent scheduled day before today with nothing recorded on it —
+  // what a forgotten treatment usually is. Looks back two weeks.
+  function mostRecentUnloggedScheduledDay(entries, todayISO, scheduleDays) {
+    for (let i = 1; i <= 14; i++) {
+      const d = addDays(todayISO, -i);
+      if (scheduleDays.includes(dow(d)) && !hasEntryOn(entries, d)) return d;
+    }
+    return null;
+  }
+  function makePastTreatment(dateISO, seconds, note) {
+    return { kind: 'treatment', date: dateISO, step: stepAtOrBelowSeconds(seconds), seconds: seconds,
+             planned: seconds, overridden: false, reaction: null, note: note || '', backdated: true, ts: Date.now() };
+  }
+  // Why a back-dated entry might be wrong — shown to the user, never blocking.
+  function backdateWarnings(entries, dateISO, todayISO) {
+    const w = [];
+    if (dateISO > todayISO) w.push('That date is in the future.');
+    if (hasEntryOn(entries, dateISO)) w.push('There is already an entry on that date. Delete it first if you want to replace it.');
+    for (const e of entries) {
+      if (e.kind !== 'treatment') continue;
+      if (Math.abs(daysBetween(e.date, dateISO)) === 1) {
+        w.push('That is the day ' + (e.date < dateISO ? 'after' : 'before') + ' the treatment on ' + e.date + ' — the instructions say never two days in a row.');
+        break;
+      }
+    }
+    return w;
+  }
+
   const api = { CHART, REACTIONS, SKIP_FOLLOWUP, DEFAULT_SETTINGS, chartFromFormula, secondsForStep, clampStep,
+                sortEntries, hasEntryOn, lastTreatmentBefore, suggestedSecondsFor, mostRecentUnloggedScheduledDay,
+                makePastTreatment, backdateWarnings,
                 stepAtOrBelowSeconds, fmt, parseMmSs, toISO, fromISO, daysBetween, addDays, dow,
                 scheduledDaysBetween, nextScheduledOnOrAfter, gapAssessment, planToday, makeEntry,
                 medicationAdjust, tanAdjust, baseStep, lastEntry, lastOfKind, activeMedicationHold };
@@ -566,13 +620,14 @@
     const frag = document.createDocumentFragment();
     frag.appendChild(el('<h1>Log</h1>'));
     frag.appendChild(el('<p class="sub">' + state.entries.length + ' entries. Bring this to clinic visits (instruction 14).</p>'));
+    frag.appendChild(addPastCard());
     if (!state.entries.length) { frag.appendChild(el('<div class="card">No entries yet.</div>')); app.replaceChildren(frag); return; }
     const tbl = el('<table><thead><tr><th>Date</th><th>Step</th><th>Dose</th><th>Reaction / event</th><th></th></tr></thead><tbody></tbody></table>');
     const tb = tbl.querySelector('tbody');
     const rxLabel = id => { const o = R.REACTIONS.concat(R.SKIP_FOLLOWUP).find(x => x.id === id); return o ? o.label : ''; };
     for (const e of state.entries.slice().reverse()) {
       let what = '';
-      if (e.kind === 'treatment') what = (e.reaction ? rxLabel(e.reaction) : 'First treatment') + (e.overridden ? ' · edited from ' + R.fmt(e.planned) : '') + (e.note ? '<div class="small">' + esc(e.note) + '</div>' : '');
+      if (e.kind === 'treatment') what = (e.backdated ? 'Added later' : e.reaction ? rxLabel(e.reaction) : 'First treatment') + (e.overridden ? ' · edited from ' + R.fmt(e.planned) : '') + (e.note ? '<div class="small">' + esc(e.note) + '</div>' : '');
       else if (e.kind === 'skip') what = 'Skipped — ' + (e.reason === 'burn' ? 'burning/red' : 'still red or sore');
       else what = e.reason === 'medication' ? 'New medication: −50% and hold' : e.reason === 'tan' ? 'Tanning: step back' : 'Adjusted';
       const tr = el('<tr><td class="num">' + nice(e.date) + '</td><td class="num">' + e.step + '</td><td class="num">' + (e.kind === 'treatment' ? '<b>' + R.fmt(e.seconds) + '</b>' : '<span class="small">' + R.fmt(R.secondsForStep(e.step)) + ' next</span>') + '</td><td>' + what + '</td><td></td></tr>');
@@ -583,6 +638,62 @@
     }
     frag.appendChild(tbl);
     app.replaceChildren(frag);
+  }
+
+  // A treatment that happened but was not logged on the day. Kept collapsed so
+  // the Log stays a log. The dose is the user's to state; the app only offers
+  // the value it would most likely have suggested that day.
+  function addPastCard() {
+    const tISO = today();
+    const card = el('<details class="card"><summary>Add a treatment I forgot to log</summary></details>');
+    const body = el('<div style="margin-top:10px"></div>');
+    const suggestedDate = R.mostRecentUnloggedScheduledDay(state.entries, tISO, state.settings.scheduleDays) || R.addDays(tISO, -1);
+
+    const dateWrap = el('<div><label class="small">Date of the treatment</label><input type="date" max="' + tISO + '" value="' + suggestedDate + '"></div>');
+    const dateInp = dateWrap.querySelector('input');
+    const doseWrap = el('<div style="margin-top:10px"><label class="small">Dose you actually used (m:ss)</label><input type="text" inputmode="numeric" class="dose"></div>');
+    const doseInp = doseWrap.querySelector('input');
+    const hint = el('<div class="small" style="margin-top:4px"></div>');
+    const warn = el('<div></div>');
+    const noteInp = el('<textarea style="margin-top:10px" placeholder="Note (optional)"></textarea>');
+    const btn = el('<button class="primary" style="margin-top:10px">Add this treatment</button>');
+
+    function refresh() {
+      const d = dateInp.value;
+      const warnings = d ? R.backdateWarnings(state.entries, d, tISO) : ['Pick a date.'];
+      warn.replaceChildren();
+      for (const w of warnings) warn.appendChild(el('<div class="banner warn">' + esc(w) + '</div>'));
+      const secs = R.parseMmSs(doseInp.value);
+      const blocking = !d || d > tISO || R.hasEntryOn(state.entries, d);
+      btn.disabled = blocking || secs == null || secs <= 0 || secs > 3600;
+      btn.textContent = blocking ? 'Fix the problem above'
+        : secs == null ? 'Enter the dose as m:ss'
+        : 'Add ' + R.fmt(secs) + ' on ' + nice(d);
+      const prev = d ? R.lastTreatmentBefore(state.entries, d) : null;
+      hint.textContent = prev
+        ? 'Suggested: ' + R.fmt(R.suggestedSecondsFor(state.entries, d)) + ' — one chart step above the ' + R.fmt(prev.seconds) + ' on ' + nice(prev.date) + '. Change it if you used something else.'
+        : 'Suggested: ' + R.fmt(R.suggestedSecondsFor(state.entries, d || tISO)) + ' — no earlier treatment on record, so chart step 1.';
+    }
+    function fillSuggestedDose() {
+      if (dateInp.value) doseInp.value = R.fmt(R.suggestedSecondsFor(state.entries, dateInp.value));
+      refresh();
+    }
+    dateInp.onchange = fillSuggestedDose;
+    doseInp.oninput = refresh;
+    btn.onclick = () => {
+      const d = dateInp.value, secs = R.parseMmSs(doseInp.value);
+      if (!d || secs == null) return;
+      if (!confirm('Record a treatment of ' + R.fmt(secs) + ' on ' + nice(d) + '?\n\nThis changes what the app suggests from here on.')) return;
+      state.entries.push(R.makePastTreatment(d, secs, noteInp.value));
+      R.sortEntries(state.entries);
+      answer = null; doseText = null;
+      save(); render();
+    };
+    fillSuggestedDose();
+    body.appendChild(dateWrap); body.appendChild(doseWrap); body.appendChild(hint);
+    body.appendChild(noteInp); body.appendChild(warn); body.appendChild(btn);
+    card.appendChild(body);
+    return card;
   }
 
   // ---- Chart ---------------------------------------------------------------
@@ -671,7 +782,7 @@
     th.querySelectorAll('button').forEach(b => b.onclick = () => { const t = b.dataset.t; if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; try { localStorage.setItem(KEY + '-theme', t); } catch (e) {} });
     frag.appendChild(th);
     const m = backupMethod();
-    frag.appendChild(el('<p class="small">Phototherapy Log · build <b>2026-10-07-a453ac7</b><br>Backup method on this device: <b>' + (m.kind === 'share' ? 'share sheet' : 'file download') + '</b> — ' + esc(m.why) + '</p>'));
+    frag.appendChild(el('<p class="small">Phototherapy Log · build <b>2026-10-09-fc46734</b><br>Backup method on this device: <b>' + (m.kind === 'share' ? 'share sheet' : 'file download') + '</b> — ' + esc(m.why) + '</p>'));
     frag.appendChild(el('<p class="small">Rules from Dr. Pandya\'s instruction sheet (scanned 20 Sep 2026). This app suggests; you decide. Call the clinic for any burn or concern.</p>'));
     app.replaceChildren(frag);
   }
